@@ -429,11 +429,11 @@ export default function TeamPage() {
       <View style={[styles.centered, styles.topBanner]}>
         {isEditMode ? (
           <TouchableOpacity onPress={handleImagePicker} style={styles.editImageContainer}>
-            <BaskitballImage size={150} imageUri={editedImageUri}></BaskitballImage>
+            <BaskitballImage size={150} imageUri={editedImageUri} circular={true}></BaskitballImage>
             <Text style={styles.editImageHint}>Tap to change image</Text>
           </TouchableOpacity>
         ) : (
-          <BaskitballImage size={150} imageUri={team?.imageUri}></BaskitballImage>
+          <BaskitballImage size={150} imageUri={team?.imageUri} circular={true}></BaskitballImage>
         )}
 
         {isEditMode ? (

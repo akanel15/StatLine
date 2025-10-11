@@ -16,7 +16,7 @@ export function BackToTeamsButton({ hitSlop = 20 }: BackToTeamsButtonProps) {
 
   return (
     <Pressable hitSlop={hitSlop} onPress={handlePress}>
-      <AntDesign name="arrowleft" size={24} color={theme.colorOrangePeel} />
+      <AntDesign name="left" size={24} color={theme.colorOrangePeel} />
     </Pressable>
   );
 }

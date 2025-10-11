@@ -4,9 +4,10 @@ import { useState, useEffect } from "react";
 type Props = {
   size?: number;
   imageUri?: string;
+  circular?: boolean;
 };
 
-export function BaskitballImage({ size, imageUri }: Props) {
+export function BaskitballImage({ size, imageUri, circular = false }: Props) {
   const { width } = useWindowDimensions();
   const imageSize = size || Math.min(width / 1.2, 200);
   const [imageError, setImageError] = useState(false);
@@ -38,7 +39,12 @@ export function BaskitballImage({ size, imageUri }: Props) {
   return (
     <Image
       source={getImageSource()}
-      style={{ width: imageSize, height: imageSize, borderRadius: 50 }}
+      style={{
+        width: imageSize,
+        height: imageSize,
+        borderRadius: circular ? 50 : 8,
+      }}
+      resizeMode="contain"
       onError={handleImageError}
       onLoad={handleImageLoad}
     />
