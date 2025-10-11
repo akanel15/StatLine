@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, Text, StyleSheet, FlatList, Pressable } from "react-native";
+import { View, Text, StyleSheet, FlatList, Pressable, Alert } from "react-native";
 import { BaskitballButton } from "@/components/BaskitballButton";
 import { useGameStore } from "@/store/gameStore";
 import { usePlayerStore } from "@/store/playerStore";
@@ -25,10 +25,14 @@ export default function SubstitutionOverlay({ gameId, onClose }: SubstitutionOve
   const activePlayers = game.activePlayers
     .map(playerId => players[playerId])
     .filter(player => player !== undefined); // Filter out undefined players
-  const benchPlayers = teamPlayers.filter(player => !activePlayers.includes(player));
 
-  const [selectedActive, setSelectedActive] = useState<PlayerType[]>(activePlayers);
-  const [selectedBench, setSelectedBench] = useState<PlayerType[]>(benchPlayers);
+  // Default to first 5 players (or all if less than 5) as active if none selected
+  const defaultActivePlayers = activePlayers.length === 0 ? teamPlayers.slice(0, 5) : activePlayers;
+
+  const defaultBenchPlayers = teamPlayers.filter(player => !defaultActivePlayers.includes(player));
+
+  const [selectedActive, setSelectedActive] = useState<PlayerType[]>(defaultActivePlayers);
+  const [selectedBench, setSelectedBench] = useState<PlayerType[]>(defaultBenchPlayers);
 
   // Toggle active player selection (remove from active)
   const toggleActivePlayer = (player: PlayerType) => {
@@ -38,13 +42,15 @@ export default function SubstitutionOverlay({ gameId, onClose }: SubstitutionOve
 
   // Toggle bench player selection (add to active)
   const toggleBenchPlayer = (player: PlayerType) => {
-    if (selectedActive.length < 5) {
-      setSelectedActive(prev => [...prev, player]);
-      setSelectedBench(prev => prev.filter(p => p.id !== player.id));
-    }
+    setSelectedActive(prev => [...prev, player]);
+    setSelectedBench(prev => prev.filter(p => p.id !== player.id));
   };
 
   const handleConfirm = () => {
+    if (selectedActive.length === 0) {
+      Alert.alert("Validation Error", "Please select at least 1 active player");
+      return;
+    }
     const activeIds = selectedActive.map(player => player.id);
     addPlayerToGamePlayed(gameId, activeIds);
     setActivePlayers(gameId, activeIds);

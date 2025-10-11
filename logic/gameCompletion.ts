@@ -19,6 +19,13 @@ export const calculateGameResult = (game: GameType): Result => {
 };
 
 /**
+ * Checks if a game has any plays recorded
+ */
+export const gameHasPlays = (game: GameType): boolean => {
+  return game.periods.some(period => period && period.playByPlay && period.playByPlay.length > 0);
+};
+
+/**
  * Checks if a game can be completed (not already finished)
  */
 export const canCompleteGame = (game: GameType): boolean => {
@@ -131,14 +138,14 @@ export const completeGameManually = (
 };
 
 /**
- * Convenience function for automatic game completion (app state/focus)
+ * Convenience function for automatic game completion (app state/navigation)
  */
 export const completeGameAutomatically = (
   game: GameType,
   gameId: string,
   teamId: string,
   actions: GameCompletionActions,
-  trigger: "AppState" | "FocusEffect",
+  trigger: "AppState" | "Navigation",
 ): boolean => {
   const completionData = prepareGameCompletion(game, gameId, teamId);
   return executeGameCompletion(

@@ -5,7 +5,7 @@ import { usePlayerStore } from "@/store/playerStore";
 import { useTeamStore } from "@/store/teamStore";
 import { ActionType, getStatsForAction, Stat, StatMapping } from "@/types/stats";
 import { useNavigation, useRoute } from "@react-navigation/core";
-import { useEffect, useLayoutEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useLayoutEffect, useState, useRef } from "react";
 import { Alert, Pressable, StyleSheet, Text, View, AppState, Modal } from "react-native";
 import { theme } from "@/theme";
 import { PeriodType, PlayByPlayType, Team } from "@/types/game";
@@ -19,10 +19,10 @@ import BoxScoreOverlay from "@/components/gamePage/BoxScoreOverlay";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import MatchUpDisplay from "@/components/MatchUpDisplay";
 import { Result } from "@/types/player";
-import { useFocusEffect } from "@react-navigation/native";
 import {
   completeGameAutomatically,
   completeGameManually,
+  gameHasPlays,
   GameCompletionActions,
 } from "@/logic/gameCompletion";
 import { LoadingState } from "@/components/LoadingState";
@@ -138,6 +138,13 @@ export default function GamePage() {
     }
   }, [game, sets, setIdList, gameId, setActiveSets]);
 
+  // Auto-show substitutions when there are no active players
+  useEffect(() => {
+    if (game && game.activePlayers.length === 0) {
+      setShowSubstitutions(true);
+    }
+  }, [game]);
+
   useEffect(() => {
     if (!game) return;
 
@@ -162,33 +169,61 @@ export default function GamePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameId, teamId, game?.gamePlayedList, game?.isFinished, game?.statTotals]);
 
-  useFocusEffect(
-    useCallback(() => {
-      if (!game) return;
+  // Handle navigation away from game (back button, swipe, tab switch)
+  useEffect(() => {
+    if (!game) return;
 
-      const createGameCompletionActions = (): GameCompletionActions => ({
-        markGameAsFinished: () => useGameStore.getState().markGameAsFinished(gameId),
-        updateTeamGameNumbers: (teamId: string, result: Result) =>
-          useTeamStore.getState().updateGamesPlayed(teamId, result),
-        updatePlayerGameNumbers: (playerId: string, result: Result) =>
-          usePlayerStore.getState().updateGamesPlayed(playerId, result),
-        getCurrentGame: () => useGameStore.getState().games[gameId],
-      });
+    const createGameCompletionActions = (): GameCompletionActions => ({
+      markGameAsFinished: () => useGameStore.getState().markGameAsFinished(gameId),
+      updateTeamGameNumbers: (teamId: string, result: Result) =>
+        useTeamStore.getState().updateGamesPlayed(teamId, result),
+      updatePlayerGameNumbers: (playerId: string, result: Result) =>
+        usePlayerStore.getState().updateGamesPlayed(playerId, result),
+      getCurrentGame: () => useGameStore.getState().games[gameId],
+    });
 
-      return () => {
-        if (!game.isFinished) {
-          const actions = createGameCompletionActions();
-          completeGameAutomatically(game, gameId, teamId, actions, "FocusEffect");
-        }
-      };
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [gameId, teamId, game?.gamePlayedList, game?.isFinished, game?.statTotals]),
-  );
+    const unsubscribe = navigation.addListener("beforeRemove", () => {
+      if (!game.isFinished) {
+        const actions = createGameCompletionActions();
+        completeGameAutomatically(game, gameId, teamId, actions, "Navigation");
+      }
+    });
+
+    return unsubscribe;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [navigation, gameId, teamId, game?.isFinished, game?.gamePlayedList, game?.statTotals]);
 
   useLayoutEffect(() => {
     if (!game) return;
 
     const completeGame = () => {
+      if (!gameHasPlays(game)) {
+        Alert.alert(
+          "No Plays Recorded",
+          "This game has no plays recorded. Are you sure you want to mark it as complete?",
+          [
+            { text: "Cancel", style: "cancel" },
+            {
+              text: "Complete Anyway",
+              style: "destructive",
+              onPress: () => {
+                const createGameCompletionActions = (): GameCompletionActions => ({
+                  markGameAsFinished: () => useGameStore.getState().markGameAsFinished(gameId),
+                  updateTeamGameNumbers: (teamId: string, result: Result) =>
+                    useTeamStore.getState().updateGamesPlayed(teamId, result),
+                  updatePlayerGameNumbers: (playerId: string, result: Result) =>
+                    usePlayerStore.getState().updateGamesPlayed(playerId, result),
+                  getCurrentGame: () => useGameStore.getState().games[gameId],
+                });
+                const actions = createGameCompletionActions();
+                completeGameManually(game, gameId, teamId, actions);
+              },
+            },
+          ],
+        );
+        return;
+      }
+
       const createGameCompletionActions = (): GameCompletionActions => ({
         markGameAsFinished: () => useGameStore.getState().markGameAsFinished(gameId),
         updateTeamGameNumbers: (teamId: string, result: Result) =>
@@ -214,11 +249,12 @@ export default function GamePage() {
     } else {
       navigation.setOptions({
         headerLeft: () => <StandardBackButton onPress={() => navigation.goBack()} />,
-        headerRight: () => (
-          <Pressable hitSlop={20} onPress={completeGame}>
-            <Text style={styles.headerButtonText}>Done</Text>
-          </Pressable>
-        ),
+        headerRight: () =>
+          showSubstitutions ? null : (
+            <Pressable hitSlop={20} onPress={completeGame}>
+              <Text style={styles.headerButtonText}>Done</Text>
+            </Pressable>
+          ),
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -230,6 +266,7 @@ export default function GamePage() {
     game?.statTotals,
     navigation,
     isSharing,
+    showSubstitutions,
   ]);
 
   // Show loading or error state if game doesn't exist
