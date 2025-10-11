@@ -15,7 +15,7 @@ export default function Layout() {
           headerRight: () => (
             <Link href="/players/newPlayer" asChild>
               <Pressable hitSlop={20}>
-                <AntDesign name="pluscircleo" size={24} color={theme.colorOrangePeel} />
+                <AntDesign name="plus-circle" size={24} color={theme.colorOrangePeel} />
               </Pressable>
             </Link>
           ),
