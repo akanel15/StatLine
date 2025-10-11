@@ -11,6 +11,7 @@ yarn-error.log
 .expo
 .vscode
 .DS_Store
+scripts
 
 # Temporary debug files
 debug/
