@@ -1,4 +1,7 @@
 /* eslint-env jest */
+// Define React Native globals expected by expo modules
+global.__DEV__ = true;
+
 // Mock react-native-uuid
 jest.mock("react-native-uuid", () => ({
   v4: jest.fn(() => "mock-uuid-" + Math.random().toString(36).substr(2, 9)),

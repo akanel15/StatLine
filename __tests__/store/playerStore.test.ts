@@ -58,7 +58,7 @@ describe("Player Store", () => {
 
     it("should add a new player with image", async () => {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const mockFileSystem = require("expo-file-system");
+      const mockFileSystem = require("expo-file-system/legacy");
       const store = usePlayerStore.getState();
 
       await store.addPlayer("Jane Smith", 10, "team-1", "file://test-image.jpg");

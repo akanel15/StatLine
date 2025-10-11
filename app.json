@@ -1,8 +1,9 @@
 {
   "expo": {
-    "name": "baskItball",
-    "slug": "baskItball",
-    "scheme": "baskItball",
+    "name": "StatLine",
+    "slug": "statline",
+    "owner": "akanel",
+    "scheme": "statline",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -15,7 +16,10 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.baskItball"
+      "bundleIdentifier": "com.akanel.StatLine",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -27,6 +31,16 @@
       "favicon": "./assets/favicon.png",
       "bundler": "metro"
     },
-    "plugins": ["expo-router"]
+    "plugins": [
+      "expo-router",
+      "expo-dev-client",
+      "./plugins/fix-hermes-warning.js"
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "73e9210c-f423-4718-848c-ae00dab72485"
+      }
+    }
   }
 }

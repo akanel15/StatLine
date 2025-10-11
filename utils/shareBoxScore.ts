@@ -1,5 +1,5 @@
 import * as Sharing from "expo-sharing";
-import * as FileSystem from "expo-file-system";
+import * as FileSystem from "expo-file-system/legacy";
 import { Alert } from "react-native";
 import { captureRef } from "react-native-view-shot";
 
