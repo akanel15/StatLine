@@ -21,6 +21,14 @@ type DebugSection = {
 
 const debugSections: DebugSection[] = [
   {
+    id: "teamSetup",
+    title: "Team Setup",
+    description: "Quickly create teams with players and sets",
+    icon: "🏀",
+    route: "/debug/teamSetup",
+    color: theme.colorGreen,
+  },
+  {
     id: "snapshots",
     title: "Snapshots & Backups",
     description: "Save, restore, and export store state for testing",
@@ -44,6 +52,14 @@ const debugSections: DebugSection[] = [
     route: "/debug/validation",
     color: theme.colorOrangePeel,
   },
+  {
+    id: "simulation",
+    title: "Game Simulator",
+    description: "Simulate game events and scenarios",
+    icon: "🎲",
+    route: "/debug/gameSimulator",
+    color: theme.colorPurple,
+  }
 ];
 
 export default function DebugHomeScreen() {
