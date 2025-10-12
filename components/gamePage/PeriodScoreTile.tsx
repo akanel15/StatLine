@@ -2,7 +2,7 @@ import { GameType, PeriodType, Team } from "@/types/game";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { OpponentShield } from "../OpponentTeamImage";
 import { useTeamStore } from "@/store/teamStore";
-import { BaskitballImage } from "../BaskitballImage";
+import { StatLineImage } from "../StatLineImage";
 
 type PeriodScoreTileProps = {
   game: GameType;
@@ -59,7 +59,7 @@ export default function PeriodScoreTile({ game }: PeriodScoreTileProps) {
           <Text style={styles.totalScore}>TOT</Text>
         </View>
         <View style={styles.periodScores}>
-          <BaskitballImage imageUri={teamInfo.imageUri} size={40} />
+          <StatLineImage imageUri={teamInfo.imageUri} size={40} />
           {getPeriodTotals(Team.Us).map((period, index) => (
             <Text key={index} style={styles.score}>
               {period}

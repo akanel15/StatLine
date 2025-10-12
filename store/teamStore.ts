@@ -204,7 +204,7 @@ export const useTeamStore = create(
       },
     }),
     {
-      name: "baskItball-team-store",
+      name: "statline-team-store",
       storage: createJSONStorage(() => AsyncStorage),
     },
   ),

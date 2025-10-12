@@ -1,4 +1,4 @@
-import { BaskitballButton } from "@/components/BaskitballButton";
+import { StatLineButton } from "@/components/StatLineButton";
 import { theme } from "@/theme";
 import { useRouter } from "expo-router";
 import { useState } from "react";
@@ -36,7 +36,7 @@ export default function NewSet() {
         onChangeText={newPlayName => setPlayName(newPlayName)}
       ></TextInput>
 
-      <BaskitballButton title="Create Set" onPress={handleSubmit}></BaskitballButton>
+      <StatLineButton title="Create Set" onPress={handleSubmit}></StatLineButton>
     </KeyboardAwareScrollView>
   );
 }

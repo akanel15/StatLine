@@ -1,4 +1,4 @@
-import { BaskitballButton } from "@/components/BaskitballButton";
+import { StatLineButton } from "@/components/StatLineButton";
 import { SetCard } from "@/components/SetCard";
 import { useSetStore } from "@/store/setStore";
 import { useTeamStore } from "@/store/teamStore";
@@ -19,7 +19,7 @@ export default function Sets() {
       data={teamSets}
       renderItem={({ item }) => <SetCard set={item} />}
       ListEmptyComponent={
-        <BaskitballButton
+        <StatLineButton
           title="Add your first Set"
           onPress={() => router.navigate("/sets/newSet")}
         />

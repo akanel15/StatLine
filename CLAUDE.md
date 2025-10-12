@@ -135,7 +135,7 @@ npx expo prebuild --platform ios
 - **plugins/fix-hermes-warning.js**: Expo plugin fixes Hermes build phase outputPaths during prebuild
 
 ### Xcode Development Builds
-1. Open `ios/baskItball.xcworkspace` (never .xcodeproj)
+1. Open `ios/StatLine.xcworkspace` (never .xcodeproj)
 2. Select physical device as destination
 3. Configure code signing with Apple Developer account
 4. Build directly from Xcode for device testing

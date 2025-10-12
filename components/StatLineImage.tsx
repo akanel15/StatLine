@@ -7,7 +7,7 @@ type Props = {
   circular?: boolean;
 };
 
-export function BaskitballImage({ size, imageUri, circular = false }: Props) {
+export function StatLineImage({ size, imageUri, circular = false }: Props) {
   const { width } = useWindowDimensions();
   const imageSize = size || Math.min(width / 1.2, 200);
   const [imageError, setImageError] = useState(false);

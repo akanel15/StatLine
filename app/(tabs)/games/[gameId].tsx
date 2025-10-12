@@ -1,4 +1,4 @@
-import { BaskitballButton } from "@/components/BaskitballButton";
+import { StatLineButton } from "@/components/StatLineButton";
 import { GamePlayerButton } from "@/components/GamePlayerButton";
 import { useGameStore } from "@/store/gameStore";
 import { usePlayerStore } from "@/store/playerStore";
@@ -643,20 +643,17 @@ export default function GamePage() {
             <View style={styles.section}>
               <View style={styles.rowContainer}>
                 <View style={styles.split}>
-                  <BaskitballButton
-                    onPress={() => setShowSubstitutions(true)}
-                    title="Sub Players"
-                  />
+                  <StatLineButton onPress={() => setShowSubstitutions(true)} title="Sub Players" />
                 </View>
                 <View style={styles.split}>
-                  <BaskitballButton
+                  <StatLineButton
                     onPress={() => setShowSets(true)}
                     title="Change Sets"
                     color={theme.colorBlue}
                   />
                 </View>
                 <View style={styles.split}>
-                  <BaskitballButton
+                  <StatLineButton
                     onPress={() => setShowBoxScore(true)}
                     title="Box Score"
                     color={theme.colorOnyx}

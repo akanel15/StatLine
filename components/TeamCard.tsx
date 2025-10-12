@@ -1,7 +1,7 @@
 import { StyleSheet, View, Text, Pressable } from "react-native";
 import { theme } from "@/theme";
 import { useTeamStore } from "@/store/teamStore";
-import { BaskitballImage } from "./BaskitballImage";
+import { StatLineImage } from "./StatLineImage";
 import { Link } from "expo-router";
 import { TeamType } from "@/types/team";
 
@@ -15,7 +15,7 @@ export function TeamCard({ team }: { team: TeamType }) {
   return (
     <Link href={`/${team.id}`} asChild>
       <Pressable style={styles.teamCard} onPress={handlePress}>
-        <BaskitballImage size={80} imageUri={team.imageUri} />
+        <StatLineImage size={80} imageUri={team.imageUri} />
 
         <View style={styles.details}>
           <Text numberOfLines={1} style={styles.teamName}>

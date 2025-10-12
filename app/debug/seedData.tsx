@@ -9,7 +9,7 @@ import {
   Pressable,
 } from "react-native";
 import { theme } from "@/theme";
-import { BaskitballButton } from "@/components/BaskitballButton";
+import { StatLineButton } from "@/components/StatLineButton";
 import { loadSnapshot, getStoreSummary } from "@/utils/debug/snapshotManager";
 import {
   generateSeed,
@@ -78,7 +78,7 @@ export default function SeedDataScreen() {
         </View>
 
         <View style={styles.seedFooter}>
-          <BaskitballButton
+          <StatLineButton
             title="Load This Data"
             color={color}
             onPress={() => handleLoadSeed(seedType)}

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { View, Text, StyleSheet, FlatList, Pressable } from "react-native";
-import { BaskitballButton } from "@/components/BaskitballButton";
+import { StatLineButton } from "@/components/StatLineButton";
 import { useGameStore } from "@/store/gameStore";
 import { theme } from "@/theme";
 import { useSetStore } from "@/store/setStore";
@@ -95,10 +95,10 @@ export default function SetOverlay({ gameId, onClose }: SetOverlayProps) {
       <View style={styles.section}>
         <View style={styles.rowContainer}>
           <View style={styles.split}>
-            <BaskitballButton onPress={onClose} title="Cancel" color={theme.colorOnyx} />
+            <StatLineButton onPress={onClose} title="Cancel" color={theme.colorOnyx} />
           </View>
           <View style={styles.split}>
-            <BaskitballButton onPress={handleConfirm} title="Confirm" color={theme.colorBlue} />
+            <StatLineButton onPress={handleConfirm} title="Confirm" color={theme.colorBlue} />
           </View>
         </View>
       </View>

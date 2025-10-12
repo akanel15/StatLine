@@ -1,4 +1,4 @@
-import { BaskitballButton } from "@/components/BaskitballButton";
+import { StatLineButton } from "@/components/StatLineButton";
 import { theme } from "@/theme";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
@@ -7,7 +7,7 @@ import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view
 import { useTeamStore } from "@/store/teamStore";
 import { useGameStore } from "@/store/gameStore";
 import { usePlayerStore } from "@/store/playerStore";
-import { BaskitballToggle } from "@/components/BaskItballToggle";
+import { StatLineToggle } from "@/components/StatLineToggle";
 import { PeriodType } from "@/types/game";
 
 export default function NewGame() {
@@ -69,19 +69,19 @@ export default function NewGame() {
       ></TextInput>
 
       <View style={styles.periodContainer}>
-        <BaskitballToggle
+        <StatLineToggle
           title="Quarters"
           selected={periodSelector === PeriodType.Quarters}
           onPress={() => setPeriodSelector(PeriodType.Quarters)}
-        ></BaskitballToggle>
-        <BaskitballToggle
+        ></StatLineToggle>
+        <StatLineToggle
           title="Halves"
           selected={periodSelector === PeriodType.Halves}
           onPress={() => setPeriodSelector(PeriodType.Halves)}
-        ></BaskitballToggle>
+        ></StatLineToggle>
       </View>
 
-      <BaskitballButton title="Start Game" onPress={handleSubmit}></BaskitballButton>
+      <StatLineButton title="Start Game" onPress={handleSubmit}></StatLineButton>
     </KeyboardAwareScrollView>
   );
 }

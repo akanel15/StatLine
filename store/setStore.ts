@@ -103,7 +103,7 @@ export const useSetStore = create(
       },
     }),
     {
-      name: "baskItball-set-store",
+      name: "statline-set-store",
       storage: createJSONStorage(() => AsyncStorage),
     },
   ),

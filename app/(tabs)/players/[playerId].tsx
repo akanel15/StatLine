@@ -25,11 +25,12 @@ import { PlayerGameItem } from "@/components/shared/PlayerGameItem";
 import { RecordBadge } from "@/components/shared/RecordBadge";
 import { ViewAllButton } from "@/components/shared/ViewAllButton";
 import { EmptyStateText } from "@/components/shared/EmptyStateText";
-import { BaskitballImage } from "@/components/BaskitballImage";
+import { StatLineImage } from "@/components/StatLineImage";
 import { confirmPlayerDeletion } from "@/utils/playerDeletion";
 import { LoadingState } from "@/components/LoadingState";
 import * as ImagePicker from "expo-image-picker";
 import { StandardBackButton } from "@/components/StandardBackButton";
+import { formatPercentage } from "@/utils/basketball";
 
 export default function PlayerPage() {
   const { playerId } = useRoute().params as { playerId: string };
@@ -193,24 +194,19 @@ export default function PlayerPage() {
           label="FGA"
         />
         <StatCard
-          value={
-            (
-              ((player.stats[Stat.TwoPointMakes] + player.stats[Stat.ThreePointMakes]) /
-                (player.stats[Stat.TwoPointAttempts] + player.stats[Stat.ThreePointAttempts])) *
-              100
-            ).toFixed(1) + "%"
-          }
+          value={formatPercentage(
+            player.stats[Stat.TwoPointMakes] + player.stats[Stat.ThreePointMakes],
+            player.stats[Stat.TwoPointAttempts] + player.stats[Stat.ThreePointAttempts],
+          )}
           label="FG%"
         />
         <StatCard value={(player.stats[Stat.TwoPointMakes] / divisor).toFixed(1)} label="2PM" />
         <StatCard value={(player.stats[Stat.TwoPointAttempts] / divisor).toFixed(1)} label="2PA" />
         <StatCard
-          value={
-            (
-              (player.stats[Stat.TwoPointMakes] / player.stats[Stat.TwoPointAttempts]) *
-              100
-            ).toFixed(1) + "%"
-          }
+          value={formatPercentage(
+            player.stats[Stat.TwoPointMakes],
+            player.stats[Stat.TwoPointAttempts],
+          )}
           label="2P%"
         />
         <StatCard value={(player.stats[Stat.ThreePointMakes] / divisor).toFixed(1)} label="3PM" />
@@ -219,12 +215,10 @@ export default function PlayerPage() {
           label="3PA"
         />
         <StatCard
-          value={
-            (
-              (player.stats[Stat.ThreePointMakes] / player.stats[Stat.ThreePointAttempts]) *
-              100
-            ).toFixed(1) + "%"
-          }
+          value={formatPercentage(
+            player.stats[Stat.ThreePointMakes],
+            player.stats[Stat.ThreePointAttempts],
+          )}
           label="3P%"
         />
         <StatCard value={(player.stats[Stat.FreeThrowsMade] / divisor).toFixed(1)} label="FTM" />
@@ -233,12 +227,10 @@ export default function PlayerPage() {
           label="FTA"
         />
         <StatCard
-          value={
-            (
-              (player.stats[Stat.FreeThrowsMade] / player.stats[Stat.FreeThrowsAttempted]) *
-              100
-            ).toFixed(1) + "%"
-          }
+          value={formatPercentage(
+            player.stats[Stat.FreeThrowsMade],
+            player.stats[Stat.FreeThrowsAttempted],
+          )}
           label="FT%"
         />
         <StatCard
@@ -365,7 +357,7 @@ export default function PlayerPage() {
             <TouchableOpacity style={styles.teamCard} onPress={handleTeamPress}>
               <View style={styles.teamInfo}>
                 <View style={styles.teamAvatar}>
-                  <BaskitballImage size={50} imageUri={team.imageUri} />
+                  <StatLineImage size={50} imageUri={team.imageUri} />
                 </View>
                 <View style={styles.teamDetails}>
                   <Text style={styles.teamName}>{team.name}</Text>

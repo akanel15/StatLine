@@ -1,7 +1,7 @@
 // import { TeamCard } from "@/components/TeamCard";
 // import { theme } from "@/theme";
 // import { FlatList, StyleSheet } from "react-native";
-// import { BaskitballButton } from "@/components/BaskitballButton";
+// import { StatLineButton } from "@/components/StatLineButton";
 // import { useGameStore } from "@/store/gameStore";
 // import { usePlayerStore } from "@/store/playerStore";
 // import { useTeamStore } from "@/store/teamStore";
@@ -21,10 +21,10 @@
 //       data={[]}
 //       renderItem={({ item }) => <TeamCard team={item}></TeamCard>}
 //       ListEmptyComponent={
-//         <BaskitballButton
+//         <StatLineButton
 //           title="reset team store"
 //           onPress={handlePress}
-//         ></BaskitballButton>
+//         ></StatLineButton>
 //       }
 //     ></FlatList>
 //   );

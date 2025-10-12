@@ -1,6 +1,6 @@
 # 🔧 Debug & Development Tools
 
-A comprehensive suite of debugging and development tools for the BaskItball app, designed to help with testing, data management, and troubleshooting.
+A comprehensive suite of debugging and development tools for the StatLine app, designed to help with testing, data management, and troubleshooting.
 
 ## 🚀 Getting Started
 

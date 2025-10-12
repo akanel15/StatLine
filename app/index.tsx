@@ -2,7 +2,7 @@ import { TeamCard } from "@/components/TeamCard";
 import { theme } from "@/theme";
 import { router } from "expo-router";
 import { FlatList, StyleSheet, View } from "react-native";
-import { BaskitballButton } from "@/components/BaskitballButton";
+import { StatLineButton } from "@/components/StatLineButton";
 import { useTeamStore } from "@/store/teamStore";
 import { Link } from "expo-router";
 
@@ -18,17 +18,14 @@ export default function App() {
         data={teamList}
         renderItem={({ item }) => <TeamCard team={item} />}
         ListEmptyComponent={
-          <BaskitballButton
-            title="Add your first Team"
-            onPress={() => router.navigate("/newTeam")}
-          />
+          <StatLineButton title="Add your first Team" onPress={() => router.navigate("/newTeam")} />
         }
       />
 
       {/* Debug Section */}
       <View style={styles.debugSection}>
         <Link href="/debug/home" asChild>
-          <BaskitballButton
+          <StatLineButton
             title="🔧 Debug & Development Tools"
             color={theme.colorGrey}
             onPress={() => {}}

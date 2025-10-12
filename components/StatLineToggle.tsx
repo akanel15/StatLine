@@ -7,7 +7,7 @@ type ToggleProps = {
   onPress: () => void;
 };
 
-export const BaskitballToggle = ({ title, selected, onPress }: ToggleProps) => {
+export const StatLineToggle = ({ title, selected, onPress }: ToggleProps) => {
   return (
     <TouchableOpacity
       style={[

@@ -163,7 +163,7 @@ export const usePlayerStore = create(
       },
     }),
     {
-      name: "baskItball-player-store",
+      name: "statline-player-store",
       storage: createJSONStorage(() => AsyncStorage),
     },
   ),

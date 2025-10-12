@@ -1,4 +1,4 @@
-import { BaskitballButton } from "@/components/BaskitballButton";
+import { StatLineButton } from "@/components/StatLineButton";
 import { GameCard } from "@/components/GameCard";
 import { useGameStore } from "@/store/gameStore";
 import { useTeamStore } from "@/store/teamStore";
@@ -18,10 +18,10 @@ export default function Games() {
       data={teamGames}
       renderItem={({ item }) => <GameCard game={item}></GameCard>}
       ListEmptyComponent={
-        <BaskitballButton
+        <StatLineButton
           title="Add your first Game"
           onPress={() => router.navigate("/games/newGame")}
-        ></BaskitballButton>
+        ></StatLineButton>
       }
     ></FlatList>
   );

@@ -2,7 +2,7 @@ import { PlayerCard } from "@/components/PlayerCard";
 import { theme } from "@/theme";
 import { router } from "expo-router";
 import { FlatList, StyleSheet } from "react-native";
-import { BaskitballButton } from "@/components/BaskitballButton";
+import { StatLineButton } from "@/components/StatLineButton";
 import { usePlayerStore } from "@/store/playerStore";
 import { useTeamStore } from "@/store/teamStore";
 
@@ -21,10 +21,10 @@ export default function App() {
       data={teamPlayers}
       renderItem={({ item }) => <PlayerCard player={item}></PlayerCard>}
       ListEmptyComponent={
-        <BaskitballButton
+        <StatLineButton
           title="Add your first Player"
           onPress={() => router.navigate("/players/newPlayer")}
-        ></BaskitballButton>
+        ></StatLineButton>
       }
     ></FlatList>
   );

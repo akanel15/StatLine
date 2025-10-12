@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet } from "react-native";
-import { BaskitballButton } from "@/components/BaskitballButton";
+import { StatLineButton } from "@/components/StatLineButton";
 import { GameStatButton } from "@/components/GameStatButton";
 import { theme } from "@/theme";
 import {
@@ -75,7 +75,7 @@ export default function StatOverlay({ onClose, onStatPress }: StatOverlayProps) 
         ))}
       </View>
 
-      <BaskitballButton onPress={onClose} title="Close" />
+      <StatLineButton onPress={onClose} title="Close" />
     </View>
   );
 }

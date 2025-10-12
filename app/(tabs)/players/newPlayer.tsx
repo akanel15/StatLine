@@ -1,5 +1,5 @@
-import { BaskitballButton } from "@/components/BaskitballButton";
-import { BaskitballImage } from "@/components/BaskitballImage";
+import { StatLineButton } from "@/components/StatLineButton";
+import { StatLineImage } from "@/components/StatLineImage";
 import { usePlayerStore } from "@/store/playerStore";
 import { theme } from "@/theme";
 import { useRouter } from "expo-router";
@@ -56,7 +56,7 @@ export default function NewPlayer() {
         onPress={handlePlayerImageSelection}
       >
         <View style={styles.imageContainer}>
-          <BaskitballImage imageUri={imageUri}></BaskitballImage>
+          <StatLineImage imageUri={imageUri}></StatLineImage>
           <View style={styles.photoOverlay}>
             <Ionicons
               name={imageUri ? "camera" : "add-circle"}
@@ -83,7 +83,7 @@ export default function NewPlayer() {
         onChangeText={newPlayerNumber => setPlayerNumber(parseInt(newPlayerNumber))}
       ></TextInput>
 
-      <BaskitballButton title="Add Player" onPress={handleSubmit}></BaskitballButton>
+      <StatLineButton title="Add Player" onPress={handleSubmit}></StatLineButton>
     </KeyboardAwareScrollView>
   );
 }

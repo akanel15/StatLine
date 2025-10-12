@@ -1,5 +1,5 @@
-import { BaskitballButton } from "@/components/BaskitballButton";
-import { BaskitballImage } from "@/components/BaskitballImage";
+import { StatLineButton } from "@/components/StatLineButton";
+import { StatLineImage } from "@/components/StatLineImage";
 import { useTeamStore } from "@/store/teamStore";
 import { theme } from "@/theme";
 import { useRouter } from "expo-router";
@@ -78,7 +78,7 @@ export default function NewTeam() {
         onPress={handleTeamLogoSelection}
       >
         <View style={styles.imageContainer}>
-          <BaskitballImage imageUri={imageUri}></BaskitballImage>
+          <StatLineImage imageUri={imageUri}></StatLineImage>
           <View style={styles.photoOverlay}>
             <Ionicons
               name={imageUri ? "camera" : "add-circle"}
@@ -131,7 +131,7 @@ export default function NewTeam() {
         onChangeText={newTeamName => setTeamName(newTeamName)}
       ></TextInput>
 
-      <BaskitballButton title="Create Team" onPress={handleSubmit}></BaskitballButton>
+      <StatLineButton title="Create Team" onPress={handleSubmit}></StatLineButton>
     </KeyboardAwareScrollView>
   );
 }

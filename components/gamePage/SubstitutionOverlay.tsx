@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { View, Text, StyleSheet, FlatList, Pressable, Alert } from "react-native";
-import { BaskitballButton } from "@/components/BaskitballButton";
+import { StatLineButton } from "@/components/StatLineButton";
 import { useGameStore } from "@/store/gameStore";
 import { usePlayerStore } from "@/store/playerStore";
 import { theme } from "@/theme";
@@ -105,14 +105,10 @@ export default function SubstitutionOverlay({ gameId, onClose }: SubstitutionOve
       <View style={styles.section}>
         <View style={styles.rowContainer}>
           <View style={styles.split}>
-            <BaskitballButton onPress={onClose} title="Cancel" color={theme.colorOnyx} />
+            <StatLineButton onPress={onClose} title="Cancel" color={theme.colorOnyx} />
           </View>
           <View style={styles.split}>
-            <BaskitballButton
-              onPress={handleConfirm}
-              title="Confirm"
-              color={theme.colorOrangePeel}
-            />
+            <StatLineButton onPress={handleConfirm} title="Confirm" color={theme.colorOrangePeel} />
           </View>
         </View>
       </View>

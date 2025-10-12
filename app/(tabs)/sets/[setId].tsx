@@ -18,7 +18,7 @@ import { useTeamStore } from "@/store/teamStore";
 import { Stat } from "@/types/stats";
 import { StatCard } from "@/components/shared/StatCard";
 import { ViewAllButton } from "@/components/shared/ViewAllButton";
-import { BaskitballImage } from "@/components/BaskitballImage";
+import { StatLineImage } from "@/components/StatLineImage";
 import { IconAvatar } from "@/components/shared/IconAvatar";
 import { router } from "expo-router";
 import { confirmSetDeletion } from "@/utils/playerDeletion";
@@ -291,7 +291,7 @@ export default function SetPage() {
             <TouchableOpacity style={styles.teamCard} onPress={handleTeamPress}>
               <View style={styles.teamInfo}>
                 <View style={styles.teamAvatar}>
-                  <BaskitballImage size={50} imageUri={team.imageUri} />
+                  <StatLineImage size={50} imageUri={team.imageUri} />
                 </View>
                 <View style={styles.teamDetails}>
                   <Text style={styles.teamName}>{team.name}</Text>

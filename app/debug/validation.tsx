@@ -11,7 +11,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { theme } from "@/theme";
-import { BaskitballButton } from "@/components/BaskitballButton";
+import { StatLineButton } from "@/components/StatLineButton";
 import {
   runFullValidation,
   fixAllAutoFixableIssues,
@@ -182,7 +182,7 @@ export default function ValidationScreen() {
         </View>
 
         {totalIssues > 0 && (
-          <BaskitballButton
+          <StatLineButton
             title="Fix All"
             color={theme.colorOrangePeel}
             onPress={handleFixAllIssues}
@@ -299,7 +299,7 @@ export default function ValidationScreen() {
               {getStoreDescription(report.storeType)}
             </Text>
 
-            <BaskitballButton
+            <StatLineButton
               title={`Inspect ${getStoreDisplayName(report.storeType)}`}
               color={getStoreColor(report.storeType)}
               onPress={() =>
@@ -448,7 +448,7 @@ export default function ValidationScreen() {
         : renderInspectorContent()}
 
       <View style={styles.footer}>
-        <BaskitballButton
+        <StatLineButton
           title="Re-run Validation"
           color={theme.colorBlue}
           onPress={runValidation}

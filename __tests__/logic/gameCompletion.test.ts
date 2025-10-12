@@ -311,16 +311,16 @@ describe("Game Completion Logic", () => {
       );
     });
 
-    test("should complete game automatically with FocusEffect trigger", () => {
+    test("should complete game automatically with Navigation trigger", () => {
       const game = createMockGame(95, 85, false, ["player1"]);
       const actions = createMockActions();
 
-      const result = completeGameAutomatically(game, "game-id", "team-id", actions, "FocusEffect");
+      const result = completeGameAutomatically(game, "game-id", "team-id", actions, "Navigation");
 
       expect(result).toBe(true);
       expect(actions.updateTeamGameNumbers).toHaveBeenCalledWith("team-id", Result.Win);
       expect(mockConsoleLog).toHaveBeenCalledWith(
-        "GameCompletion: AUTO completion (FocusEffect): Starting completion - Game:",
+        "GameCompletion: AUTO completion (Navigation): Starting completion - Game:",
         "game-id",
         "Result:",
         Result.Win,

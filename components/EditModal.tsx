@@ -10,8 +10,8 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
-import { BaskitballButton } from "./BaskitballButton";
-import { BaskitballImage } from "./BaskitballImage";
+import { StatLineButton } from "./StatLineButton";
+import { StatLineImage } from "./StatLineImage";
 import { theme } from "@/theme";
 import * as ImagePicker from "expo-image-picker";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
@@ -128,7 +128,7 @@ export function EditModal({ visible, title, fields, onSave, onCancel }: EditModa
                   activeOpacity={0.6}
                   onPress={() => handleImagePicker(field.key)}
                 >
-                  <BaskitballImage imageUri={values[field.key]} />
+                  <StatLineImage imageUri={values[field.key]} />
                   <Text style={styles.imageHint}>Tap to change image</Text>
                 </TouchableOpacity>
               ) : (
@@ -152,7 +152,7 @@ export function EditModal({ visible, title, fields, onSave, onCancel }: EditModa
 
         <View style={styles.footer}>
           <View style={styles.buttonContainer}>
-            <BaskitballButton
+            <StatLineButton
               title="Cancel"
               onPress={handleCancel}
               color={theme.colorGrey}
@@ -160,7 +160,7 @@ export function EditModal({ visible, title, fields, onSave, onCancel }: EditModa
             />
           </View>
           <View style={styles.buttonContainer}>
-            <BaskitballButton
+            <StatLineButton
               title={loading ? "Saving..." : "Save Changes"}
               onPress={handleSave}
               disabled={loading}

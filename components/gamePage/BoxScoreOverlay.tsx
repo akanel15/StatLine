@@ -1,4 +1,4 @@
-import { BaskitballButton } from "@/components/BaskitballButton";
+import { StatLineButton } from "@/components/StatLineButton";
 import { useGameStore } from "@/store/gameStore";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { GameType, Team } from "@/types/game";
@@ -188,7 +188,7 @@ export default function BoxScoreOverlay({
       {/* Close Button */}
       {!hideCloseButton && (
         <View style={styles.closeButtonContainer}>
-          <BaskitballButton onPress={onClose} title="Close" />
+          <StatLineButton onPress={onClose} title="Close" />
         </View>
       )}
     </View>

@@ -27,3 +27,18 @@ export const getPointsForAction = (action: Stat): number => {
 export const getPointsForPlay = (play: PlayByPlayType): number => {
   return getPointsForAction(play.action);
 };
+
+/**
+ * Formats a shooting percentage, returning "-" if there are no attempts
+ * @param makes - Number of made shots
+ * @param attempts - Number of attempted shots
+ * @param decimals - Number of decimal places (default 1)
+ * @returns Formatted percentage string (e.g., "45.2%" or "-")
+ */
+export const formatPercentage = (makes: number, attempts: number, decimals: number = 1): string => {
+  if (attempts === 0 || isNaN(attempts) || isNaN(makes)) {
+    return "-";
+  }
+  const percentage = (makes / attempts) * 100;
+  return `${percentage.toFixed(decimals)}%`;
+};

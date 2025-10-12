@@ -11,7 +11,7 @@ import {
   Pressable,
 } from "react-native";
 import { theme } from "@/theme";
-import { BaskitballButton } from "@/components/BaskitballButton";
+import { StatLineButton } from "@/components/StatLineButton";
 import {
   listSnapshots,
   quickSave,
@@ -204,7 +204,7 @@ export default function SnapshotsScreen() {
         />
 
         <View style={styles.dialogButtons}>
-          <BaskitballButton
+          <StatLineButton
             title="Cancel"
             color={theme.colorGrey}
             onPress={() => {
@@ -214,7 +214,7 @@ export default function SnapshotsScreen() {
             }}
             style={styles.dialogButton}
           />
-          <BaskitballButton
+          <StatLineButton
             title="Save"
             onPress={handleSaveWithName}
             style={styles.dialogButton}
@@ -261,14 +261,14 @@ export default function SnapshotsScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>💾 Save Current State</Text>
           <View style={styles.buttonRow}>
-            <BaskitballButton
+            <StatLineButton
               title="Quick Save"
               onPress={handleQuickSave}
               color={theme.colorBlue}
               style={styles.actionButton}
               disabled={loading}
             />
-            <BaskitballButton
+            <StatLineButton
               title="Save As..."
               onPress={() => setShowSaveDialog(true)}
               color={theme.colorGreen}

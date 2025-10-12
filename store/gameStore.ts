@@ -456,7 +456,7 @@ export const useGameStore = create(
       },
     }),
     {
-      name: "baskItball-game-store",
+      name: "statline-game-store",
       storage: createJSONStorage(() => AsyncStorage),
     },
   ),

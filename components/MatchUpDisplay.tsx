@@ -1,7 +1,7 @@
 import { GameType, Team } from "@/types/game";
 import { StyleSheet, Text, View } from "react-native";
 import { useTeamStore } from "@/store/teamStore";
-import { BaskitballImage } from "./BaskitballImage";
+import { StatLineImage } from "./StatLineImage";
 import { OpponentShield } from "./OpponentTeamImage";
 import { theme } from "@/theme";
 
@@ -18,7 +18,7 @@ export default function MatchUpDisplay({ game }: MatchUpDisplayProps) {
     <View style={styles.container}>
       {/* Left Team */}
       <View style={styles.teamContainer}>
-        <BaskitballImage imageUri={teamInfo.imageUri} size={50} />
+        <StatLineImage imageUri={teamInfo.imageUri} size={50} />
         <Text numberOfLines={1} style={styles.subtitle}>
           {teamInfo.name}
         </Text>

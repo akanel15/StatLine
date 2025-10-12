@@ -8,7 +8,7 @@ type Props = {
   color?: string;
 };
 
-export function BaskitballButton({ title, onPress, color }: Props) {
+export function StatLineButton({ title, onPress, color }: Props) {
   const handlePress = () => {
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);

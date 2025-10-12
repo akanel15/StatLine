@@ -13,7 +13,7 @@ import {
 import { useTeamStore } from "@/store/teamStore";
 import { theme } from "@/theme";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
-import { BaskitballImage } from "@/components/BaskitballImage";
+import { StatLineImage } from "@/components/StatLineImage";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import { Stat } from "@/types/stats";
 import { Team } from "@/types/game";
@@ -31,6 +31,7 @@ import { TeamDeletionConfirm } from "@/components/deletion/TeamDeletionConfirm";
 import { getTeamDeletionInfo } from "@/utils/cascadeDelete";
 import { LoadingState } from "@/components/LoadingState";
 import * as ImagePicker from "expo-image-picker";
+import { formatPercentage } from "@/utils/basketball";
 
 export default function TeamPage() {
   const { teamId } = useRoute().params as { teamId: string }; // Access teamId from route params
@@ -212,15 +213,11 @@ export default function TeamPage() {
           label="FGA"
         />
         <StatCard
-          value={
-            (
-              ((team.stats[teamType][Stat.TwoPointMakes] +
-                team.stats[teamType][Stat.ThreePointMakes]) /
-                (team.stats[teamType][Stat.TwoPointAttempts] +
-                  team.stats[teamType][Stat.ThreePointAttempts])) *
-              100
-            ).toFixed(1) + "%"
-          }
+          value={formatPercentage(
+            team.stats[teamType][Stat.TwoPointMakes] + team.stats[teamType][Stat.ThreePointMakes],
+            team.stats[teamType][Stat.TwoPointAttempts] +
+              team.stats[teamType][Stat.ThreePointAttempts],
+          )}
           label="FG%"
         />
         <StatCard
@@ -232,13 +229,10 @@ export default function TeamPage() {
           label="2PA"
         />
         <StatCard
-          value={
-            (
-              (team.stats[teamType][Stat.TwoPointMakes] /
-                team.stats[teamType][Stat.TwoPointAttempts]) *
-              100
-            ).toFixed(1) + "%"
-          }
+          value={formatPercentage(
+            team.stats[teamType][Stat.TwoPointMakes],
+            team.stats[teamType][Stat.TwoPointAttempts],
+          )}
           label="2P%"
         />
         <StatCard
@@ -250,13 +244,10 @@ export default function TeamPage() {
           label="3PA"
         />
         <StatCard
-          value={
-            (
-              (team.stats[teamType][Stat.ThreePointMakes] /
-                team.stats[teamType][Stat.ThreePointAttempts]) *
-              100
-            ).toFixed(1) + "%"
-          }
+          value={formatPercentage(
+            team.stats[teamType][Stat.ThreePointMakes],
+            team.stats[teamType][Stat.ThreePointAttempts],
+          )}
           label="3P%"
         />
         <StatCard
@@ -268,13 +259,10 @@ export default function TeamPage() {
           label="FTA"
         />
         <StatCard
-          value={
-            (
-              (team.stats[teamType][Stat.FreeThrowsMade] /
-                team.stats[teamType][Stat.FreeThrowsAttempted]) *
-              100
-            ).toFixed(1) + "%"
-          }
+          value={formatPercentage(
+            team.stats[teamType][Stat.FreeThrowsMade],
+            team.stats[teamType][Stat.FreeThrowsAttempted],
+          )}
           label="FT%"
         />
         <StatCard
@@ -429,11 +417,11 @@ export default function TeamPage() {
       <View style={[styles.centered, styles.topBanner]}>
         {isEditMode ? (
           <TouchableOpacity onPress={handleImagePicker} style={styles.editImageContainer}>
-            <BaskitballImage size={150} imageUri={editedImageUri} circular={true}></BaskitballImage>
+            <StatLineImage size={150} imageUri={editedImageUri} circular={true}></StatLineImage>
             <Text style={styles.editImageHint}>Tap to change image</Text>
           </TouchableOpacity>
         ) : (
-          <BaskitballImage size={150} imageUri={team?.imageUri} circular={true}></BaskitballImage>
+          <StatLineImage size={150} imageUri={team?.imageUri} circular={true}></StatLineImage>
         )}
 
         {isEditMode ? (
