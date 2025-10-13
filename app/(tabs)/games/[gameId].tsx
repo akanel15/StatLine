@@ -33,6 +33,8 @@ import ShareableBoxScore from "@/components/gamePage/ShareableBoxScore";
 import { sanitizeFileName } from "@/utils/filename";
 import { StandardBackButton } from "@/components/StandardBackButton";
 import { EditGameModal } from "@/components/EditGameModal";
+import { handleStatUpdate as handleStatUpdateLogic } from "@/logic/statUpdates";
+import type { StatUpdateStoreActions } from "@/logic/statUpdates";
 
 export default function GamePage() {
   const { gameId } = useRoute().params as { gameId: string }; // Access playerId from route params
@@ -288,72 +290,49 @@ export default function GamePage() {
     setId: string;
   };
 
-  const updatePlusMinus = (team: Team, amount: number) => {
-    amount = team === Team.Opponent ? -amount : amount;
-
-    //us
-    updateTeamStats(teamId, Stat.PlusMinus, amount, Team.Us);
-    updateTotals(gameId, Stat.PlusMinus, amount, Team.Us);
-
-    //them
-    updateTeamStats(teamId, Stat.PlusMinus, -amount, Team.Opponent);
-    updateTotals(gameId, Stat.PlusMinus, -amount, Team.Opponent);
-    game.activePlayers.forEach(playerId => {
-      updateBoxScore(gameId, playerId, Stat.PlusMinus, amount);
-      updatePlayerStats(playerId, Stat.PlusMinus, amount);
-    });
+  // Create store actions for the stat update logic
+  const storeActions: StatUpdateStoreActions = {
+    updateBoxScore,
+    updateTotals,
+    updatePeriods,
+    updateGameSetStats,
+    incrementSetRunCount: updateGameSetCounts,
+    updateTeamStats,
+    updatePlayerStats,
+    updateSetStats,
+    incrementGlobalSetRunCount: updateSetRunCount,
   };
 
   function handleStatUpdate({ stats, gameId, teamId, playerId, setId }: StatUpdateType) {
-    const team = playerId === "Opponent" ? Team.Opponent : Team.Us;
-    //PLAY BY PLAY AND PERIOD INFO
-    if (stats.length === 2) {
-      //shot make
-      updatePeriods(gameId, playerId, stats[0], selectedPeriod, team);
-    } else if (stats.length === 1) {
-      //regular case for single action
-      updatePeriods(gameId, playerId, stats[0], selectedPeriod, team); //attempt means miss as the above attempts are filtered out
-    }
-
-    stats.forEach(stat => {
-      updateBoxScore(gameId, playerId, stat, 1);
-      updateTotals(gameId, stat, 1, team);
-      updatePlayerStats(playerId, stat, 1);
-      updateTeamStats(teamId, stat, 1, team);
-      updateSetStats(setId, stat, 1);
-      updateGameSetStats(gameId, setId, stat, 1);
-
-      switch (stat) {
-        case Stat.FreeThrowsMade:
-          updateTotals(gameId, Stat.Points, 1, team);
-          updateBoxScore(gameId, playerId, Stat.Points, 1);
-          updatePlayerStats(playerId, Stat.Points, 1);
-          updateTeamStats(teamId, Stat.Points, 1, team);
-          updateSetStats(setId, Stat.Points, 1);
-          updateGameSetStats(gameId, setId, Stat.Points, 1);
-          updatePlusMinus(team, 1);
-          break;
-        case Stat.TwoPointMakes:
-          updateTotals(gameId, Stat.Points, 2, team);
-          updateBoxScore(gameId, playerId, Stat.Points, 2);
-          updatePlayerStats(playerId, Stat.Points, 2);
-          updateTeamStats(teamId, Stat.Points, 2, team);
-          updateSetStats(setId, Stat.Points, 2);
-          updateGameSetStats(gameId, setId, Stat.Points, 2);
-          updatePlusMinus(team, 2);
-          break;
-        case Stat.ThreePointMakes:
-          updateTotals(gameId, Stat.Points, 3, team);
-          updateBoxScore(gameId, playerId, Stat.Points, 3);
-          updatePlayerStats(playerId, Stat.Points, 3);
-          updateTeamStats(teamId, Stat.Points, 3, team);
-          updateSetStats(setId, Stat.Points, 3);
-          updateGameSetStats(gameId, setId, Stat.Points, 3);
-          updatePlusMinus(team, 3);
-          break;
-      }
+    // Use the extracted stat update logic
+    handleStatUpdateLogic(storeActions, {
+      stats,
+      gameId,
+      teamId,
+      playerId,
+      setId,
+      selectedPeriod,
+      activePlayers: game?.activePlayers || [],
     });
   }
+
+  // Helper function for plus/minus updates (used in reversePlayStats)
+  const updatePlusMinus = (team: Team, amount: number) => {
+    const adjustedAmount = team === Team.Opponent ? -amount : amount;
+
+    // Update team plus/minus
+    updateTeamStats(teamId, Stat.PlusMinus, adjustedAmount, Team.Us);
+    updateTotals(gameId, Stat.PlusMinus, adjustedAmount, Team.Us);
+
+    updateTeamStats(teamId, Stat.PlusMinus, -adjustedAmount, Team.Opponent);
+    updateTotals(gameId, Stat.PlusMinus, -adjustedAmount, Team.Opponent);
+
+    // Update plus/minus for all active players
+    game?.activePlayers.forEach(playerId => {
+      updateBoxScore(gameId, playerId, Stat.PlusMinus, adjustedAmount);
+      updatePlayerStats(playerId, Stat.PlusMinus, adjustedAmount);
+    });
+  };
   const reversePlayStats = (playToRemove: PlayByPlayType) => {
     const team = playToRemove.playerId === "Opponent" ? Team.Opponent : Team.Us;
     const statsToReverse = getStatsForAction(playToRemove.action);
