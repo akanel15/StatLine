@@ -20,7 +20,7 @@ export default function Sets() {
       renderItem={({ item }) => <SetCard set={item} />}
       ListEmptyComponent={
         <StatLineButton
-          title="Add your first Set"
+          title="Add your first set"
           onPress={() => router.navigate("/sets/newSet")}
         />
       }

@@ -18,7 +18,7 @@ export default function App() {
         data={teamList}
         renderItem={({ item }) => <TeamCard team={item} />}
         ListEmptyComponent={
-          <StatLineButton title="Add your first Team" onPress={() => router.navigate("/newTeam")} />
+          <StatLineButton title="Add your first team" onPress={() => router.navigate("/newTeam")} />
         }
       />
 

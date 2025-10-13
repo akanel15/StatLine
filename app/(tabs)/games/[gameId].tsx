@@ -27,6 +27,7 @@ import PlayByPlay from "@/components/gamePage/PlayByPlay";
 import BoxScoreOverlay from "@/components/gamePage/BoxScoreOverlay";
 import CompletedGamePlayByPlay from "@/components/gamePage/CompletedGamePlayByPlay";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import Feather from "@expo/vector-icons/Feather";
 import MatchUpDisplay from "@/components/MatchUpDisplay";
 import { Result } from "@/types/player";
 import {
@@ -36,7 +37,6 @@ import {
   GameCompletionActions,
 } from "@/logic/gameCompletion";
 import { LoadingState } from "@/components/LoadingState";
-import Feather from "@expo/vector-icons/Feather";
 import ViewShot from "react-native-view-shot";
 import { shareBoxScoreImage } from "@/utils/shareBoxScore";
 import ShareableBoxScore from "@/components/gamePage/ShareableBoxScore";
@@ -291,6 +291,8 @@ export default function GamePage() {
     } else {
       navigation.setOptions({
         headerLeft: () => null,
+        headerBackVisible: false,
+        gestureEnabled: false,
         headerRight: () =>
           showSubstitutions ? null : (
             <Pressable hitSlop={20} onPress={completeGame}>
@@ -601,31 +603,46 @@ export default function GamePage() {
       ) : (
         <View>
           <View style={styles.periodContainer}>
-            <Pressable
-              hitSlop={20}
+            <TouchableOpacity
+              style={[styles.periodButton, selectedPeriod === 0 && styles.periodButtonDisabled]}
               onPress={() => setSelectedPeriod(selectedPeriod - 1)}
               disabled={selectedPeriod === 0}
             >
-              <Ionicons
-                name="arrow-undo-circle"
-                size={30}
-                color={selectedPeriod === 0 ? theme.colorLightGrey : theme.colorOrangePeel}
+              <Feather
+                name="chevron-left"
+                size={20}
+                color={selectedPeriod === 0 ? theme.colorGrey : theme.colorBlue}
               />
-            </Pressable>
-            {selectedPeriod + 1 <= game.periodType ? (
-              // regulation
-              game.periodType === PeriodType.Quarters ? (
-                <Text style={styles.heading}>Q{selectedPeriod + 1}</Text>
-              ) : (
-                <Text style={styles.heading}>Half {selectedPeriod + 1}</Text>
-              )
-            ) : (
-              <Text style={styles.heading}>OT{selectedPeriod + 1 - game.periodType}</Text>
-            )}
+              <Text
+                style={[
+                  styles.periodButtonText,
+                  selectedPeriod === 0 && styles.periodButtonTextDisabled,
+                ]}
+              >
+                Previous
+              </Text>
+            </TouchableOpacity>
 
-            <Pressable hitSlop={20} onPress={() => setSelectedPeriod(selectedPeriod + 1)}>
-              <Ionicons name="arrow-redo-circle" size={30} color={theme.colorOrangePeel} />
-            </Pressable>
+            <View style={styles.periodInfo}>
+              {selectedPeriod + 1 <= game.periodType ? (
+                // regulation
+                game.periodType === PeriodType.Quarters ? (
+                  <Text style={styles.periodLabel}>Q{selectedPeriod + 1}</Text>
+                ) : (
+                  <Text style={styles.periodLabel}>Half {selectedPeriod + 1}</Text>
+                )
+              ) : (
+                <Text style={styles.periodLabel}>OT{selectedPeriod + 1 - game.periodType}</Text>
+              )}
+            </View>
+
+            <TouchableOpacity
+              style={styles.periodButton}
+              onPress={() => setSelectedPeriod(selectedPeriod + 1)}
+            >
+              <Text style={styles.periodButtonText}>Next</Text>
+              <Feather name="chevron-right" size={20} color={theme.colorBlue} />
+            </TouchableOpacity>
           </View>
           <View style={styles.playByPlayContainer}>
             <PlayByPlay gameId={gameId} period={selectedPeriod} onDeletePlay={removePlay} />
@@ -768,11 +785,43 @@ const styles = StyleSheet.create({
     maxWidth: "50%",
   },
   periodContainer: {
-    marginTop: 4,
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    backgroundColor: theme.colorWhite,
+    marginTop: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: theme.colorLightGrey,
+  },
+  periodButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+  },
+  periodButtonDisabled: {
+    opacity: 0.4,
+  },
+  periodButtonText: {
+    color: theme.colorBlue,
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  periodButtonTextDisabled: {
+    color: theme.colorGrey,
+  },
+  periodInfo: {
+    alignItems: "center",
     justifyContent: "center",
-    gap: 30, // Adds spacing between the icons and text
+  },
+  periodLabel: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: theme.colorOnyx,
   },
   headerButtonText: {
     color: theme.colorOrangePeel,

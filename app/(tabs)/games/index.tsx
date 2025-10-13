@@ -19,7 +19,7 @@ export default function Games() {
       renderItem={({ item }) => <GameCard game={item}></GameCard>}
       ListEmptyComponent={
         <StatLineButton
-          title="Add your first Game"
+          title="Add your first game"
           onPress={() => router.navigate("/games/newGame")}
         ></StatLineButton>
       }

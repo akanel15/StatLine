@@ -22,7 +22,7 @@ export default function App() {
       renderItem={({ item }) => <PlayerCard player={item}></PlayerCard>}
       ListEmptyComponent={
         <StatLineButton
-          title="Add your first Player"
+          title="Add your first player"
           onPress={() => router.navigate("/players/newPlayer")}
         ></StatLineButton>
       }
