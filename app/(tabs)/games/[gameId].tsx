@@ -69,8 +69,22 @@ export default function GamePage() {
   const [showSubstitutions, setShowSubstitutions] = useState(false);
   const [showSets, setShowSets] = useState(false);
   const [showBoxScore, setShowBoxScore] = useState(false);
-  const [selectedPeriod, setSelectedPeriod] = useState(0);
   const [selectedPlayer, setSelectedPlayer] = useState<string>("");
+
+  // Start at the last period with plays instead of Q1
+  const [selectedPeriod, setSelectedPeriod] = useState(() => {
+    const currentGame = getGameSafely(gameId);
+    if (currentGame?.periods && currentGame.periods.length > 0) {
+      // Find the last period that has plays
+      for (let i = currentGame.periods.length - 1; i >= 0; i--) {
+        const period = currentGame.periods[i];
+        if (period?.playByPlay && period.playByPlay.length > 0) {
+          return i;
+        }
+      }
+    }
+    return 0; // Default to first period if no plays found
+  });
   const [freeThrowToggle, setFreeThrowToggle] = useState<boolean>(false);
   const [isSharing, setIsSharing] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
