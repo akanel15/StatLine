@@ -4,7 +4,7 @@ import { useTeamStore } from "@/store/teamStore";
 import { theme } from "@/theme";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Alert, Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import * as ImagePicker from "expo-image-picker";
@@ -16,11 +16,11 @@ const DEFAULT_TEAM_LOGOS = [
     source: require("@/assets/baskitball.png"),
     name: "Basketball",
   },
-  { id: "team1", source: require("@/assets/icon.png"), name: "Classic" },
+  { id: "falcon", source: require("@/assets/falcon.png"), name: "Falcon" },
   {
-    id: "team2",
-    source: require("@/assets/adaptive-icon.png"),
-    name: "Modern",
+    id: "crown",
+    source: require("@/assets/crown.png"),
+    name: "Crown",
   },
 ];
 
@@ -36,7 +36,10 @@ export default function NewTeam() {
     if (!teamName) {
       return Alert.alert("Validation Error", "Please give the team a name");
     }
-    addTeam(teamName, imageUri);
+
+    // Use custom image URI or default logo ID as the image identifier
+    const finalImageUri = imageUri || selectedDefaultLogo;
+    addTeam(teamName, finalImageUri);
 
     //naviate to team page set up players
     router.back();
@@ -59,10 +62,9 @@ export default function NewTeam() {
   const handleDefaultLogoSelection = (logoId: string) => {
     const selectedLogo = DEFAULT_TEAM_LOGOS.find(logo => logo.id === logoId);
     if (selectedLogo) {
-      // Convert the require statement to a local file URI for consistency
-      // For now, we'll use the default basketball image for all defaults
-      setImageUri(undefined); // Clear custom image
+      // Store the logo ID for rendering, clear custom URI
       setSelectedDefaultLogo(logoId);
+      setImageUri(undefined);
     }
   };
 
@@ -78,14 +80,16 @@ export default function NewTeam() {
         onPress={handleTeamLogoSelection}
       >
         <View style={styles.imageContainer}>
-          <StatLineImage imageUri={imageUri}></StatLineImage>
+          <StatLineImage imageUri={imageUri} defaultLogoId={selectedDefaultLogo} />
           <View style={styles.photoOverlay}>
             <Ionicons
-              name={imageUri ? "camera" : "add-circle"}
+              name={imageUri || selectedDefaultLogo ? "camera" : "add-circle"}
               size={14}
               color={theme.colorWhite}
             />
-            <Text style={styles.photoText}>{imageUri ? "Change Logo" : "Add Logo"}</Text>
+            <Text style={styles.photoText}>
+              {imageUri || selectedDefaultLogo ? "Change Logo" : "Add Logo"}
+            </Text>
           </View>
         </View>
       </TouchableOpacity>
@@ -110,6 +114,7 @@ export default function NewTeam() {
               ]}
               onPress={() => handleDefaultLogoSelection(logo.id)}
             >
+              <Image source={logo.source} style={styles.defaultLogoImage} resizeMode="contain" />
               <Text
                 style={[
                   styles.defaultLogoText,
@@ -189,24 +194,31 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
   },
   defaultLogoOption: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-    borderWidth: 2,
+    alignItems: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    borderWidth: 3,
     borderColor: theme.colorLightGrey,
     backgroundColor: theme.colorWhite,
+    minWidth: 100,
   },
   selectedDefaultLogo: {
-    borderColor: theme.colorBlue,
-    backgroundColor: theme.colorBlue,
+    borderColor: theme.colorOrangePeel,
+    backgroundColor: theme.colorWhite,
+  },
+  defaultLogoImage: {
+    width: 60,
+    height: 60,
+    marginBottom: 8,
   },
   defaultLogoText: {
     color: theme.colorOnyx,
-    fontSize: 14,
-    fontWeight: "500",
+    fontSize: 12,
+    fontWeight: "600",
   },
   selectedDefaultLogoText: {
-    color: theme.colorWhite,
+    color: theme.colorOrangePeel,
   },
   header: {
     color: theme.colorOnyx,

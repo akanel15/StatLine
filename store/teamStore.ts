@@ -31,21 +31,31 @@ export const useTeamStore = create(
       teams: {},
       currentTeamId: "",
       addTeam: async (name: string, imageUri?: string) => {
-        const savedImageUri =
-          FileSystem.documentDirectory +
-          `${new Date().getTime()}-${imageUri?.split("/").slice(-1)[0]}`;
+        // Default logo IDs that don't need file copying
+        const defaultLogoIds = ["basketball", "falcon", "crown"];
+        const isDefaultLogo = imageUri && defaultLogoIds.includes(imageUri);
 
-        if (imageUri) {
+        let finalImageUri = imageUri;
+
+        // Only copy to file system if it's a custom image (not a default logo ID)
+        if (imageUri && !isDefaultLogo) {
+          const savedImageUri =
+            FileSystem.documentDirectory +
+            `${new Date().getTime()}-${imageUri.split("/").slice(-1)[0]}`;
+
           await FileSystem.copyAsync({
             from: imageUri,
             to: savedImageUri,
           });
+
+          finalImageUri = savedImageUri;
         }
+
         const id = uuid.v4();
 
         set(state => ({
           teams: {
-            [id]: createTeam(id, name, imageUri ? savedImageUri : undefined),
+            [id]: createTeam(id, name, finalImageUri),
             ...state.teams,
           },
         }));
@@ -69,10 +79,18 @@ export const useTeamStore = create(
         });
       },
       updateTeam: async (teamId: string, updates: Partial<Pick<TeamType, "name" | "imageUri">>) => {
+        // Default logo IDs that don't need file copying
+        const defaultLogoIds = ["basketball", "falcon", "crown"];
+        const isDefaultLogo = updates.imageUri && defaultLogoIds.includes(updates.imageUri);
+
         let savedImageUri = updates.imageUri;
 
-        // If a new image is provided and it's not already in the document directory, save it
-        if (updates.imageUri && !updates.imageUri.startsWith(FileSystem.documentDirectory!)) {
+        // If a new image is provided and it's not a default logo or already in document directory, save it
+        if (
+          updates.imageUri &&
+          !isDefaultLogo &&
+          !updates.imageUri.startsWith(FileSystem.documentDirectory!)
+        ) {
           savedImageUri =
             FileSystem.documentDirectory +
             `${new Date().getTime()}-${updates.imageUri.split("/").slice(-1)[0]}`;

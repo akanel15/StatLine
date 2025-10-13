@@ -4,7 +4,7 @@ import { ScrollView, StyleSheet, View } from "react-native";
 import { usePlayerStore } from "@/store/playerStore";
 import PeriodScoreTile from "./PeriodScoreTile";
 import { getPlayerDisplayName } from "@/utils/displayHelpers";
-import { BoxScoreTable } from "@/components/shared/BoxScoreTable";
+import { SortableBoxScoreTable } from "@/components/shared/SortableBoxScoreTable";
 
 type BoxScoreProps = {
   gameId: string;
@@ -32,7 +32,7 @@ export default function BoxScoreOverlay({
 
         {/* Box Score Table */}
         <View style={styles.tableWrapper}>
-          <BoxScoreTable
+          <SortableBoxScoreTable
             game={game}
             players={players}
             stickyColumnHeader="Player"

@@ -60,7 +60,7 @@ export const VIKES_DIV1_MEN_CONFIG: TeamSetupConfig = {
   players: [
     { name: "Nick Kanellis", number: 24 },
     { name: "Alex Kanellis", number: 15 },
-    { name: "Jack Heath", number: 50 },
+    { name: "Jake Heath", number: 50 },
     { name: "Caleb Bruggeman", number: 43 },
     { name: "Matt Hart", number: 11 },
     { name: "Cormac Bohanna", number: 4 },

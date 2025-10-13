@@ -417,13 +417,11 @@ export default function GamePage() {
   const removePlay = (playIndex: number, period: number) => {
     // Check if period and playByPlay exist before accessing
     if (!game.periods?.[period]?.playByPlay) {
-      console.log("No playByPlay data for this period");
       return;
     }
 
     const playToRemove = game.periods[period].playByPlay[playIndex];
     if (!playToRemove) {
-      console.log("No play to remove");
       return;
     }
 
@@ -439,7 +437,6 @@ export default function GamePage() {
             reversePlayStats(playToRemove);
             // Remove from playByPlay array
             removePlayFromPeriod(gameId, period, playIndex);
-            console.log("Successfully deleted play:", playToRemove);
           },
         },
         { text: "Cancel", style: "cancel" },
@@ -453,8 +450,6 @@ export default function GamePage() {
   };
 
   const handleStatPress = (category: ActionType, action: string) => {
-    console.log("Action Type:", category, "Action Key:", action);
-
     const stats = StatMapping[category]?.[action];
 
     if (!stats) {

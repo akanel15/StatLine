@@ -5,9 +5,17 @@ type Props = {
   size?: number;
   imageUri?: string;
   circular?: boolean;
+  defaultLogoId?: string;
 };
 
-export function StatLineImage({ size, imageUri, circular = false }: Props) {
+// Default logo mapping
+const DEFAULT_LOGOS = {
+  basketball: require("@/assets/baskitball.png"),
+  falcon: require("@/assets/falcon.png"),
+  crown: require("@/assets/crown.png"),
+};
+
+export function StatLineImage({ size, imageUri, circular = false, defaultLogoId }: Props) {
   const { width } = useWindowDimensions();
   const imageSize = size || Math.min(width / 1.2, 200);
   const [imageError, setImageError] = useState(false);
@@ -29,11 +37,22 @@ export function StatLineImage({ size, imageUri, circular = false }: Props) {
 
   // Determine image source
   const getImageSource = () => {
-    // If no imageUri provided or there was an error loading the image, use default
-    if (!imageUri || imageError) {
-      return require("@/assets/baskitball.png");
+    // If custom URI is provided and hasn't errored, use it
+    if (imageUri && !imageError) {
+      // Check if imageUri is a default logo ID
+      if (imageUri in DEFAULT_LOGOS) {
+        return DEFAULT_LOGOS[imageUri as keyof typeof DEFAULT_LOGOS];
+      }
+      return { uri: imageUri };
     }
-    return { uri: imageUri };
+
+    // If a default logo ID is provided, use it
+    if (defaultLogoId && defaultLogoId in DEFAULT_LOGOS) {
+      return DEFAULT_LOGOS[defaultLogoId as keyof typeof DEFAULT_LOGOS];
+    }
+
+    // Fallback to default basketball
+    return require("@/assets/baskitball.png");
   };
 
   return (

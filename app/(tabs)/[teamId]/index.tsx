@@ -16,15 +16,16 @@ import { theme } from "@/theme";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { StatLineImage } from "@/components/StatLineImage";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { Stat } from "@/types/stats";
 import { Team } from "@/types/game";
 import { StatCard } from "@/components/shared/StatCard";
 import { RecentGamesTable } from "@/components/shared/RecentGamesTable";
 import { router } from "expo-router";
 import { useGameStore } from "@/store/gameStore";
-import { TopPlayerCard } from "@/components/shared/TopPlayerCard";
 import { usePlayerStore } from "@/store/playerStore";
 import { TopSetCard } from "@/components/shared/TopSetCard";
+import { PlayerAveragesTable } from "@/components/shared/PlayerAveragesTable";
 import { useSetStore } from "@/store/setStore";
 import { RecordBadge } from "@/components/shared/RecordBadge";
 import { TeamDeletionConfirm } from "@/components/deletion/TeamDeletionConfirm";
@@ -38,6 +39,22 @@ import { shareBoxScoreImage } from "@/utils/shareBoxScore";
 import { sanitizeFileName } from "@/utils/filename";
 import Feather from "@expo/vector-icons/Feather";
 import { GameCountSelectorModal } from "@/components/shared/GameCountSelectorModal";
+import { Image } from "react-native";
+
+// Default team logo options (same as in newTeam.tsx)
+const DEFAULT_TEAM_LOGOS = [
+  {
+    id: "basketball",
+    source: require("@/assets/baskitball.png"),
+    name: "Basketball",
+  },
+  { id: "falcon", source: require("@/assets/falcon.png"), name: "Falcon" },
+  {
+    id: "crown",
+    source: require("@/assets/crown.png"),
+    name: "Crown",
+  },
+];
 
 export default function TeamPage() {
   const { teamId } = useRoute().params as { teamId: string }; // Access teamId from route params
@@ -65,6 +82,8 @@ export default function TeamPage() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [editedName, setEditedName] = useState("");
   const [editedImageUri, setEditedImageUri] = useState<string | undefined>();
+  const [selectedDefaultLogo, setSelectedDefaultLogo] = useState<string | undefined>();
+  const [showDefaultOptions, setShowDefaultOptions] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showGameCountSelector, setShowGameCountSelector] = useState(false);
@@ -92,7 +111,16 @@ export default function TeamPage() {
   const handleEdit = () => {
     setIsEditMode(true);
     setEditedName(team?.name || "");
-    setEditedImageUri(team?.imageUri);
+
+    // Check if current image is a default logo ID
+    const defaultLogoIds = ["basketball", "falcon", "crown"];
+    if (team?.imageUri && defaultLogoIds.includes(team.imageUri)) {
+      setSelectedDefaultLogo(team.imageUri);
+      setEditedImageUri(undefined);
+    } else {
+      setEditedImageUri(team?.imageUri);
+      setSelectedDefaultLogo(undefined);
+    }
   };
 
   const handleSave = async () => {
@@ -102,11 +130,15 @@ export default function TeamPage() {
     }
 
     try {
+      // Use custom image URI or default logo ID
+      const finalImageUri = editedImageUri || selectedDefaultLogo;
+
       await updateTeam(teamId, {
         name: editedName.trim(),
-        imageUri: editedImageUri,
+        imageUri: finalImageUri,
       });
       setIsEditMode(false);
+      setShowDefaultOptions(false);
     } catch {
       Alert.alert("Error", "Failed to update team. Please try again.");
     }
@@ -116,6 +148,13 @@ export default function TeamPage() {
     setIsEditMode(false);
     setEditedName(team?.name || "");
     setEditedImageUri(team?.imageUri);
+    setSelectedDefaultLogo(undefined);
+    setShowDefaultOptions(false);
+  };
+
+  const handleDefaultLogoSelection = (logoId: string) => {
+    setSelectedDefaultLogo(logoId);
+    setEditedImageUri(undefined); // Clear custom image when selecting default
   };
 
   const handleImagePicker = async () => {
@@ -128,16 +167,18 @@ export default function TeamPage() {
 
     if (!result.canceled) {
       setEditedImageUri(result.assets[0].uri);
+      setSelectedDefaultLogo(undefined); // Clear default logo when custom image is chosen
     }
   };
 
-  // Initialize edit values when team changes
+  // Initialize edit values when team changes - but only when not in edit mode
+  // to avoid overwriting user's changes
   useEffect(() => {
-    if (team) {
+    if (team && !isEditMode) {
       setEditedName(team.name);
       setEditedImageUri(team.imageUri);
     }
-  }, [team]);
+  }, [team, isEditMode]);
 
   // Move all hooks before any conditional returns
   useLayoutEffect(() => {
@@ -150,7 +191,7 @@ export default function TeamPage() {
       ),
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isEditMode, teamName, editedName, editedImageUri]);
+  }, [isEditMode, teamName, editedName, editedImageUri, selectedDefaultLogo]);
 
   // Handle invalid team ID
   useEffect(() => {
@@ -291,62 +332,6 @@ export default function TeamPage() {
         />
       </>
     );
-  };
-  const getTopPlayers = () => {
-    // Calculate efficiency score for each player
-    const playersWithEfficiency = teamPlayers.map(player => {
-      const stats = player.stats;
-      const games = player.gameNumbers.gamesPlayed || 1; // Avoid division by zero
-
-      const efficiency =
-        (stats[Stat.Points] +
-          stats[Stat.Assists] +
-          stats[Stat.OffensiveRebounds] +
-          stats[Stat.DefensiveRebounds] +
-          stats[Stat.Steals] +
-          stats[Stat.Blocks] +
-          stats[Stat.TwoPointMakes] +
-          stats[Stat.ThreePointMakes] -
-          (stats[Stat.TwoPointAttempts] + stats[Stat.ThreePointAttempts] + stats[Stat.Turnovers])) /
-        games;
-
-      return { player, efficiency };
-    });
-
-    // Sort by efficiency (highest first) and take top 3
-    const top3Players = playersWithEfficiency
-      .sort((a, b) => b.efficiency - a.efficiency)
-      .slice(0, 3);
-
-    // For each top player, find their 2 best individual stats (per game)
-    return top3Players.map(({ player }) => {
-      const games = player.gameNumbers.gamesPlayed || 1;
-
-      const statEntries = Object.entries(player.stats)
-        .filter(([stat, value]) =>
-          [
-            Stat.Points,
-            Stat.Assists,
-            Stat.OffensiveRebounds,
-            Stat.DefensiveRebounds,
-            Stat.Steals,
-            Stat.Blocks,
-            Stat.TwoPointMakes,
-            Stat.ThreePointMakes,
-          ].includes(stat as Stat),
-        )
-        .map(([stat, value]) => ({
-          stat: stat as Stat,
-          value: (value as number) / games, // Convert to per-game
-        }))
-        .sort((a, b) => b.value - a.value) // Sort by per-game value descending
-        .slice(0, 2); // Take top 2
-
-      return {
-        player,
-        bestStats: statEntries,
-      };
-    });
   };
 
   // Helper functions for sets
@@ -526,10 +511,66 @@ export default function TeamPage() {
     <KeyboardAwareScrollView style={styles.container}>
       <View style={[styles.centered, styles.topBanner]}>
         {isEditMode ? (
-          <TouchableOpacity onPress={handleImagePicker} style={styles.editImageContainer}>
-            <StatLineImage size={150} imageUri={editedImageUri} circular={true}></StatLineImage>
-            <Text style={styles.editImageHint}>Tap to change image</Text>
-          </TouchableOpacity>
+          <>
+            <TouchableOpacity onPress={handleImagePicker} style={styles.editImageContainer}>
+              <View style={styles.imageContainer}>
+                <StatLineImage
+                  size={150}
+                  imageUri={editedImageUri}
+                  defaultLogoId={selectedDefaultLogo}
+                  circular={true}
+                />
+                <View style={styles.photoOverlay}>
+                  <Ionicons
+                    name={editedImageUri || selectedDefaultLogo ? "camera" : "add-circle"}
+                    size={14}
+                    color={theme.colorWhite}
+                  />
+                  <Text style={styles.photoText}>
+                    {editedImageUri || selectedDefaultLogo ? "Change Logo" : "Add Logo"}
+                  </Text>
+                </View>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.defaultLogosButton}
+              onPress={() => setShowDefaultOptions(!showDefaultOptions)}
+            >
+              <Text style={styles.defaultLogosText}>
+                {showDefaultOptions ? "Hide Default Logos" : "Choose from Default Logos"}
+              </Text>
+            </TouchableOpacity>
+
+            {showDefaultOptions && (
+              <View style={styles.defaultLogosContainer}>
+                {DEFAULT_TEAM_LOGOS.map(logo => (
+                  <TouchableOpacity
+                    key={logo.id}
+                    style={[
+                      styles.defaultLogoOption,
+                      selectedDefaultLogo === logo.id && styles.selectedDefaultLogo,
+                    ]}
+                    onPress={() => handleDefaultLogoSelection(logo.id)}
+                  >
+                    <Image
+                      source={logo.source}
+                      style={styles.defaultLogoImage}
+                      resizeMode="contain"
+                    />
+                    <Text
+                      style={[
+                        styles.defaultLogoText,
+                        selectedDefaultLogo === logo.id && styles.selectedDefaultLogoText,
+                      ]}
+                    >
+                      {logo.name}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+          </>
         ) : (
           <StatLineImage size={150} imageUri={team?.imageUri} circular={true}></StatLineImage>
         )}
@@ -603,27 +644,11 @@ export default function TeamPage() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Recent Games</Text>
           <View style={styles.recentGames}>{renderRecentGames()}</View>
-          <TouchableOpacity style={styles.viewAllBtn} onPress={() => router.navigate("/games")}>
-            <Text style={styles.viewAllBtnText}>View All Games</Text>
-          </TouchableOpacity>
         </View>
-        {/* Top Players */}
+        {/* Player Averages */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Top Performers</Text>
-          <View style={styles.topPlayers}>
-            {getTopPlayers().map(({ bestStats, player }, index) => (
-              <TopPlayerCard
-                key={player.id}
-                player={player}
-                primaryStat={bestStats[0]}
-                secondaryStat={bestStats[1]}
-                onPress={() => router.push(`/players/${player.id}`)}
-              />
-            ))}
-          </View>
-          <TouchableOpacity style={styles.viewAllBtn} onPress={() => router.navigate("/players")}>
-            <Text style={styles.viewAllBtnText}>View All Players</Text>
-          </TouchableOpacity>
+          <Text style={styles.sectionTitle}>Player Averages</Text>
+          <PlayerAveragesTable players={teamPlayers} stickyColumnHeader="Player" />
         </View>
 
         {/* Top Performing Sets */}
@@ -637,13 +662,15 @@ export default function TeamPage() {
                   set={set}
                   primaryStat={primaryStat}
                   secondaryStat={secondaryStat}
-                  onPress={() => router.push(`/sets/${set.id}`)}
+                  onPress={() => {
+                    router.navigate("/sets");
+                    setTimeout(() => {
+                      router.navigate(`/sets/${set.id}`);
+                    }, 0);
+                  }}
                 />
               ))}
             </View>
-            <TouchableOpacity style={styles.viewAllBtn} onPress={() => router.navigate("/sets")}>
-              <Text style={styles.viewAllBtnText}>View All Sets</Text>
-            </TouchableOpacity>
           </View>
         )}
 
@@ -849,30 +876,12 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     color: theme.colorGrey,
   },
-  viewAllBtn: {
-    backgroundColor: theme.colorBlue,
-    padding: 12,
-    borderRadius: 8,
-    alignItems: "center",
-    marginTop: 15,
-  },
-  viewAllBtnText: {
-    color: theme.colorWhite,
-    fontWeight: "600",
-    fontSize: 16,
-  },
   noGamesText: {
     textAlign: "center",
     color: theme.colorGrey,
     fontSize: 16,
     fontStyle: "italic",
     padding: 20,
-  },
-  topPlayers: {
-    backgroundColor: theme.colorWhite,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: theme.colorLightGrey,
   },
   topSets: {
     backgroundColor: theme.colorWhite,
@@ -895,11 +904,75 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 16,
   },
-  editImageHint: {
+  imageContainer: {
+    position: "relative",
+  },
+  photoOverlay: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    borderBottomLeftRadius: 75,
+    borderBottomRightRadius: 75,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    gap: 4,
+  },
+  photoText: {
+    color: theme.colorWhite,
+    fontSize: 10,
+    fontWeight: "600",
+  },
+  defaultLogosButton: {
+    marginTop: 12,
+    marginBottom: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+  },
+  defaultLogosText: {
     color: theme.colorWhite,
     fontSize: 14,
+    textDecorationLine: "underline",
+    fontWeight: "600",
+  },
+  defaultLogosContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 12,
     marginTop: 8,
-    fontWeight: "500",
+    marginBottom: 16,
+    flexWrap: "wrap",
+  },
+  defaultLogoOption: {
+    alignItems: "center",
+    paddingVertical: 8,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+    borderWidth: 3,
+    borderColor: theme.colorLightGrey,
+    backgroundColor: theme.colorWhite,
+    minWidth: 80,
+  },
+  selectedDefaultLogo: {
+    borderColor: theme.colorOrangePeel,
+    backgroundColor: theme.colorWhite,
+  },
+  defaultLogoImage: {
+    width: 50,
+    height: 50,
+    marginBottom: 4,
+  },
+  defaultLogoText: {
+    color: theme.colorOnyx,
+    fontSize: 11,
+    fontWeight: "600",
+  },
+  selectedDefaultLogoText: {
+    color: theme.colorOrangePeel,
   },
   editNameContainer: {
     width: "80%",
