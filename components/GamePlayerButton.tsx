@@ -26,6 +26,8 @@ export function GamePlayerButton({
     onPress();
   };
 
+  const playerNumber = player?.number;
+
   return (
     <Pressable
       onPress={handlePress}
@@ -38,6 +40,9 @@ export function GamePlayerButton({
       ]}
     >
       <View style={styles.content}>
+        {playerNumber && !opponentName && (
+          <Text style={[styles.numberText, { color: theme.colorOnyx }]}>#{playerNumber}</Text>
+        )}
         <Text style={[styles.text, { color: opponentName ? theme.colorWhite : theme.colorBlack }]}>
           {opponentName
             ? "Opponent"
@@ -54,6 +59,12 @@ const styles = StyleSheet.create({
     flexShrink: 1,
     flexWrap: "wrap",
     textAlign: "center",
+  },
+  numberText: {
+    fontSize: 16,
+    fontWeight: "700",
+    textAlign: "center",
+    marginBottom: 4,
   },
   button: {
     paddingVertical: 8,
@@ -84,5 +95,6 @@ const styles = StyleSheet.create({
   },
   content: {
     width: "100%",
+    alignItems: "center",
   },
 });

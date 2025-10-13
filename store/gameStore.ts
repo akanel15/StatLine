@@ -8,9 +8,17 @@ import { useSetStore } from "./setStore";
 
 type GameState = {
   games: Record<string, GameType>;
-  addGame: (teamId: string, opposingTeamName: string, periodType: PeriodType) => string;
+  addGame: (
+    teamId: string,
+    opposingTeamName: string,
+    periodType: PeriodType,
+    opposingTeamImageUri?: string,
+  ) => string;
   removeGame: (gameId: string) => void;
-  updateGame: (gameId: string, updates: Partial<Pick<GameType, "opposingTeamName">>) => void;
+  updateGame: (
+    gameId: string,
+    updates: Partial<Pick<GameType, "opposingTeamName" | "opposingTeamImageUri">>,
+  ) => void;
   setActivePlayers: (gameId: string, newActivePlayers: string[]) => void;
   setActiveSets: (gameId: string, newActiveSets: string[]) => void;
 
@@ -32,11 +40,16 @@ export const useGameStore = create(
   persist<GameState>(
     (set, get) => ({
       games: {},
-      addGame: (teamId: string, opposingTeamName: string, periodType: PeriodType) => {
+      addGame: (
+        teamId: string,
+        opposingTeamName: string,
+        periodType: PeriodType,
+        opposingTeamImageUri?: string,
+      ) => {
         const id = uuid.v4();
         set(state => ({
           games: {
-            [id]: createGame(id, teamId, opposingTeamName, periodType),
+            [id]: createGame(id, teamId, opposingTeamName, periodType, opposingTeamImageUri),
             ...state.games,
           },
         }));

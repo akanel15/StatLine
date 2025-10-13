@@ -9,6 +9,8 @@ import { useGameStore } from "@/store/gameStore";
 import { usePlayerStore } from "@/store/playerStore";
 import { StatLineToggle } from "@/components/StatLineToggle";
 import { PeriodType } from "@/types/game";
+import * as ImagePicker from "expo-image-picker";
+import { OpponentImage } from "@/components/OpponentImage";
 
 export default function NewGame() {
   const addGame = useGameStore(state => state.addGame);
@@ -19,6 +21,7 @@ export default function NewGame() {
 
   const router = useRouter();
   const [opponentName, setOpponentName] = useState<string>();
+  const [opponentImageUri, setOpponentImageUri] = useState<string>();
   const [periodSelector, setPeriodSelector] = useState<PeriodType>(PeriodType.Quarters);
 
   useEffect(() => {
@@ -35,6 +38,18 @@ export default function NewGame() {
     }
   });
 
+  const handleOpponentImagePicker = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      quality: 1,
+      allowsEditing: true,
+      aspect: [1, 1],
+    });
+    if (!result.canceled) {
+      setOpponentImageUri(result.assets[0].uri);
+    }
+  };
+
   const handleSubmit = () => {
     if (!opponentName) {
       return Alert.alert("Validation Error", "Please enter opponent name");
@@ -49,7 +64,7 @@ export default function NewGame() {
         },
       ]);
     }
-    const gameId = addGame(teamId, opponentName, periodSelector);
+    const gameId = addGame(teamId, opponentName, periodSelector, opponentImageUri);
     router.replace(`/games/${gameId}`);
   };
 
@@ -59,6 +74,16 @@ export default function NewGame() {
       keyboardShouldPersistTaps="handled"
       contentContainerStyle={styles.contentContainer}
     >
+      <View style={styles.centered}>
+        <OpponentImage
+          imageUri={opponentImageUri}
+          teamName={opponentName}
+          size={100}
+          showOverlay={true}
+          onPress={handleOpponentImagePicker}
+        />
+      </View>
+
       <Text style={styles.header}>Opponent Name</Text>
       <TextInput
         style={styles.input}
@@ -95,6 +120,10 @@ const styles = StyleSheet.create({
     paddingTop: 24,
     paddingHorizontal: 24,
     paddingBottom: 100,
+  },
+  centered: {
+    alignItems: "center",
+    marginBottom: 24,
   },
   header: {
     color: theme.colorOnyx,

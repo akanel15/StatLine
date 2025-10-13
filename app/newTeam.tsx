@@ -82,7 +82,7 @@ export default function NewTeam() {
           <View style={styles.photoOverlay}>
             <Ionicons
               name={imageUri ? "camera" : "add-circle"}
-              size={32}
+              size={14}
               color={theme.colorWhite}
             />
             <Text style={styles.photoText}>{imageUri ? "Change Logo" : "Add Logo"}</Text>
@@ -158,16 +158,16 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0, 0, 0, 0.7)",
     borderBottomLeftRadius: 50,
     borderBottomRightRadius: 50,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
     alignItems: "center",
     justifyContent: "center",
     flexDirection: "row",
-    gap: 8,
+    gap: 4,
   },
   photoText: {
     color: theme.colorWhite,
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: "600",
   },
   defaultLogosButton: {

@@ -29,6 +29,7 @@ export type GameType = {
   id: string;
   teamId: string; //to keep track of which games should be stored for which team
   opposingTeamName: string;
+  opposingTeamImageUri?: string; //optional custom image for opponent
   activePlayers: string[]; //list of players
   activeSets: string[]; //list of sets
   gamePlayedList: string[]; //list of players who checked in the game for player stats
@@ -49,10 +50,12 @@ export const createGame = (
   teamId: string,
   opposingTeamName: string,
   periodType: PeriodType,
+  opposingTeamImageUri?: string,
 ): GameType => ({
   id: id,
   teamId: teamId,
   opposingTeamName: opposingTeamName,
+  opposingTeamImageUri: opposingTeamImageUri,
   activePlayers: [],
   activeSets: [],
   gamePlayedList: [],

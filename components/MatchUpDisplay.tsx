@@ -2,7 +2,7 @@ import { GameType, Team } from "@/types/game";
 import { StyleSheet, Text, View } from "react-native";
 import { useTeamStore } from "@/store/teamStore";
 import { StatLineImage } from "./StatLineImage";
-import { OpponentShield } from "./OpponentTeamImage";
+import { OpponentImage } from "./OpponentImage";
 import { theme } from "@/theme";
 
 type MatchUpDisplayProps = {
@@ -38,7 +38,11 @@ export default function MatchUpDisplay({ game }: MatchUpDisplayProps) {
 
       {/* Right Team */}
       <View style={styles.teamContainer}>
-        <OpponentShield teamName={game.opposingTeamName} size={50} />
+        <OpponentImage
+          imageUri={game.opposingTeamImageUri}
+          teamName={game.opposingTeamName}
+          size={50}
+        />
         <Text numberOfLines={1} style={styles.subtitle}>
           {game.opposingTeamName}
         </Text>
