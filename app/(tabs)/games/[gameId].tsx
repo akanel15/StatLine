@@ -6,7 +6,16 @@ import { useTeamStore } from "@/store/teamStore";
 import { ActionType, getStatsForAction, Stat, StatMapping } from "@/types/stats";
 import { useNavigation, useRoute } from "@react-navigation/core";
 import { useEffect, useLayoutEffect, useState, useRef } from "react";
-import { Alert, Pressable, StyleSheet, Text, View, AppState, Modal } from "react-native";
+import {
+  Alert,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  AppState,
+  Modal,
+  TouchableOpacity,
+} from "react-native";
 import { theme } from "@/theme";
 import { PeriodType, PlayByPlayType, Team } from "@/types/game";
 import { SetRadioButton } from "@/components/SetRadioButton";
@@ -16,6 +25,7 @@ import SetOverlay from "@/components/gamePage/SetOverlay";
 import SubstitutionOverlay from "@/components/gamePage/SubstitutionOverlay";
 import PlayByPlay from "@/components/gamePage/PlayByPlay";
 import BoxScoreOverlay from "@/components/gamePage/BoxScoreOverlay";
+import CompletedGamePlayByPlay from "@/components/gamePage/CompletedGamePlayByPlay";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import MatchUpDisplay from "@/components/MatchUpDisplay";
 import { Result } from "@/types/player";
@@ -66,7 +76,8 @@ export default function GamePage() {
   const [showShareModal, setShowShareModal] = useState(false);
   const shareableRef = useRef<ViewShot>(null);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [showSetsSection, setShowSetsSection] = useState(true);
+  const [showSetsSection, setShowSetsSection] = useState(teamSets.length > 0);
+  const [activeTab, setActiveTab] = useState<"boxscore" | "playbyplay">("boxscore");
 
   //game stats
   const updateBoxScore = useGameStore(state => state.updateBoxScore);
@@ -461,8 +472,35 @@ export default function GamePage() {
   if (game.isFinished) {
     return (
       <View style={styles.container}>
-        <View style={styles.boxScoreContainer}>
-          <BoxScoreOverlay gameId={gameId} onClose={() => {}} hideCloseButton={true} />
+        {/* Tab Switcher */}
+        <View style={styles.tabSwitcher}>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === "boxscore" && styles.activeTab]}
+            onPress={() => setActiveTab("boxscore")}
+          >
+            <Text style={[styles.tabText, activeTab === "boxscore" && styles.activeTabText]}>
+              Box Score
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === "playbyplay" && styles.activeTab]}
+            onPress={() => setActiveTab("playbyplay")}
+          >
+            <Text style={[styles.tabText, activeTab === "playbyplay" && styles.activeTabText]}>
+              Play-by-Play
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Content Area */}
+        <View style={styles.contentContainer}>
+          {activeTab === "boxscore" ? (
+            <View style={styles.boxScoreContainer}>
+              <BoxScoreOverlay gameId={gameId} onClose={() => {}} hideCloseButton={true} />
+            </View>
+          ) : (
+            <CompletedGamePlayByPlay gameId={gameId} />
+          )}
         </View>
 
         {/* Bottom Action Buttons */}
@@ -719,6 +757,38 @@ const styles = StyleSheet.create({
     opacity: 0,
   },
   boxScoreContainer: {
+    flex: 1,
+  },
+  tabSwitcher: {
+    flexDirection: "row",
+    backgroundColor: theme.colorLightGrey,
+    borderRadius: 8,
+    marginHorizontal: 20,
+    marginTop: 12,
+    marginBottom: 8,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: theme.colorLightGrey,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  activeTab: {
+    backgroundColor: theme.colorOrangePeel,
+  },
+  tabText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: theme.colorGrey,
+  },
+  activeTabText: {
+    color: theme.colorWhite,
+  },
+  contentContainer: {
     flex: 1,
   },
   bottomActionsContainer: {

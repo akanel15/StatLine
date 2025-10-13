@@ -12,6 +12,9 @@ export default function PeriodScoreTile({ game }: PeriodScoreTileProps) {
   const teamInfo = useTeamStore(state => state.teams[game.teamId]);
   const totalPeriods = Math.max(game.periodType, game.periods.length); // Define total expected periods
 
+  // Determine if we need scrolling (threshold: more than 5 periods means scrolling)
+  const shouldScroll = totalPeriods > 5;
+
   const getPeriodTotals = (team: Team): number[] => {
     const formattedPeriods = [];
 
@@ -45,47 +48,107 @@ export default function PeriodScoreTile({ game }: PeriodScoreTileProps) {
   };
 
   if (!game) return null;
-  return (
-    <ScrollView horizontal>
-      <View>
-        <View style={styles.periodScores}>
-          <View style={[styles.periodHeadingSpacing, { backgroundColor: "transparent" }]} />
 
-          {getPeriodHeadings().map((period, index) => (
-            <Text key={index} style={styles.score}>
-              {period}
-            </Text>
-          ))}
+  // Render for games with many periods (scrollable with sticky TOT)
+  if (shouldScroll) {
+    return (
+      <View style={styles.scrollContainer}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={true}>
+          <View>
+            {/* Headers Row */}
+            <View style={styles.periodScores}>
+              <View style={[styles.periodHeadingSpacing, { backgroundColor: "transparent" }]} />
+              {getPeriodHeadings().map((period, index) => (
+                <Text key={index} style={styles.score}>
+                  {period}
+                </Text>
+              ))}
+              <View style={styles.stickyColumnPlaceholder} />
+            </View>
+
+            {/* Team Row */}
+            <View style={styles.periodScores}>
+              <StatLineImage imageUri={teamInfo.imageUri} size={40} />
+              {getPeriodTotals(Team.Us).map((period, index) => (
+                <Text key={index} style={styles.score}>
+                  {period}
+                </Text>
+              ))}
+              <View style={styles.stickyColumnPlaceholder} />
+            </View>
+
+            {/* Opponent Row */}
+            <View style={styles.periodScores}>
+              <OpponentImage
+                imageUri={game.opposingTeamImageUri}
+                teamName={game.opposingTeamName}
+                size={40}
+              />
+              {getPeriodTotals(Team.Opponent).map((period, index) => (
+                <Text key={index} style={styles.score}>
+                  {period}
+                </Text>
+              ))}
+              <View style={styles.stickyColumnPlaceholder} />
+            </View>
+          </View>
+        </ScrollView>
+
+        {/* Sticky TOT Column */}
+        <View style={styles.stickyColumn}>
           <Text style={styles.totalScore}>TOT</Text>
-        </View>
-        <View style={styles.periodScores}>
-          <StatLineImage imageUri={teamInfo.imageUri} size={40} />
-          {getPeriodTotals(Team.Us).map((period, index) => (
-            <Text key={index} style={styles.score}>
-              {period}
-            </Text>
-          ))}
           <Text style={styles.totalScore}>{game.statTotals[Team.Us].Points}</Text>
-        </View>
-        <View style={styles.periodScores}>
-          <OpponentImage
-            imageUri={game.opposingTeamImageUri}
-            teamName={game.opposingTeamName}
-            size={40}
-          />
-          {getPeriodTotals(Team.Opponent).map((period, index) => (
-            <Text key={index} style={styles.score}>
-              {period}
-            </Text>
-          ))}
           <Text style={styles.totalScore}>{game.statTotals[Team.Opponent].Points}</Text>
         </View>
       </View>
-    </ScrollView>
+    );
+  }
+
+  // Render for normal games (stretched layout, no scroll)
+  return (
+    <View style={styles.stretchContainer}>
+      {/* Headers Row */}
+      <View style={styles.stretchRow}>
+        <View style={[styles.periodHeadingSpacing, { backgroundColor: "transparent" }]} />
+        {getPeriodHeadings().map((period, index) => (
+          <Text key={index} style={styles.stretchScore}>
+            {period}
+          </Text>
+        ))}
+        <Text style={styles.totalScore}>TOT</Text>
+      </View>
+
+      {/* Team Row */}
+      <View style={styles.stretchRow}>
+        <StatLineImage imageUri={teamInfo.imageUri} size={40} />
+        {getPeriodTotals(Team.Us).map((period, index) => (
+          <Text key={index} style={styles.stretchScore}>
+            {period}
+          </Text>
+        ))}
+        <Text style={styles.totalScore}>{game.statTotals[Team.Us].Points}</Text>
+      </View>
+
+      {/* Opponent Row */}
+      <View style={styles.stretchRow}>
+        <OpponentImage
+          imageUri={game.opposingTeamImageUri}
+          teamName={game.opposingTeamName}
+          size={40}
+        />
+        {getPeriodTotals(Team.Opponent).map((period, index) => (
+          <Text key={index} style={styles.stretchScore}>
+            {period}
+          </Text>
+        ))}
+        <Text style={styles.totalScore}>{game.statTotals[Team.Opponent].Points}</Text>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  // Common styles
   periodScores: {
     flexDirection: "row",
     alignItems: "center",
@@ -105,5 +168,43 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 20,
     backgroundColor: "transparent",
+  },
+
+  // Scrollable layout styles (for games with many periods)
+  scrollContainer: {
+    position: "relative",
+    paddingRight: 60, // Make room for sticky column
+  },
+  stickyColumnPlaceholder: {
+    width: 60, // Matches stickyColumn width + padding
+  },
+  stickyColumn: {
+    position: "absolute",
+    right: 0,
+    top: 0,
+    bottom: 0,
+    justifyContent: "space-around",
+    alignItems: "center",
+    paddingVertical: 5,
+    backgroundColor: "white",
+    borderLeftWidth: 1,
+    borderLeftColor: "#e0e0e0",
+    paddingHorizontal: 5,
+  },
+
+  // Stretch layout styles (for normal games)
+  stretchContainer: {
+    width: "100%",
+    paddingHorizontal: 10,
+  },
+  stretchRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 5,
+    width: "100%",
+  },
+  stretchScore: {
+    flex: 1, // This makes columns stretch evenly
+    textAlign: "center",
   },
 });
