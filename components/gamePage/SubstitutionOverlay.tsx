@@ -47,8 +47,8 @@ export default function SubstitutionOverlay({ gameId, onClose }: SubstitutionOve
   };
 
   const handleConfirm = () => {
-    if (selectedActive.length === 0) {
-      Alert.alert("Validation Error", "Please select at least 1 active player");
+    if (selectedActive.length === 0 || selectedActive.length > 5) {
+      Alert.alert("Validation Error", "Please select a valid number of players (1-5).");
       return;
     }
     const activeIds = selectedActive.map(player => player.id);

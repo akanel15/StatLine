@@ -12,6 +12,7 @@ type SetState = {
   updateSet: (setId: string, updates: Partial<Pick<SetType, "name">>) => void;
   updateStats: (setId: string, stat: Stat, amount: number) => void;
   incrementRunCount: (setId: string) => void;
+  decrementRunCount: (setId: string) => void;
   getSetSafely: (setId: string) => SetType | null;
 };
 
@@ -92,6 +93,24 @@ export const useSetStore = create(
               [setId]: {
                 ...set,
                 runCount: (set.runCount || 0) + 1,
+              },
+            },
+          };
+        });
+      },
+      decrementRunCount: (setId: string) => {
+        set(state => {
+          const set = state.sets[setId];
+          if (!state.sets[setId]) {
+            console.warn(`Set with ID ${setId} not found.`);
+            return state;
+          }
+          return {
+            sets: {
+              ...state.sets,
+              [setId]: {
+                ...set,
+                runCount: Math.max(0, (set.runCount || 0) - 1),
               },
             },
           };

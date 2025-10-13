@@ -3,6 +3,8 @@ import { usePlayerStore } from "@/store/playerStore";
 import { useSetStore } from "@/store/setStore";
 import { useTeamStore } from "@/store/teamStore";
 import { calculateGameResult } from "@/logic/gameCompletion";
+import { Team } from "@/types/game";
+import { Stat } from "@/types/stats";
 
 export type CascadeDeletionInfo = {
   games: { id: string; name: string }[];
@@ -147,6 +149,7 @@ export function cascadeDeleteGame(gameId: string): void {
   const gameStore = useGameStore.getState();
   const teamStore = useTeamStore.getState();
   const playerStore = usePlayerStore.getState();
+  const setStore = useSetStore.getState();
 
   const game = gameStore.games[gameId];
   if (!game) {
@@ -154,21 +157,61 @@ export function cascadeDeleteGame(gameId: string): void {
     return;
   }
 
-  // Only revert game counts if the game was finished (had counts applied)
+  // Only revert game counts and stats if the game was finished (had counts applied)
   if (game.isFinished) {
     const result = calculateGameResult(game);
 
-    // Revert team game numbers
+    // 1. Revert team game numbers
     teamStore.revertGameNumbers(game.teamId, result);
 
-    // Revert player game numbers for all players who participated
-    game.gamePlayedList.forEach(playerId => {
-      if (playerStore.players[playerId]) {
-        playerStore.revertGameNumbers(playerId, result);
+    // 2. Revert team stats (both Us and Opponent)
+    Object.entries(game.statTotals[Team.Us]).forEach(([stat, value]) => {
+      if (value !== 0) {
+        teamStore.updateStats(game.teamId, stat as Stat, -value, Team.Us);
       }
     });
 
-    console.log(`Reverted game counts for finished game ${gameId} (${result})`);
+    Object.entries(game.statTotals[Team.Opponent]).forEach(([stat, value]) => {
+      if (value !== 0) {
+        teamStore.updateStats(game.teamId, stat as Stat, -value, Team.Opponent);
+      }
+    });
+
+    // 3. Revert player game numbers and stats
+    game.gamePlayedList.forEach(playerId => {
+      if (playerStore.players[playerId]) {
+        playerStore.revertGameNumbers(playerId, result);
+
+        // Revert player's box score stats if they have any
+        const playerBoxScore = game.boxScore[playerId];
+        if (playerBoxScore) {
+          Object.entries(playerBoxScore).forEach(([stat, value]) => {
+            if (value !== 0) {
+              playerStore.updateStats(playerId, stat as Stat, -value);
+            }
+          });
+        }
+      }
+    });
+
+    // 4. Revert set stats and run counts
+    Object.entries(game.sets).forEach(([setId, setData]) => {
+      if (setStore.sets[setId]) {
+        // Revert set stats
+        Object.entries(setData.stats).forEach(([stat, value]) => {
+          if (value !== 0) {
+            setStore.updateStats(setId, stat as Stat, -value);
+          }
+        });
+
+        // Decrement run count for each run in this game
+        for (let i = 0; i < setData.runCount; i++) {
+          setStore.decrementRunCount(setId);
+        }
+      }
+    });
+
+    console.log(`Reverted game counts and stats for finished game ${gameId} (${result})`);
   }
 
   // Finally, delete the game

@@ -312,7 +312,6 @@ export default function GameSimulatorScreen() {
             title={isSimulating ? "Simulating..." : "Simulate Game(s)"}
             onPress={handleSimulate}
             color={theme.colorOrangePeel}
-            disabled={isSimulating}
           />
         </View>
 
@@ -329,7 +328,7 @@ export default function GameSimulatorScreen() {
               {"\n"}• Distributing stats across active players
               {"\n"}• Creating complete, finished games
             </Text>
-            <Text style={styles.infoText} style={{ marginTop: 8 }}>
+            <Text style={styles.infoText}>
               Use this to quickly generate test data for analytics and statistics features.
             </Text>
           </View>

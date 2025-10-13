@@ -4,6 +4,7 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import uuid from "react-native-uuid";
 import { GameType, PeriodType, Team, createGame } from "@/types/game";
 import { initialBaseStats, Stat, StatsType } from "@/types/stats";
+import { useSetStore } from "./setStore";
 
 type GameState = {
   games: Record<string, GameType>;
@@ -212,7 +213,26 @@ export const useGameStore = create(
             console.warn(`Game with ID ${gameId} not found.`);
             return state;
           }
-          const existingSet = game.sets[setId];
+
+          let existingSet = game.sets[setId];
+
+          // If set doesn't exist in game yet, initialize it from global set store
+          if (!existingSet) {
+            const globalSet = useSetStore.getState().sets[setId];
+            if (globalSet) {
+              existingSet = {
+                id: globalSet.id,
+                name: globalSet.name,
+                teamId: globalSet.teamId,
+                runCount: 0,
+                stats: { ...initialBaseStats },
+              };
+            } else {
+              console.warn(`Set with ID ${setId} not found in global set store.`);
+              return state;
+            }
+          }
+
           return {
             games: {
               ...state.games,
@@ -223,8 +243,8 @@ export const useGameStore = create(
                   [setId]: {
                     ...existingSet,
                     stats: {
-                      ...(existingSet?.stats || { ...initialBaseStats }),
-                      [stat]: (existingSet?.stats?.[stat] || 0) + amount,
+                      ...existingSet.stats,
+                      [stat]: (existingSet.stats[stat] || 0) + amount,
                     },
                   },
                 },
@@ -241,7 +261,24 @@ export const useGameStore = create(
             return state;
           }
 
-          const existingSet = game.sets[setId];
+          let existingSet = game.sets[setId];
+
+          // If set doesn't exist in game yet, initialize it from global set store
+          if (!existingSet) {
+            const globalSet = useSetStore.getState().sets[setId];
+            if (globalSet) {
+              existingSet = {
+                id: globalSet.id,
+                name: globalSet.name,
+                teamId: globalSet.teamId,
+                runCount: 0,
+                stats: { ...initialBaseStats },
+              };
+            } else {
+              console.warn(`Set with ID ${setId} not found in global set store.`);
+              return state;
+            }
+          }
 
           return {
             games: {
@@ -251,8 +288,8 @@ export const useGameStore = create(
                 sets: {
                   ...game.sets,
                   [setId]: {
-                    ...existingSet, // Spread existing set if it exists
-                    runCount: (existingSet?.runCount || 0) + 1, // Initialize to 1 if it doesn't exist
+                    ...existingSet,
+                    runCount: existingSet.runCount + 1,
                   },
                 },
               },

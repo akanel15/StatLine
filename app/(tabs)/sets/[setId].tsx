@@ -17,7 +17,6 @@ import { useSetStore } from "@/store/setStore";
 import { useTeamStore } from "@/store/teamStore";
 import { Stat } from "@/types/stats";
 import { StatCard } from "@/components/shared/StatCard";
-import { ViewAllButton } from "@/components/shared/ViewAllButton";
 import { StatLineImage } from "@/components/StatLineImage";
 import { IconAvatar } from "@/components/shared/IconAvatar";
 import { router } from "expo-router";
@@ -304,11 +303,6 @@ export default function SetPage() {
             </TouchableOpacity>
           </View>
         )}
-
-        {/* Navigation */}
-        <View style={styles.section}>
-          <ViewAllButton text="View All Sets" onPress={() => router.navigate("/sets")} />
-        </View>
 
         {/* Delete and Cancel Buttons in Edit Mode */}
         {isEditMode && (

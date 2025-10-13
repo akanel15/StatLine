@@ -1,6 +1,6 @@
 import { useGameStore } from "@/store/gameStore";
 import { PeriodType, Team } from "@/types/game";
-import { Stat } from "@/types/stats";
+import { Stat, initialBaseStats } from "@/types/stats";
 
 // Mock UUID for consistent IDs
 jest.mock("react-native-uuid", () => ({
@@ -19,6 +19,30 @@ jest.mock("@react-native-async-storage/async-storage", () => ({
 jest.mock("zustand/middleware", () => ({
   persist: (fn: any) => fn,
   createJSONStorage: () => ({}),
+}));
+
+// Mock set store
+jest.mock("@/store/setStore", () => ({
+  useSetStore: {
+    getState: () => ({
+      sets: {
+        "set-1": {
+          id: "set-1",
+          name: "Test Set 1",
+          teamId: "team-1",
+          runCount: 0,
+          stats: { ...initialBaseStats },
+        },
+        "new-set": {
+          id: "new-set",
+          name: "New Test Set",
+          teamId: "team-1",
+          runCount: 0,
+          stats: { ...initialBaseStats },
+        },
+      },
+    }),
+  },
 }));
 
 describe("Game Store", () => {
