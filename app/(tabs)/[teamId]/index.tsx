@@ -617,6 +617,7 @@ export default function TeamPage() {
                 player={player}
                 primaryStat={bestStats[0]}
                 secondaryStat={bestStats[1]}
+                onPress={() => router.push(`/players/${player.id}`)}
               />
             ))}
           </View>
@@ -636,6 +637,7 @@ export default function TeamPage() {
                   set={set}
                   primaryStat={primaryStat}
                   secondaryStat={secondaryStat}
+                  onPress={() => router.push(`/sets/${set.id}`)}
                 />
               ))}
             </View>

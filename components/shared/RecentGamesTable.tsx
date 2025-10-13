@@ -114,7 +114,7 @@ export function RecentGamesTable({ games, context, playerId }: RecentGamesTableP
   });
 
   const handleGamePress = (gameId: string) => {
-    router.push(`/games/${gameId}`);
+    router.navigate(`/games/${gameId}`);
   };
 
   return (

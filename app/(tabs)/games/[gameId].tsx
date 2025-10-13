@@ -224,43 +224,58 @@ export default function GamePage() {
     if (!game) return;
 
     const completeGame = () => {
-      if (!gameHasPlays(game)) {
-        Alert.alert(
-          "No Plays Recorded",
-          "This game has no plays recorded. Are you sure you want to mark it as complete?",
-          [
-            { text: "Cancel", style: "cancel" },
-            {
-              text: "Complete Anyway",
-              style: "destructive",
-              onPress: () => {
-                const createGameCompletionActions = (): GameCompletionActions => ({
-                  markGameAsFinished: () => useGameStore.getState().markGameAsFinished(gameId),
-                  updateTeamGameNumbers: (teamId: string, result: Result) =>
-                    useTeamStore.getState().updateGamesPlayed(teamId, result),
-                  updatePlayerGameNumbers: (playerId: string, result: Result) =>
-                    usePlayerStore.getState().updateGamesPlayed(playerId, result),
-                  getCurrentGame: () => useGameStore.getState().games[gameId],
-                });
-                const actions = createGameCompletionActions();
-                completeGameManually(game, gameId, teamId, actions);
-              },
-            },
-          ],
-        );
-        return;
-      }
+      // Show confirmation dialog before completing the game
+      Alert.alert(
+        "Complete Game",
+        "Are you sure you want to complete this game? This action will mark the game as finished.",
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Complete",
+            style: "default",
+            onPress: () => {
+              if (!gameHasPlays(game)) {
+                Alert.alert(
+                  "No Plays Recorded",
+                  "This game has no plays recorded. Are you sure you want to mark it as complete?",
+                  [
+                    { text: "Cancel", style: "cancel" },
+                    {
+                      text: "Complete Anyway",
+                      style: "destructive",
+                      onPress: () => {
+                        const createGameCompletionActions = (): GameCompletionActions => ({
+                          markGameAsFinished: () =>
+                            useGameStore.getState().markGameAsFinished(gameId),
+                          updateTeamGameNumbers: (teamId: string, result: Result) =>
+                            useTeamStore.getState().updateGamesPlayed(teamId, result),
+                          updatePlayerGameNumbers: (playerId: string, result: Result) =>
+                            usePlayerStore.getState().updateGamesPlayed(playerId, result),
+                          getCurrentGame: () => useGameStore.getState().games[gameId],
+                        });
+                        const actions = createGameCompletionActions();
+                        completeGameManually(game, gameId, teamId, actions);
+                      },
+                    },
+                  ],
+                );
+                return;
+              }
 
-      const createGameCompletionActions = (): GameCompletionActions => ({
-        markGameAsFinished: () => useGameStore.getState().markGameAsFinished(gameId),
-        updateTeamGameNumbers: (teamId: string, result: Result) =>
-          useTeamStore.getState().updateGamesPlayed(teamId, result),
-        updatePlayerGameNumbers: (playerId: string, result: Result) =>
-          usePlayerStore.getState().updateGamesPlayed(playerId, result),
-        getCurrentGame: () => useGameStore.getState().games[gameId],
-      });
-      const actions = createGameCompletionActions();
-      completeGameManually(game, gameId, teamId, actions);
+              const createGameCompletionActions = (): GameCompletionActions => ({
+                markGameAsFinished: () => useGameStore.getState().markGameAsFinished(gameId),
+                updateTeamGameNumbers: (teamId: string, result: Result) =>
+                  useTeamStore.getState().updateGamesPlayed(teamId, result),
+                updatePlayerGameNumbers: (playerId: string, result: Result) =>
+                  usePlayerStore.getState().updateGamesPlayed(playerId, result),
+                getCurrentGame: () => useGameStore.getState().games[gameId],
+              });
+              const actions = createGameCompletionActions();
+              completeGameManually(game, gameId, teamId, actions);
+            },
+          },
+        ],
+      );
     };
 
     if (game.isFinished) {
@@ -275,7 +290,7 @@ export default function GamePage() {
       });
     } else {
       navigation.setOptions({
-        headerLeft: () => <StandardBackButton onPress={() => navigation.goBack()} />,
+        headerLeft: () => null,
         headerRight: () =>
           showSubstitutions ? null : (
             <Pressable hitSlop={20} onPress={completeGame}>

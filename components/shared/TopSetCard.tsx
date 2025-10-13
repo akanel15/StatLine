@@ -1,6 +1,6 @@
 import { theme } from "@/theme";
 import { SetType } from "@/types/set";
-import { StyleSheet } from "react-native";
+import { StyleSheet, TouchableOpacity } from "react-native";
 import { Text, View } from "react-native";
 import { IconAvatar } from "./IconAvatar";
 
@@ -8,11 +8,17 @@ type TopSetCardProps = {
   set: SetType;
   primaryStat: { label: string; value: string };
   secondaryStat: { label: string; value: string };
+  onPress?: () => void;
 };
 
-export function TopSetCard({ set, primaryStat, secondaryStat }: TopSetCardProps) {
+export function TopSetCard({ set, primaryStat, secondaryStat, onPress }: TopSetCardProps) {
   return (
-    <View style={styles.setItem}>
+    <TouchableOpacity
+      style={styles.setItem}
+      onPress={onPress}
+      activeOpacity={0.7}
+      disabled={!onPress}
+    >
       <View style={styles.setInfo}>
         <View style={styles.setAvatar}>
           <IconAvatar size={40} icon={set.name.charAt(0).toUpperCase()} />
@@ -29,7 +35,7 @@ export function TopSetCard({ set, primaryStat, secondaryStat }: TopSetCardProps)
           {secondaryStat.value} {secondaryStat.label}
         </Text>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }
 

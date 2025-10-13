@@ -1,6 +1,6 @@
 import { theme } from "@/theme";
 import { PlayerType } from "@/types/player";
-import { StyleSheet } from "react-native";
+import { StyleSheet, TouchableOpacity } from "react-native";
 import { Text, View } from "react-native";
 import { PlayerImage } from "../PlayerImage";
 import { getStatLabel, Stat } from "@/types/stats";
@@ -9,11 +9,17 @@ type TopPlayerCardProps = {
   player: PlayerType;
   primaryStat: { stat: Stat; value: number };
   secondaryStat: { stat: Stat; value: number };
+  onPress?: () => void;
 };
 
-export function TopPlayerCard({ player, primaryStat, secondaryStat }: TopPlayerCardProps) {
+export function TopPlayerCard({ player, primaryStat, secondaryStat, onPress }: TopPlayerCardProps) {
   return (
-    <View style={styles.playerItem}>
+    <TouchableOpacity
+      style={styles.playerItem}
+      onPress={onPress}
+      activeOpacity={0.7}
+      disabled={!onPress}
+    >
       <View style={styles.playerInfo}>
         <View style={styles.playerAvatar}>
           <PlayerImage player={player} size={40} />
@@ -30,7 +36,7 @@ export function TopPlayerCard({ player, primaryStat, secondaryStat }: TopPlayerC
           {secondaryStat.value.toFixed(1)} {getStatLabel(secondaryStat.stat)}
         </Text>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }
 
