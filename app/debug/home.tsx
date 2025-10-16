@@ -6,9 +6,12 @@ import {
   FlatList,
   Pressable,
   SafeAreaView,
+  Alert,
 } from "react-native";
 import { theme } from "@/theme";
 import { router } from "expo-router";
+import { useHelpStore } from "@/store/helpStore";
+import { StatLineButton } from "@/components/StatLineButton";
 
 type DebugSection = {
   id: string;
@@ -63,6 +66,26 @@ const debugSections: DebugSection[] = [
 ];
 
 export default function DebugHomeScreen() {
+  const resetAllHints = useHelpStore(state => state.resetAllHints);
+
+  const handleResetHints = () => {
+    Alert.alert(
+      "Reset Help Hints",
+      "This will reset all help hints so they appear again (as if you're a first-time user). Continue?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Reset",
+          style: "default",
+          onPress: () => {
+            resetAllHints();
+            Alert.alert("Success", "Help hints have been reset. They will now appear again when you visit relevant screens.");
+          },
+        },
+      ],
+    );
+  };
+
   const renderDebugSection = ({ item }: { item: DebugSection }) => (
     <Pressable
       style={[styles.card, { borderLeftColor: item.color }]}
@@ -95,6 +118,16 @@ export default function DebugHomeScreen() {
         contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
       />
+
+      {/* Quick Actions */}
+      <View style={styles.quickActions}>
+        <Text style={styles.quickActionsTitle}>Quick Actions</Text>
+        <StatLineButton
+          title="🔄 Reset Help Hints"
+          onPress={handleResetHints}
+          color={theme.colorBlue}
+        />
+      </View>
 
       <View style={styles.footer}>
         <Text style={styles.footerText}>
@@ -171,6 +204,19 @@ const styles = StyleSheet.create({
     fontSize: 24,
     color: theme.colorGrey,
     marginLeft: 8,
+  },
+  quickActions: {
+    padding: 16,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: theme.colorLightGrey,
+    backgroundColor: theme.colorWhite,
+  },
+  quickActionsTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: theme.colorOnyx,
+    marginBottom: 8,
   },
   footer: {
     padding: 16,

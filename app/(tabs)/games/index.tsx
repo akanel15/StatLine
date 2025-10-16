@@ -11,6 +11,7 @@ export default function Games() {
   const gameList = Object.values(games);
   const currentTeamId = useTeamStore(state => state.currentTeamId);
   const teamGames = gameList.filter(game => game.teamId === currentTeamId);
+
   return (
     <FlatList
       style={styles.container}

@@ -162,7 +162,7 @@ export function PlayerAveragesTable({
   };
 
   const handlePlayerPress = (playerId: string) => {
-    router.navigate(`/players/${playerId}`);
+    router.push(`/(tabs)/players/${playerId}`);
   };
 
   if (playersWithGames.length === 0) {

@@ -29,8 +29,8 @@ export function SortableBoxScoreTable({
   scrollable = true,
   getPlayerDisplayName,
 }: SortableBoxScoreTableProps) {
-  const [sortColumnIndex, setSortColumnIndex] = useState<number | null>(null);
-  const [sortDirection, setSortDirection] = useState<SortDirection>(null);
+  const [sortColumnIndex, setSortColumnIndex] = useState<number | null>(0);
+  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
 
   const headings = [
     "PTS",

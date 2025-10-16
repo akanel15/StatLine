@@ -34,6 +34,9 @@ export function RecentGamesTable({ games, context, playerId }: RecentGamesTableP
     "DREB",
     "TOV",
     "PF",
+    "FD",
+    "DEF",
+    "EFF",
     "+/-",
   ];
 
@@ -41,18 +44,27 @@ export function RecentGamesTable({ games, context, playerId }: RecentGamesTableP
     const safeDivide = (num: number, den: number) =>
       den === 0 ? "-" : Math.round((num / den) * 100).toString() + "%";
 
+    const fgm = stats[Stat.TwoPointMakes] + stats[Stat.ThreePointMakes];
+    const fga = stats[Stat.TwoPointAttempts] + stats[Stat.ThreePointAttempts];
+    const efficiency =
+      stats[Stat.Points] +
+      stats[Stat.Assists] +
+      stats[Stat.OffensiveRebounds] +
+      stats[Stat.DefensiveRebounds] +
+      stats[Stat.Steals] +
+      stats[Stat.Blocks] +
+      fgm -
+      (fga + stats[Stat.Turnovers]);
+
     return [
       stats[Stat.Points].toString(),
       (stats[Stat.DefensiveRebounds] + stats[Stat.OffensiveRebounds]).toString(),
       stats[Stat.Assists].toString(),
       stats[Stat.Steals].toString(),
       stats[Stat.Blocks].toString(),
-      (stats[Stat.TwoPointMakes] + stats[Stat.ThreePointMakes]).toString(),
-      (stats[Stat.TwoPointAttempts] + stats[Stat.ThreePointAttempts]).toString(),
-      safeDivide(
-        stats[Stat.TwoPointMakes] + stats[Stat.ThreePointMakes],
-        stats[Stat.TwoPointAttempts] + stats[Stat.ThreePointAttempts],
-      ),
+      fgm.toString(),
+      fga.toString(),
+      safeDivide(fgm, fga),
       stats[Stat.TwoPointMakes].toString(),
       stats[Stat.TwoPointAttempts].toString(),
       safeDivide(stats[Stat.TwoPointMakes], stats[Stat.TwoPointAttempts]),
@@ -66,6 +78,9 @@ export function RecentGamesTable({ games, context, playerId }: RecentGamesTableP
       stats[Stat.DefensiveRebounds].toString(),
       stats[Stat.Turnovers].toString(),
       stats[Stat.FoulsCommitted].toString(),
+      stats[Stat.FoulsDrawn].toString(),
+      stats[Stat.Deflections].toString(),
+      efficiency.toString(),
       stats[Stat.PlusMinus].toString(),
     ];
   };
@@ -114,7 +129,7 @@ export function RecentGamesTable({ games, context, playerId }: RecentGamesTableP
   });
 
   const handleGamePress = (gameId: string) => {
-    router.navigate(`/games/${gameId}`);
+    router.push(`/(tabs)/games/${gameId}`);
   };
 
   return (

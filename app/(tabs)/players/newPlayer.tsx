@@ -1,6 +1,7 @@
 import { StatLineButton } from "@/components/StatLineButton";
-import { StatLineImage } from "@/components/StatLineImage";
+import { PlayerImage } from "@/components/PlayerImage";
 import { usePlayerStore } from "@/store/playerStore";
+import { PlayerType } from "@/types/player";
 import { theme } from "@/theme";
 import { useRouter } from "expo-router";
 import { useState } from "react";
@@ -56,11 +57,19 @@ export default function NewPlayer() {
         onPress={handlePlayerImageSelection}
       >
         <View style={styles.imageContainer}>
-          <StatLineImage imageUri={imageUri}></StatLineImage>
+          <PlayerImage
+            player={
+              {
+                number: playerNumber || 0,
+                imageUri: imageUri,
+              } as PlayerType
+            }
+            size={100}
+          />
           <View style={styles.photoOverlay}>
             <Ionicons
               name={imageUri ? "camera" : "add-circle"}
-              size={32}
+              size={14}
               color={theme.colorWhite}
             />
             <Text style={styles.photoText}>{imageUri ? "Change Photo" : "Add Photo"}</Text>
@@ -110,16 +119,16 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0, 0, 0, 0.7)",
     borderBottomLeftRadius: 50,
     borderBottomRightRadius: 50,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
     alignItems: "center",
     justifyContent: "center",
     flexDirection: "row",
-    gap: 8,
+    gap: 4,
   },
   photoText: {
     color: theme.colorWhite,
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: "600",
   },
   header: {

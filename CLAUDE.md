@@ -52,6 +52,43 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 All stores use AsyncStorage persistence and support image storage via Expo FileSystem.
 
+### Navigation Patterns
+
+**Two Patterns - Both Correct and Necessary**:
+
+1. **Expo Router** (from `expo-router`)
+   ```typescript
+   import { router } from "expo-router";
+   router.navigate("/path");  // Navigate to route
+   router.back();             // Go back
+   router.replace("/path");   // Replace current route
+   ```
+   **Use cases**:
+   - Tab navigation
+   - Simple routing
+   - Programmatic navigation after mutations (create, update, delete)
+   - Navigation from tables and lists
+
+2. **React Navigation Hooks** (from `@react-navigation/native`)
+   ```typescript
+   import { useRoute, useNavigation } from "@react-navigation/native";
+   const { paramId } = useRoute().params;
+   const navigation = useNavigation();
+   navigation.setOptions({ title: "..." });
+   ```
+   **Use cases**:
+   - Dynamic routes with params (`[teamId]`, `[playerId]`, `[gameId]`, `[setId]`)
+   - Setting navigation options in `useLayoutEffect`
+   - Header customization
+   - Access to navigation state
+
+**Important**: Screens often use BOTH patterns together. For example, `[teamId]/index.tsx` uses:
+- `useRoute()` to get `teamId` from route params
+- `useNavigation()` to set header options
+- `router.navigate()` to navigate to player/game/set pages
+
+This is **correct architecture** - not redundancy.
+
 ### Navigation Structure
 ```
 app/
@@ -74,12 +111,38 @@ import { theme } from '@/theme';
 // Use: theme.colorOrangePeel, theme.colorOnyx, etc.
 ```
 
-#### Image Handling
-Images are copied to DocumentDirectory for persistence:
+#### Image/Logo Management System
+
+**Default Team Logos**:
+- Three built-in options: Basketball (`baskitball.png`), Falcon (`falcon.png`), Crown (`crown.png`)
+- Stored as string IDs in database: `"basketball"`, `"falcon"`, `"crown"`
+- Mapped to actual images by `StatLineImage` component using `DEFAULT_LOGOS` object
+- No file copying required - IDs are passed directly
+
+**Custom Team Images**:
+- User-uploaded images copied to `FileSystem.documentDirectory`
+- Filename format: `{timestamp}-{originalName}`
+- Persistent across app restarts
+- Pattern:
 ```typescript
 const savedImageUri = FileSystem.documentDirectory + `${timestamp}-${filename}`;
 await FileSystem.copyAsync({ from: imageUri, to: savedImageUri });
 ```
+
+**Detection Logic**:
+```typescript
+const defaultLogoIds = ["basketball", "falcon", "crown"];
+const isDefaultLogo = imageUri && defaultLogoIds.includes(imageUri);
+// Only copy custom images to file system
+if (imageUri && !isDefaultLogo) {
+  await FileSystem.copyAsync({ from: imageUri, to: savedImageUri });
+}
+```
+
+**Opponent Images**:
+- Optional custom image or auto-generated shield with team's first letter
+- Uses `OpponentImage` component which wraps `OpponentShield`
+- Fallback system with error handling
 
 #### Testing Requirements
 - Business logic (`logic/`): 95% coverage required
@@ -108,6 +171,43 @@ From WARP.md:
 
 ### Stat Categories
 Points, rebounds, assists, steals, blocks, turnovers, fouls, plus various shooting percentages tracked per player and team.
+
+### Player Averages System
+
+**Components**:
+- `PlayerAveragesTable` (`components/shared/PlayerAveragesTable.tsx`) - Sortable table showing per-game averages across 25 stat categories
+- `calculatePlayerAverages()` (`logic/playerAverages.ts`) - Calculation function dividing cumulative stats by games played
+
+**Features**:
+- Click column headers to sort ascending/descending
+- Horizontally scrollable with sticky left column for player names
+- Click player names to navigate to player detail page using `router.navigate()`
+- Handles edge cases (0 games played, percentage calculations)
+- Empty state when no players have game data
+- Full test coverage with 95%+ logic coverage
+
+**Usage**:
+```typescript
+<PlayerAveragesTable players={teamPlayers} stickyColumnHeader="Player" />
+```
+
+### Box Score Components
+
+**Two Implementations - Both Required**:
+
+1. **BoxScoreTable** (`components/shared/BoxScoreTable.tsx`)
+   - **Purpose**: Static display for sharing/exporting
+   - **Used by**: `ShareableBoxScore.tsx`
+   - **Features**: Non-sortable, can disable horizontal scrolling for image capture
+   - **Use case**: Generating shareable images of game stats
+
+2. **SortableBoxScoreTable** (`components/shared/SortableBoxScoreTable.tsx`)
+   - **Purpose**: Interactive viewing during games
+   - **Used by**: `BoxScoreOverlay.tsx`
+   - **Features**: Click-to-sort columns, interactive UI
+   - **Use case**: Live game statistics viewing
+
+**Important**: Do not consolidate these components - they serve different purposes.
 
 ## iOS Build & Deployment
 

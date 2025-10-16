@@ -16,8 +16,6 @@ export const exportToExcel = async () => {
   const wbout = XLSX.write(wb, { type: "base64", bookType: "xlsx" });
   const uri = FileSystem.cacheDirectory + "cities.xlsx";
 
-  console.log(`Writing to ${JSON.stringify(uri)} with text: ${wbout}`);
-
   await FileSystem.writeAsStringAsync(uri, wbout, {
     encoding: FileSystem.EncodingType.Base64,
   });

@@ -14,6 +14,7 @@ export default function App() {
   const teamPlayers = playersList
     .filter(player => player.teamId === teamId)
     .sort((a, b) => a.number - b.number);
+
   return (
     <FlatList
       style={styles.container}
