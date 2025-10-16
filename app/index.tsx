@@ -5,10 +5,19 @@ import { FlatList, StyleSheet, View } from "react-native";
 import { StatLineButton } from "@/components/StatLineButton";
 import { useTeamStore } from "@/store/teamStore";
 import { Link } from "expo-router";
+import { useEffect } from "react";
+import { runAppLoadHealthCheck } from "@/utils/appHealthCheck";
 
 export default function App() {
   const teams = useTeamStore(state => state.teams);
   const teamList = Object.values(teams);
+
+  // Run health check on app load
+  useEffect(() => {
+    runAppLoadHealthCheck().then(report => {
+      console.log("Health check report:", report);
+    });
+  }, []);
 
   return (
     <View style={styles.container}>
