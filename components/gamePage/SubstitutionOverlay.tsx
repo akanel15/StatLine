@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { View, Text, StyleSheet, FlatList, Pressable, Alert } from "react-native";
 import { StatLineButton } from "@/components/StatLineButton";
 import { useGameStore } from "@/store/gameStore";
@@ -6,6 +6,8 @@ import { usePlayerStore } from "@/store/playerStore";
 import { theme } from "@/theme";
 import { PlayerType } from "@/types/player";
 import { PlayerImage } from "../PlayerImage";
+import { useHelpStore } from "@/store/helpStore";
+import { ContextualTooltip } from "@/components/shared/ContextualTooltip";
 
 type SubstitutionOverlayProps = {
   gameId: string;
@@ -34,6 +36,24 @@ export default function SubstitutionOverlay({ gameId, onClose }: SubstitutionOve
   const [selectedActive, setSelectedActive] = useState<PlayerType[]>(defaultActivePlayers);
   const [selectedBench, setSelectedBench] = useState<PlayerType[]>(defaultBenchPlayers);
 
+  // Help hints
+  const hasSeenSubstitutionHint = useHelpStore(state => state.hasSeenSubstitutionHint);
+  const markHintAsSeen = useHelpStore(state => state.markHintAsSeen);
+  const [showSubstitutionHint, setShowSubstitutionHint] = useState(false);
+
+  // Show substitution hint on first overlay open
+  useEffect(() => {
+    if (!hasSeenSubstitutionHint) {
+      setShowSubstitutionHint(true);
+      // Mark as seen immediately when shown (not on dismiss)
+      markHintAsSeen("substitution");
+    }
+  }, [hasSeenSubstitutionHint, markHintAsSeen]);
+
+  const handleDismissSubstitutionHint = () => {
+    setShowSubstitutionHint(false);
+  };
+
   // Toggle active player selection (remove from active)
   const toggleActivePlayer = (player: PlayerType) => {
     setSelectedActive(prev => prev.filter(p => p.id !== player.id));
@@ -60,6 +80,18 @@ export default function SubstitutionOverlay({ gameId, onClose }: SubstitutionOve
   return (
     <View style={styles.overlay}>
       <Text style={styles.title}>Substitutions</Text>
+
+      {/* Absolute Positioned Tooltip */}
+      {showSubstitutionHint && (
+        <View style={styles.absoluteTooltipContainer} pointerEvents="box-none">
+          <ContextualTooltip
+            message="Select 1-5 active players. You can substitute anytime during the game."
+            onDismiss={handleDismissSubstitutionHint}
+            autoDismiss={true}
+            autoDismissDelay={10000}
+          />
+        </View>
+      )}
 
       <View style={styles.container}>
         {/* Active Players */}
@@ -188,5 +220,12 @@ const styles = StyleSheet.create({
   },
   section: {
     marginBottom: 10,
+  },
+  absoluteTooltipContainer: {
+    position: "absolute",
+    top: -30,
+    left: 10,
+    right: 10,
+    zIndex: 1000,
   },
 });
