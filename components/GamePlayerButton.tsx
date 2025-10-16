@@ -1,5 +1,5 @@
 import { theme } from "@/theme";
-import { StyleSheet, Text, Pressable, Platform, View } from "react-native";
+import { StyleSheet, Text, Pressable, Platform } from "react-native";
 import * as Haptics from "expo-haptics";
 import { PlayerType } from "@/types/player";
 import { getPlayerDisplayName } from "@/utils/displayHelpers";
@@ -39,16 +39,17 @@ export function GamePlayerButton({
         pressed && styles.buttonPressed,
       ]}
     >
-      <View style={styles.content}>
-        {playerNumber && !opponentName && (
-          <Text style={[styles.numberText, { color: theme.colorOnyx }]}>#{playerNumber}</Text>
-        )}
-        <Text style={[styles.text, { color: opponentName ? theme.colorWhite : theme.colorBlack }]}>
-          {opponentName
-            ? "Opponent"
+      <Text
+        numberOfLines={2}
+        ellipsizeMode="tail"
+        style={[styles.text, { color: opponentName ? theme.colorWhite : theme.colorBlack }]}
+      >
+        {opponentName
+          ? "Opponent"
+          : playerNumber
+            ? `#${playerNumber}\n${player?.name || (playerId ? getPlayerDisplayName(playerId) : "Unknown Player")}`
             : player?.name || (playerId ? getPlayerDisplayName(playerId) : "Unknown Player")}
-        </Text>
-      </View>
+      </Text>
     </Pressable>
   );
 }
@@ -56,15 +57,8 @@ export function GamePlayerButton({
 const styles = StyleSheet.create({
   text: {
     fontSize: 14,
-    flexShrink: 1,
-    flexWrap: "wrap",
     textAlign: "center",
-  },
-  numberText: {
-    fontSize: 16,
-    fontWeight: "700",
-    textAlign: "center",
-    marginBottom: 4,
+    lineHeight: 18,
   },
   button: {
     paddingVertical: 8,
@@ -75,7 +69,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     height: 80,
     width: 120,
-    marginVertical: 4,
+    marginVertical: 2,
     backgroundColor: theme.colorLightGrey,
   },
   buttonLarge: {
@@ -87,14 +81,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     height: 100,
     width: 120,
-    marginVertical: 4,
+    marginVertical: 2,
     backgroundColor: theme.colorLightGrey,
   },
   buttonPressed: {
     backgroundColor: theme.colorOrangePeel,
-  },
-  content: {
-    width: "100%",
-    alignItems: "center",
   },
 });

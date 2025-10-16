@@ -15,7 +15,20 @@ export function GameCountSelectorModal({
   onSelect,
   totalGames,
 }: GameCountSelectorModalProps) {
-  const options = [1, 3, 5, 10];
+  // Generate dynamic options based on total games
+  const generateOptions = () => {
+    const options: number[] = [];
+
+    // Add conditional options based on game count
+    if (totalGames > 5) options.push(5);
+    if (totalGames > 10) options.push(10);
+    if (totalGames > 20) options.push(20);
+    if (totalGames > 50) options.push(50);
+
+    return options;
+  };
+
+  const options = generateOptions();
 
   const handleSelect = (count: number) => {
     const actualCount = Math.min(count, totalGames);
@@ -42,34 +55,25 @@ export function GameCountSelectorModal({
 
               {/* Options */}
               <View style={styles.optionsContainer}>
-                {options.map(count => {
-                  const isAvailable = count <= totalGames;
-                  return (
-                    <TouchableOpacity
-                      key={count}
-                      style={[styles.option, !isAvailable && styles.optionDisabled]}
-                      onPress={() => handleSelect(count)}
-                      disabled={!isAvailable}
-                    >
-                      <Text style={[styles.optionText, !isAvailable && styles.optionTextDisabled]}>
-                        Last {count} {count === 1 ? "game" : "games"}
-                      </Text>
-                      <Feather
-                        name="chevron-right"
-                        size={20}
-                        color={isAvailable ? theme.colorOrangePeel : theme.colorGrey}
-                      />
-                    </TouchableOpacity>
-                  );
-                })}
-
-                {/* All games option */}
-                {totalGames > 10 && (
-                  <TouchableOpacity style={styles.option} onPress={() => handleSelect(totalGames)}>
-                    <Text style={styles.optionText}>All {totalGames} games</Text>
+                {/* Dynamic game count options */}
+                {options.map(count => (
+                  <TouchableOpacity
+                    key={count}
+                    style={styles.option}
+                    onPress={() => handleSelect(count)}
+                  >
+                    <Text style={styles.optionText}>
+                      Last {count} {count === 1 ? "game" : "games"}
+                    </Text>
                     <Feather name="chevron-right" size={20} color={theme.colorOrangePeel} />
                   </TouchableOpacity>
-                )}
+                ))}
+
+                {/* All games option - always shown */}
+                <TouchableOpacity style={styles.option} onPress={() => handleSelect(totalGames)}>
+                  <Text style={styles.optionText}>All games</Text>
+                  <Feather name="chevron-right" size={20} color={theme.colorOrangePeel} />
+                </TouchableOpacity>
               </View>
 
               {/* Cancel Button */}
@@ -130,17 +134,10 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: theme.colorOrangePeel,
   },
-  optionDisabled: {
-    borderColor: theme.colorLightGrey,
-    opacity: 0.5,
-  },
   optionText: {
     fontSize: 16,
     fontWeight: "600",
     color: theme.colorOnyx,
-  },
-  optionTextDisabled: {
-    color: theme.colorGrey,
   },
   cancelButton: {
     padding: 16,

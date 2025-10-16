@@ -3,8 +3,11 @@ import { theme } from "@/theme";
 import { Link } from "expo-router";
 import { PlayerImage } from "./PlayerImage";
 import { PlayerType } from "@/types/player";
+import { calculatePlayerCardStats, formatStatForCard } from "@/logic/cardStats";
 
 export function PlayerCard({ player }: { player: PlayerType }) {
+  const { ppg, rpg, apg, gamesPlayed } = calculatePlayerCardStats(player);
+
   return (
     <Link href={`/players/${player.id}`} asChild>
       <Pressable style={styles.playerCard}>
@@ -13,7 +16,17 @@ export function PlayerCard({ player }: { player: PlayerType }) {
           <Text numberOfLines={1} style={styles.playerName}>
             {player.name}
           </Text>
-          <Text style={styles.subtitle}>Click to see more</Text>
+          {gamesPlayed > 0 ? (
+            <>
+              <Text style={styles.stats}>
+                {formatStatForCard(ppg)} PPG • {formatStatForCard(rpg)} RPG •{" "}
+                {formatStatForCard(apg)} APG
+              </Text>
+              <Text style={styles.gamesPlayed}>{gamesPlayed} Games</Text>
+            </>
+          ) : (
+            <Text style={styles.subtitle}>No stats yet</Text>
+          )}
         </View>
       </Pressable>
     </Link>
@@ -47,6 +60,17 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     color: theme.colorGrey,
+    marginLeft: 16,
+  },
+  stats: {
+    color: theme.colorOnyx,
+    fontSize: 14,
+    marginLeft: 16,
+    marginBottom: 2,
+  },
+  gamesPlayed: {
+    color: theme.colorGrey,
+    fontSize: 12,
     marginLeft: 16,
   },
 });

@@ -4,15 +4,16 @@ import {
   View,
   Text,
   TextInput,
-  Pressable,
+  TouchableOpacity,
   Alert,
   StyleSheet,
-  ActivityIndicator,
   Platform,
 } from "react-native";
 import { theme } from "@/theme";
-import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
+import Feather from "@expo/vector-icons/Feather";
 import * as Haptics from "expo-haptics";
+import * as ImagePicker from "expo-image-picker";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { useGameStore } from "@/store/gameStore";
 import { useTeamStore } from "@/store/teamStore";
 import { usePlayerStore } from "@/store/playerStore";
@@ -20,6 +21,7 @@ import { Result } from "@/types/player";
 import { Stat } from "@/types/stats";
 import { Team } from "@/types/game";
 import { confirmGameDeletion } from "@/utils/playerDeletion";
+import { OpponentImage } from "@/components/OpponentImage";
 
 interface EditGameModalProps {
   gameId: string;
@@ -30,7 +32,7 @@ interface EditGameModalProps {
 
 export function EditGameModal({ gameId, visible, onClose, onDelete }: EditGameModalProps) {
   const [editedOpposingTeamName, setEditedOpposingTeamName] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [editedImageUri, setEditedImageUri] = useState<string | undefined>();
 
   const getGameSafely = useGameStore(state => state.getGameSafely);
   const updateGame = useGameStore(state => state.updateGame);
@@ -47,12 +49,25 @@ export function EditGameModal({ gameId, visible, onClose, onDelete }: EditGameMo
   useEffect(() => {
     if (visible && game) {
       setEditedOpposingTeamName(game.opposingTeamName);
+      setEditedImageUri(game.opposingTeamImageUri);
     }
   }, [visible, game]);
 
   const handleHapticFeedback = () => {
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+  };
+
+  const handleOpponentImagePicker = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      quality: 1,
+      allowsEditing: true,
+      aspect: [1, 1],
+    });
+    if (!result.canceled) {
+      setEditedImageUri(result.assets[0].uri);
     }
   };
 
@@ -83,7 +98,7 @@ export function EditGameModal({ gameId, visible, onClose, onDelete }: EditGameMo
     onClose();
   };
 
-  const handleSaveChanges = async () => {
+  const handleSaveChanges = () => {
     handleHapticFeedback();
     if (!game) return;
 
@@ -92,22 +107,17 @@ export function EditGameModal({ gameId, visible, onClose, onDelete }: EditGameMo
       return;
     }
 
-    setIsLoading(true);
-    try {
-      await updateGame(gameId, {
-        opposingTeamName: editedOpposingTeamName.trim(),
-      });
-      onClose();
-    } catch {
-      Alert.alert("Error", "Failed to update game. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
+    updateGame(gameId, {
+      opposingTeamName: editedOpposingTeamName.trim(),
+      opposingTeamImageUri: editedImageUri,
+    });
+    onClose();
   };
 
   const handleCancel = () => {
     handleHapticFeedback();
     setEditedOpposingTeamName(game?.opposingTeamName || "");
+    setEditedImageUri(game?.opposingTeamImageUri);
     onClose();
   };
 
@@ -125,201 +135,134 @@ export function EditGameModal({ gameId, visible, onClose, onDelete }: EditGameMo
   if (!game) return null;
 
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      presentationStyle="pageSheet"
-      onRequestClose={handleCancel}
-    >
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Edit Game</Text>
-          <Text style={styles.subtitle}>vs {game.opposingTeamName}</Text>
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={handleCancel}>
+      <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={handleCancel}>
+        <View style={styles.modalContainer}>
+          <TouchableOpacity activeOpacity={1}>
+            <KeyboardAwareScrollView
+              style={styles.modalContent}
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={styles.scrollContent}
+            >
+              {/* Header with Close Button */}
+              <View style={styles.header}>
+                <Text style={styles.title}>Edit Game</Text>
+                <TouchableOpacity onPress={handleCancel} hitSlop={20}>
+                  <Feather name="x" size={24} color={theme.colorOnyx} />
+                </TouchableOpacity>
+              </View>
+
+              {/* Opponent Image Editor */}
+              <View style={styles.centered}>
+                <OpponentImage
+                  imageUri={editedImageUri}
+                  teamName={editedOpposingTeamName}
+                  size={100}
+                  showOverlay={true}
+                  onPress={handleOpponentImagePicker}
+                />
+              </View>
+
+              {/* Opponent Name Input */}
+              <Text style={styles.inputLabel}>Opponent Name</Text>
+              <TextInput
+                style={styles.textInput}
+                value={editedOpposingTeamName}
+                onChangeText={setEditedOpposingTeamName}
+                placeholder="LA Lakers"
+                autoCapitalize="words"
+              />
+
+              {/* Action Buttons */}
+              <View style={styles.actionsSection}>
+                {/* Save Changes */}
+                <TouchableOpacity style={styles.optionButton} onPress={handleSaveChanges}>
+                  <View style={styles.optionContent}>
+                    <Feather name="save" size={20} color={theme.colorOrangePeel} />
+                    <View style={styles.optionTextContainer}>
+                      <Text style={styles.optionText}>Save Changes</Text>
+                      <Text style={styles.optionSubtext}>Update game info and stay completed</Text>
+                    </View>
+                  </View>
+                  <Feather name="chevron-right" size={20} color={theme.colorOrangePeel} />
+                </TouchableOpacity>
+
+                {/* Continue Game */}
+                <TouchableOpacity style={styles.optionButton} onPress={handleContinueGame}>
+                  <View style={styles.optionContent}>
+                    <Feather name="play" size={20} color={theme.colorOrangePeel} />
+                    <View style={styles.optionTextContainer}>
+                      <Text style={styles.optionText}>Continue Game</Text>
+                      <Text style={styles.optionSubtext}>Resume adding stats and plays</Text>
+                    </View>
+                  </View>
+                  <Feather name="chevron-right" size={20} color={theme.colorOrangePeel} />
+                </TouchableOpacity>
+
+                {/* Delete Game */}
+                <TouchableOpacity
+                  style={[styles.optionButton, styles.deleteButton]}
+                  onPress={handleDeleteGame}
+                >
+                  <View style={styles.optionContent}>
+                    <Feather name="trash-2" size={20} color={theme.colorDestructive} />
+                    <View style={styles.optionTextContainer}>
+                      <Text style={[styles.optionText, styles.deleteText]}>Delete Game</Text>
+                      <Text style={[styles.optionSubtext, styles.deleteSubtext]}>
+                        Permanently remove this game
+                      </Text>
+                    </View>
+                  </View>
+                  <Feather name="chevron-right" size={20} color={theme.colorDestructive} />
+                </TouchableOpacity>
+              </View>
+
+              {/* Cancel Button */}
+              <TouchableOpacity style={styles.cancelButton} onPress={handleCancel}>
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+            </KeyboardAwareScrollView>
+          </TouchableOpacity>
         </View>
-
-        <View style={styles.content}>
-          {/* Team Name Editor */}
-          <View style={styles.inputSection}>
-            <Text style={styles.inputLabel}>Opposing Team Name</Text>
-            <TextInput
-              style={styles.textInput}
-              value={editedOpposingTeamName}
-              onChangeText={setEditedOpposingTeamName}
-              placeholder="Enter opposing team name"
-              autoCapitalize="words"
-              editable={!isLoading}
-            />
-          </View>
-
-          {/* Action Buttons */}
-          <View style={styles.actionsSection}>
-            <Pressable
-              style={({ pressed }) => [
-                styles.actionButton,
-                styles.saveButton,
-                pressed && styles.buttonPressed,
-              ]}
-              onPress={handleSaveChanges}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <ActivityIndicator size="small" color={theme.colorWhite} />
-              ) : (
-                <FontAwesome5 name="save" size={20} color={theme.colorWhite} />
-              )}
-              <View style={styles.buttonTextContainer}>
-                <Text style={styles.actionButtonText}>
-                  {isLoading ? "Saving..." : "Save Changes"}
-                </Text>
-                <Text style={styles.actionButtonSubtext}>Update team name and stay completed</Text>
-              </View>
-            </Pressable>
-
-            <Pressable
-              style={({ pressed }) => [
-                styles.actionButton,
-                styles.resumeButton,
-                pressed && styles.buttonPressed,
-              ]}
-              onPress={handleContinueGame}
-              disabled={isLoading}
-            >
-              <FontAwesome5 name="play" size={20} color={theme.colorOrangePeel} />
-              <View style={styles.buttonTextContainer}>
-                <Text style={[styles.actionButtonText, styles.resumeButtonText]}>
-                  Continue Game
-                </Text>
-                <Text style={[styles.actionButtonSubtext, styles.resumeButtonSubtext]}>
-                  Resume adding stats and plays
-                </Text>
-              </View>
-            </Pressable>
-
-            {/* Delete Button */}
-            <Pressable
-              style={({ pressed }) => [
-                styles.actionButton,
-                styles.deleteButton,
-                pressed && styles.buttonPressed,
-              ]}
-              onPress={handleDeleteGame}
-              disabled={isLoading}
-            >
-              <FontAwesome5 name="trash-alt" size={20} color={theme.colorWhite} />
-              <View style={styles.buttonTextContainer}>
-                <Text style={[styles.actionButtonText, styles.deleteButtonText]}>Delete Game</Text>
-                <Text style={[styles.actionButtonSubtext, styles.deleteButtonSubtext]}>
-                  Permanently remove this game
-                </Text>
-              </View>
-            </Pressable>
-
-            <Pressable
-              style={({ pressed }) => [styles.cancelButton, pressed && styles.buttonPressed]}
-              onPress={handleCancel}
-              disabled={isLoading}
-            >
-              <Text style={styles.cancelButtonText}>Cancel</Text>
-            </Pressable>
-          </View>
-        </View>
-      </View>
+      </TouchableOpacity>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  backdrop: {
     flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContainer: {
+    width: "90%",
+    maxWidth: 500,
+    maxHeight: "80%",
+  },
+  modalContent: {
     backgroundColor: theme.colorWhite,
+    borderRadius: 16,
+    maxHeight: "100%",
+  },
+  scrollContent: {
+    padding: 20,
   },
   header: {
-    padding: 24,
-    paddingTop: 60,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colorLightGrey,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 24,
   },
   title: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: "700",
     color: theme.colorOnyx,
-    marginBottom: 4,
   },
-  subtitle: {
-    fontSize: 16,
-    color: theme.colorOnyx,
-    opacity: 0.7,
-  },
-  content: {
-    flex: 1,
-    padding: 24,
-  },
-  actionButton: {
-    flexDirection: "row",
+  centered: {
     alignItems: "center",
-    paddingVertical: 20,
-    paddingHorizontal: 24,
-    borderRadius: 12,
-    marginBottom: 16,
-    gap: 16,
-  },
-  saveButton: {
-    backgroundColor: theme.colorOrangePeel,
-  },
-  resumeButton: {
-    backgroundColor: theme.colorWhite,
-    borderWidth: 2,
-    borderColor: theme.colorOrangePeel,
-  },
-  buttonPressed: {
-    opacity: 0.8,
-    transform: [{ scale: 0.98 }],
-  },
-  buttonTextContainer: {
-    flex: 1,
-  },
-  actionButtonText: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: theme.colorWhite,
-    marginBottom: 2,
-  },
-  resumeButtonText: {
-    color: theme.colorOrangePeel,
-  },
-  actionButtonSubtext: {
-    fontSize: 14,
-    color: theme.colorWhite,
-    opacity: 0.9,
-  },
-  resumeButtonSubtext: {
-    color: theme.colorOrangePeel,
-  },
-  deleteButton: {
-    backgroundColor: theme.colorDestructive,
-  },
-  deleteButtonText: {
-    color: theme.colorWhite,
-  },
-  deleteButtonSubtext: {
-    color: theme.colorWhite,
-  },
-  actionsSection: {
-    gap: 16,
-  },
-  cancelButton: {
-    marginTop: 8,
-    paddingVertical: 16,
-    alignItems: "center",
-  },
-  cancelButtonText: {
-    fontSize: 16,
-    fontWeight: "500",
-    color: theme.colorOnyx,
-    opacity: 0.7,
-  },
-  inputSection: {
-    marginBottom: 32,
+    marginBottom: 24,
   },
   inputLabel: {
     fontSize: 16,
@@ -328,12 +271,67 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   textInput: {
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: theme.colorLightGrey,
     borderRadius: 8,
-    padding: 16,
+    padding: 12,
     fontSize: 16,
     backgroundColor: theme.colorWhite,
+    color: theme.colorOnyx,
+    marginBottom: 24,
+  },
+  actionsSection: {
+    gap: 12,
+    marginBottom: 20,
+  },
+  optionButton: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 16,
+    backgroundColor: theme.colorWhite,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: theme.colorOrangePeel,
+  },
+  deleteButton: {
+    borderColor: theme.colorDestructive,
+  },
+  optionContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    flex: 1,
+  },
+  optionTextContainer: {
+    flex: 1,
+  },
+  optionText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: theme.colorOnyx,
+    marginBottom: 2,
+  },
+  deleteText: {
+    color: theme.colorDestructive,
+  },
+  optionSubtext: {
+    fontSize: 13,
+    color: theme.colorGrey,
+  },
+  deleteSubtext: {
+    color: theme.colorDestructive,
+    opacity: 0.8,
+  },
+  cancelButton: {
+    padding: 16,
+    backgroundColor: theme.colorLightGrey,
+    borderRadius: 12,
+    alignItems: "center",
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
     color: theme.colorOnyx,
   },
 });

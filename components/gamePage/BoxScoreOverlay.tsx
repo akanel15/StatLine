@@ -65,7 +65,6 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     flex: 1,
-    marginBottom: 20,
   },
   tableWrapper: {
     marginHorizontal: 4,

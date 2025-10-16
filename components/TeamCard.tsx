@@ -4,6 +4,7 @@ import { useTeamStore } from "@/store/teamStore";
 import { StatLineImage } from "./StatLineImage";
 import { Link } from "expo-router";
 import { TeamType } from "@/types/team";
+import { calculateTeamPPG, formatRecord, formatStatForCard } from "@/logic/cardStats";
 
 export function TeamCard({ team }: { team: TeamType }) {
   const updateTeamId = useTeamStore(state => state.setCurrentTeamId);
@@ -11,6 +12,10 @@ export function TeamCard({ team }: { team: TeamType }) {
   const handlePress = () => {
     updateTeamId(team.id);
   };
+
+  const gamesPlayed = team.gameNumbers.gamesPlayed;
+  const record = formatRecord(team.gameNumbers);
+  const teamPPG = calculateTeamPPG(team);
 
   return (
     <Link href={`/${team.id}`} asChild>
@@ -21,7 +26,14 @@ export function TeamCard({ team }: { team: TeamType }) {
           <Text numberOfLines={1} style={styles.teamName}>
             {team.name}
           </Text>
-          <Text style={styles.subtitle}>Click to see more</Text>
+          {gamesPlayed > 0 ? (
+            <>
+              <Text style={styles.record}>{record} Record</Text>
+              <Text style={styles.ppg}>{formatStatForCard(teamPPG)} PPG</Text>
+            </>
+          ) : (
+            <Text style={styles.subtitle}>No games yet</Text>
+          )}
         </View>
       </Pressable>
     </Link>
@@ -55,5 +67,14 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     color: theme.colorGrey,
+  },
+  record: {
+    color: theme.colorOnyx,
+    fontSize: 14,
+    marginBottom: 2,
+  },
+  ppg: {
+    color: theme.colorGrey,
+    fontSize: 12,
   },
 });

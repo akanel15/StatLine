@@ -3,18 +3,11 @@ import { theme } from "@/theme";
 import { Link } from "expo-router";
 import { Stat } from "@/types/stats";
 import { SetType } from "@/types/set";
+import { IconAvatar } from "./shared/IconAvatar";
 
 // Helper functions for calculating statistics
 const calculatePerRunStat = (statValue: number, runCount: number): number => {
   return runCount > 0 ? statValue / runCount : 0;
-};
-
-const calculatePercentage = (made: number, attempted: number): number => {
-  return attempted > 0 ? (made / attempted) * 100 : 0;
-};
-
-const formatPercentage = (percentage: number): string => {
-  return percentage.toFixed(0);
 };
 
 const formatPerRun = (value: number): string => {
@@ -26,34 +19,27 @@ export function SetCard({ set }: { set: SetType }) {
   const pointsPerRun = calculatePerRunStat(set.stats[Stat.Points], set.runCount);
   const assistsPerRun = calculatePerRunStat(set.stats[Stat.Assists], set.runCount);
 
-  // Calculate shooting percentages
-  const twoPointPercentage = calculatePercentage(
-    set.stats[Stat.TwoPointMakes],
-    set.stats[Stat.TwoPointAttempts],
-  );
-  const threePointPercentage = calculatePercentage(
-    set.stats[Stat.ThreePointMakes],
-    set.stats[Stat.ThreePointAttempts],
-  );
-
   return (
     <View style={styles.setCard}>
       <Link href={`/sets/${set.id}`} asChild>
         <Pressable style={styles.cardContent}>
-          <View style={styles.leftSection}>
+          <IconAvatar size={60} icon="📋" />
+          <View style={styles.details}>
             <Text numberOfLines={1} style={styles.setName}>
               {set.name}
             </Text>
-            <Text style={styles.usageText}>{set.runCount} runs</Text>
-          </View>
-
-          <View style={styles.rightSection}>
-            <Text style={styles.primaryStat}>{formatPerRun(pointsPerRun)} pts/run</Text>
-            <Text style={styles.secondaryStat}>
-              {formatPercentage(twoPointPercentage)}% 2PT • {formatPercentage(threePointPercentage)}
-              % 3PT
-            </Text>
-            <Text style={styles.secondaryStat}>{formatPerRun(assistsPerRun)} ast/run</Text>
+            {set.runCount > 0 ? (
+              <>
+                <Text style={styles.runCount}>
+                  {set.runCount} {set.runCount === 1 ? "run" : "runs"}
+                </Text>
+                <Text style={styles.stats}>
+                  {formatPerRun(pointsPerRun)} pts/run • {formatPerRun(assistsPerRun)} ast/run
+                </Text>
+              </>
+            ) : (
+              <Text style={styles.subtitle}>No runs yet</Text>
+            )}
           </View>
         </Pressable>
       </Link>
@@ -67,8 +53,8 @@ const styles = StyleSheet.create({
     shadowColor: theme.colorOnyx,
     backgroundColor: theme.colorWhite,
     borderRadius: 6,
-    padding: 12,
-    marginBottom: 12,
+    padding: 8,
+    marginBottom: 8,
     shadowOffset: {
       width: 0,
       height: 1,
@@ -76,19 +62,15 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.22,
     shadowRadius: 2.22,
     elevation: 3,
-    alignItems: "center",
   },
   cardContent: {
     flexDirection: "row",
     flex: 1,
-    justifyContent: "space-between",
+    alignItems: "center",
   },
-  leftSection: {
+  details: {
+    marginLeft: 16,
     flex: 1,
-    justifyContent: "center",
-  },
-  rightSection: {
-    alignItems: "flex-end",
     justifyContent: "center",
   },
   setName: {
@@ -97,20 +79,17 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     color: theme.colorOnyx,
   },
-  usageText: {
+  runCount: {
     fontSize: 14,
-    color: theme.colorGrey,
-  },
-  primaryStat: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: theme.colorOrangePeel,
+    color: theme.colorOnyx,
     marginBottom: 2,
   },
-  secondaryStat: {
+  stats: {
     fontSize: 12,
     color: theme.colorGrey,
-    marginBottom: 1,
-    textAlign: "right",
+  },
+  subtitle: {
+    fontSize: 14,
+    color: theme.colorGrey,
   },
 });
