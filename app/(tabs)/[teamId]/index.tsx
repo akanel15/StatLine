@@ -18,9 +18,8 @@ import { StatLineImage } from "@/components/StatLineImage";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Stat } from "@/types/stats";
-import { Team } from "@/types/game";
-import { StatCard } from "@/components/shared/StatCard";
 import { RecentGamesTable } from "@/components/shared/RecentGamesTable";
+import { TeamStatsTable } from "@/components/shared/TeamStatsTable";
 import { router } from "expo-router";
 import { useGameStore } from "@/store/gameStore";
 import { usePlayerStore } from "@/store/playerStore";
@@ -32,7 +31,6 @@ import { TeamDeletionConfirm } from "@/components/deletion/TeamDeletionConfirm";
 import { getTeamDeletionInfo } from "@/utils/cascadeDelete";
 import { LoadingState } from "@/components/LoadingState";
 import * as ImagePicker from "expo-image-picker";
-import { formatPercentage } from "@/utils/basketball";
 import ViewShot from "react-native-view-shot";
 import { ShareableRecentGamesTable } from "@/components/shared/ShareableRecentGamesTable";
 import { shareBoxScoreImage } from "@/utils/shareBoxScore";
@@ -40,6 +38,8 @@ import { sanitizeFileName } from "@/utils/filename";
 import Feather from "@expo/vector-icons/Feather";
 import { GameCountSelectorModal } from "@/components/shared/GameCountSelectorModal";
 import { Image } from "react-native";
+import { PlayerAveragesShareModal } from "@/components/shared/PlayerAveragesShareModal";
+import { ShareablePlayerAveragesTable } from "@/components/shared/ShareablePlayerAveragesTable";
 
 // Default team logo options (same as in newTeam.tsx)
 const DEFAULT_TEAM_LOGOS = [
@@ -76,8 +76,6 @@ export default function TeamPage() {
   const setsList = Object.values(sets);
   const teamSets = setsList.filter(set => set.teamId === teamId);
 
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [currentMode, setCurrentMode] = useState(Team.Us);
   const [showDeletionConfirm, setShowDeletionConfirm] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editedName, setEditedName] = useState("");
@@ -90,6 +88,11 @@ export default function TeamPage() {
   const [selectedGameCount, setSelectedGameCount] = useState(3);
   const [currentPage, setCurrentPage] = useState(0);
   const shareableRef = useRef<ViewShot>(null);
+  const [showPlayerAveragesShareModal, setShowPlayerAveragesShareModal] = useState(false);
+  const [showPlayerAveragesShareViewShot, setShowPlayerAveragesShareViewShot] = useState(false);
+  const [selectedPlayerIds, setSelectedPlayerIds] = useState<string[]>([]);
+  const [isSharingPlayerAverages, setIsSharingPlayerAverages] = useState(false);
+  const shareablePlayerAveragesRef = useRef<ViewShot>(null);
 
   const team = getTeamSafely(teamId);
   const teamName = team?.name || "Team";
@@ -211,129 +214,6 @@ export default function TeamPage() {
     return <LoadingState message="Loading team..." />;
   }
 
-  const toggleStatsType = (type: Team) => {
-    setCurrentMode(type);
-  };
-  const toggleExpanded = () => {
-    setIsExpanded(!isExpanded);
-  };
-
-  const getMainStats = (teamType: Team) => {
-    const divisor = team.gameNumbers.gamesPlayed || 1; // Avoid division by zero
-    return (
-      <>
-        <StatCard value={(team.stats[teamType][Stat.Points] / divisor).toFixed(1)} label="Points" />
-        <StatCard
-          value={(team.stats[teamType][Stat.Assists] / divisor).toFixed(1)}
-          label="Assists"
-        />
-        <StatCard
-          value={(
-            (team.stats[teamType][Stat.DefensiveRebounds] +
-              team.stats[teamType][Stat.OffensiveRebounds]) /
-            divisor
-          ).toFixed(1)}
-          label="Rebounds"
-        />
-        <StatCard value={(team.stats[teamType][Stat.Steals] / divisor).toFixed(1)} label="Steals" />
-        <StatCard value={(team.stats[teamType][Stat.Blocks] / divisor).toFixed(1)} label="Blocks" />
-        <StatCard
-          value={(team.stats[teamType][Stat.Turnovers] / divisor).toFixed(1)}
-          label="Turnovers"
-        />
-      </>
-    );
-  };
-
-  const getExpandedStats = (teamType: Team) => {
-    const divisor = team.gameNumbers.gamesPlayed || 1; // Avoid division by zero
-    return (
-      <>
-        <StatCard
-          value={(
-            (team.stats[teamType][Stat.TwoPointMakes] +
-              team.stats[teamType][Stat.ThreePointMakes]) /
-            divisor
-          ).toFixed(1)}
-          label="FGM"
-        />
-        <StatCard
-          value={(
-            (team.stats[teamType][Stat.TwoPointAttempts] +
-              team.stats[teamType][Stat.ThreePointAttempts]) /
-            divisor
-          ).toFixed(1)}
-          label="FGA"
-        />
-        <StatCard
-          value={formatPercentage(
-            team.stats[teamType][Stat.TwoPointMakes] + team.stats[teamType][Stat.ThreePointMakes],
-            team.stats[teamType][Stat.TwoPointAttempts] +
-              team.stats[teamType][Stat.ThreePointAttempts],
-          )}
-          label="FG%"
-        />
-        <StatCard
-          value={(team.stats[teamType][Stat.TwoPointMakes] / divisor).toFixed(1)}
-          label="2PM"
-        />
-        <StatCard
-          value={(team.stats[teamType][Stat.TwoPointAttempts] / divisor).toFixed(1)}
-          label="2PA"
-        />
-        <StatCard
-          value={formatPercentage(
-            team.stats[teamType][Stat.TwoPointMakes],
-            team.stats[teamType][Stat.TwoPointAttempts],
-          )}
-          label="2P%"
-        />
-        <StatCard
-          value={(team.stats[teamType][Stat.ThreePointMakes] / divisor).toFixed(1)}
-          label="3PM"
-        />
-        <StatCard
-          value={(team.stats[teamType][Stat.ThreePointAttempts] / divisor).toFixed(1)}
-          label="3PA"
-        />
-        <StatCard
-          value={formatPercentage(
-            team.stats[teamType][Stat.ThreePointMakes],
-            team.stats[teamType][Stat.ThreePointAttempts],
-          )}
-          label="3P%"
-        />
-        <StatCard
-          value={(team.stats[teamType][Stat.FreeThrowsMade] / divisor).toFixed(1)}
-          label="FTM"
-        />
-        <StatCard
-          value={(team.stats[teamType][Stat.FreeThrowsAttempted] / divisor).toFixed(1)}
-          label="FTA"
-        />
-        <StatCard
-          value={formatPercentage(
-            team.stats[teamType][Stat.FreeThrowsMade],
-            team.stats[teamType][Stat.FreeThrowsAttempted],
-          )}
-          label="FT%"
-        />
-        <StatCard
-          value={(team.stats[teamType][Stat.OffensiveRebounds] / divisor).toFixed(1)}
-          label="Off Rebs"
-        />
-        <StatCard
-          value={(team.stats[teamType][Stat.DefensiveRebounds] / divisor).toFixed(1)}
-          label="Def Rebs"
-        />
-        <StatCard
-          value={(team.stats[teamType][Stat.FoulsCommitted] / divisor).toFixed(1)}
-          label="Fouls"
-        />
-      </>
-    );
-  };
-
   // Helper functions for sets
   const calculatePerRunStat = (statValue: number, runCount: number): number => {
     return runCount > 0 ? statValue / runCount : 0;
@@ -366,21 +246,6 @@ export default function TeamPage() {
       }));
   };
 
-  const renderMainStats = (): React.ReactNode => {
-    if (currentMode === Team.Us) {
-      return getMainStats(Team.Us);
-    } else {
-      return getMainStats(Team.Opponent);
-    }
-  };
-  const renderExpandedStats = (): React.ReactNode => {
-    if (currentMode === Team.Us) {
-      return getExpandedStats(Team.Us);
-    } else {
-      return getExpandedStats(Team.Opponent);
-    }
-  };
-
   const handleShareRecentGames = () => {
     // Show game count selector first
     setShowGameCountSelector(true);
@@ -410,6 +275,44 @@ export default function TeamPage() {
         } finally {
           setIsSharing(false);
           setShowShareModal(false);
+        }
+      }, 500);
+    }, 300);
+  };
+
+  const handleSharePlayerAverages = () => {
+    setShowPlayerAveragesShareModal(true);
+  };
+
+  const handlePlayerAveragesShareSelected = (playerIds: string[]) => {
+    if (isSharingPlayerAverages) return;
+
+    setSelectedPlayerIds(playerIds);
+    setShowPlayerAveragesShareModal(false);
+
+    // Wait before starting share process
+    setTimeout(() => {
+      setIsSharingPlayerAverages(true);
+      setShowPlayerAveragesShareViewShot(true);
+
+      // Additional delay to ensure ViewShot modal is rendered
+      setTimeout(async () => {
+        try {
+          if (shareablePlayerAveragesRef.current) {
+            const rawTitle = `${team.name} Player Averages`;
+            const fileName = sanitizeFileName(rawTitle);
+
+            await shareBoxScoreImage(
+              shareablePlayerAveragesRef,
+              `${team.name} Player Averages`,
+              fileName,
+            );
+          }
+        } catch (error) {
+          console.error("Error sharing player averages:", error);
+        } finally {
+          setIsSharingPlayerAverages(false);
+          setShowPlayerAveragesShareViewShot(false);
         }
       }, 500);
     }, 300);
@@ -491,18 +394,6 @@ export default function TeamPage() {
             </TouchableOpacity>
           </View>
         )}
-
-        {/* Share Button */}
-        <TouchableOpacity
-          style={styles.shareGamesButton}
-          onPress={handleShareRecentGames}
-          disabled={isSharing}
-        >
-          <Feather name={isSharing ? "loader" : "share"} size={16} color={theme.colorOrangePeel} />
-          <Text style={styles.shareGamesButtonText}>
-            {isSharing ? "Sharing..." : "Share Recent Games"}
-          </Text>
-        </TouchableOpacity>
       </>
     );
   };
@@ -598,56 +489,51 @@ export default function TeamPage() {
       <View style={styles.padding}>
         {/* Team Stats */}
         <View style={styles.section}>
-          <View style={styles.statsHeader}>
-            <Text style={styles.sectionTitle}>Team Stats</Text>
-            <View style={styles.headerControls}>
-              <View style={styles.statsToggle}>
-                <TouchableOpacity
-                  style={[styles.toggleOption, currentMode === Team.Us && styles.activeToggle]}
-                  onPress={() => toggleStatsType(Team.Us)}
-                >
-                  <Text
-                    style={[styles.toggleText, currentMode === Team.Us && styles.activeToggleText]}
-                  >
-                    For
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.toggleOption,
-                    currentMode === Team.Opponent && styles.activeToggle,
-                  ]}
-                  onPress={() => toggleStatsType(Team.Opponent)}
-                >
-                  <Text
-                    style={[
-                      styles.toggleText,
-                      currentMode === Team.Opponent && styles.activeToggleText,
-                    ]}
-                  >
-                    Against
-                  </Text>
-                </TouchableOpacity>
-              </View>
-              <TouchableOpacity style={styles.expandBtn} onPress={toggleExpanded}>
-                <Text style={styles.expandText}>{isExpanded ? "Less" : "More"}</Text>
-                <Text style={styles.expandArrow}>{isExpanded ? "▲" : "▼"}</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-          <View style={styles.statsGrid}>
-            {renderMainStats()}
-            {isExpanded && renderExpandedStats()}
-          </View>
+          <Text style={styles.sectionTitle}>Team Stats</Text>
+          <TeamStatsTable team={team} />
         </View>
         {/* Recent Games */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Recent Games</Text>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Recent Games</Text>
+            {teamGames.length > 0 && (
+              <View style={{ paddingRight: 12 }}>
+                <TouchableOpacity
+                  onPress={handleShareRecentGames}
+                  disabled={isSharing}
+                  hitSlop={20}
+                >
+                  <Feather
+                    name={isSharing ? "loader" : "share"}
+                    size={20}
+                    color={theme.colorOrangePeel}
+                  />
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
           <View style={styles.recentGames}>{renderRecentGames()}</View>
         </View>
         {/* Player Averages */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Player Averages</Text>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Player Averages</Text>
+            {teamPlayers.filter(p => p.gameNumbers.gamesPlayed > 0).length > 0 && (
+              <View style={{ paddingRight: 12 }}>
+                <TouchableOpacity
+                  onPress={handleSharePlayerAverages}
+                  disabled={isSharingPlayerAverages}
+                  hitSlop={20}
+                >
+                  <Feather
+                    name={isSharingPlayerAverages ? "loader" : "share"}
+                    size={20}
+                    color={theme.colorOrangePeel}
+                  />
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
           <PlayerAveragesTable players={teamPlayers} stickyColumnHeader="Player" />
         </View>
 
@@ -663,10 +549,7 @@ export default function TeamPage() {
                   primaryStat={primaryStat}
                   secondaryStat={secondaryStat}
                   onPress={() => {
-                    router.navigate("/sets");
-                    setTimeout(() => {
-                      router.navigate(`/sets/${set.id}`);
-                    }, 0);
+                    router.push(`/(tabs)/sets/${set.id}`);
                   }}
                 />
               ))}
@@ -705,6 +588,14 @@ export default function TeamPage() {
         totalGames={teamGames.length}
       />
 
+      {/* Player Averages Share Modal */}
+      <PlayerAveragesShareModal
+        visible={showPlayerAveragesShareModal}
+        onClose={() => setShowPlayerAveragesShareModal(false)}
+        onShare={handlePlayerAveragesShareSelected}
+        players={teamPlayers}
+      />
+
       {/* Hidden Modal for Capturing Game Stats for Share */}
       <Modal
         visible={showShareModal}
@@ -724,6 +615,30 @@ export default function TeamPage() {
             <ShareableRecentGamesTable
               games={teamGames.slice(0, selectedGameCount)}
               context="team"
+              teamName={team.name}
+            />
+          </ViewShot>
+        </View>
+      </Modal>
+
+      {/* Hidden Modal for Capturing Player Averages for Share */}
+      <Modal
+        visible={showPlayerAveragesShareViewShot}
+        transparent={true}
+        animationType="none"
+        onRequestClose={() => setShowPlayerAveragesShareViewShot(false)}
+      >
+        <View style={styles.hiddenModalContainer}>
+          <ViewShot
+            ref={shareablePlayerAveragesRef}
+            options={{
+              format: "png",
+              quality: 0.9,
+              result: "tmpfile",
+            }}
+          >
+            <ShareablePlayerAveragesTable
+              players={teamPlayers.filter(p => selectedPlayerIds.includes(p.id))}
               teamName={team.name}
             />
           </ViewShot>
@@ -757,62 +672,11 @@ const styles = StyleSheet.create({
     color: theme.colorOnyx,
     marginBottom: 15,
   },
-  statsHeader: {
+  sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     marginBottom: 15,
-  },
-  headerControls: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  statsToggle: {
-    flexDirection: "row",
-    backgroundColor: theme.colorLightGrey,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: theme.colorLightGrey,
-    overflow: "hidden",
-  },
-  toggleOption: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-  },
-  activeToggle: {
-    backgroundColor: theme.colorOrangePeel,
-  },
-  toggleText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: theme.colorGrey,
-  },
-  activeToggleText: {
-    color: theme.colorWhite,
-  },
-  expandBtn: {
-    backgroundColor: theme.colorBlue,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 6,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-  },
-  expandText: {
-    color: theme.colorWhite,
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  expandArrow: {
-    color: theme.colorWhite,
-    fontSize: 12,
-  },
-  statsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
   },
   recentGames: {
     backgroundColor: theme.colorWhite,
@@ -826,24 +690,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colorLightGrey,
     overflow: "hidden",
-  },
-  shareGamesButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    backgroundColor: theme.colorWhite,
-    borderWidth: 1,
-    borderColor: theme.colorOrangePeel,
-    borderRadius: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    marginTop: 12,
-  },
-  shareGamesButtonText: {
-    color: theme.colorOrangePeel,
-    fontSize: 14,
-    fontWeight: "600",
   },
   paginationContainer: {
     flexDirection: "row",

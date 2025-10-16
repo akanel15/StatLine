@@ -16,21 +16,18 @@ import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import { theme } from "@/theme";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { PlayerImage } from "@/components/PlayerImage";
-import { Stat } from "@/types/stats";
 import { useGameStore } from "@/store/gameStore";
 import { useTeamStore } from "@/store/teamStore";
 import { router } from "expo-router";
-import { StatCard } from "@/components/shared/StatCard";
 import { RecentGamesTable } from "@/components/shared/RecentGamesTable";
+import { PlayerStatsTable } from "@/components/shared/PlayerStatsTable";
 import { RecordBadge } from "@/components/shared/RecordBadge";
-import { ViewAllButton } from "@/components/shared/ViewAllButton";
 import { EmptyStateText } from "@/components/shared/EmptyStateText";
 import { StatLineImage } from "@/components/StatLineImage";
 import { confirmPlayerDeletion } from "@/utils/playerDeletion";
 import { LoadingState } from "@/components/LoadingState";
 import * as ImagePicker from "expo-image-picker";
 import { StandardBackButton } from "@/components/StandardBackButton";
-import { formatPercentage } from "@/utils/basketball";
 import ViewShot from "react-native-view-shot";
 import { ShareableRecentGamesTable } from "@/components/shared/ShareableRecentGamesTable";
 import { shareBoxScoreImage } from "@/utils/shareBoxScore";
@@ -45,7 +42,6 @@ export default function PlayerPage() {
   const teams = useTeamStore(state => state.teams);
   const games = useGameStore(state => state.games);
 
-  const [isExpanded, setIsExpanded] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editedName, setEditedName] = useState("");
   const [editedNumber, setEditedNumber] = useState("");
@@ -163,101 +159,6 @@ export default function PlayerPage() {
   const gameList = Object.values(games);
   const playerGames = gameList.filter(game => game.boxScore[playerId] !== undefined);
 
-  const toggleExpanded = () => {
-    setIsExpanded(!isExpanded);
-  };
-
-  const getMainStats = () => {
-    const divisor = player.gameNumbers.gamesPlayed || 1;
-    return (
-      <>
-        <StatCard value={(player.stats[Stat.Points] / divisor).toFixed(1)} label="Points" />
-        <StatCard value={(player.stats[Stat.Assists] / divisor).toFixed(1)} label="Assists" />
-        <StatCard
-          value={(
-            (player.stats[Stat.DefensiveRebounds] + player.stats[Stat.OffensiveRebounds]) /
-            divisor
-          ).toFixed(1)}
-          label="Rebounds"
-        />
-        <StatCard value={(player.stats[Stat.Steals] / divisor).toFixed(1)} label="Steals" />
-        <StatCard value={(player.stats[Stat.Blocks] / divisor).toFixed(1)} label="Blocks" />
-        <StatCard value={(player.stats[Stat.Turnovers] / divisor).toFixed(1)} label="Turnovers" />
-      </>
-    );
-  };
-
-  const getExpandedStats = () => {
-    const divisor = player.gameNumbers.gamesPlayed || 1;
-    return (
-      <>
-        <StatCard
-          value={(
-            (player.stats[Stat.TwoPointMakes] + player.stats[Stat.ThreePointMakes]) /
-            divisor
-          ).toFixed(1)}
-          label="FGM"
-        />
-        <StatCard
-          value={(
-            (player.stats[Stat.TwoPointAttempts] + player.stats[Stat.ThreePointAttempts]) /
-            divisor
-          ).toFixed(1)}
-          label="FGA"
-        />
-        <StatCard
-          value={formatPercentage(
-            player.stats[Stat.TwoPointMakes] + player.stats[Stat.ThreePointMakes],
-            player.stats[Stat.TwoPointAttempts] + player.stats[Stat.ThreePointAttempts],
-          )}
-          label="FG%"
-        />
-        <StatCard value={(player.stats[Stat.TwoPointMakes] / divisor).toFixed(1)} label="2PM" />
-        <StatCard value={(player.stats[Stat.TwoPointAttempts] / divisor).toFixed(1)} label="2PA" />
-        <StatCard
-          value={formatPercentage(
-            player.stats[Stat.TwoPointMakes],
-            player.stats[Stat.TwoPointAttempts],
-          )}
-          label="2P%"
-        />
-        <StatCard value={(player.stats[Stat.ThreePointMakes] / divisor).toFixed(1)} label="3PM" />
-        <StatCard
-          value={(player.stats[Stat.ThreePointAttempts] / divisor).toFixed(1)}
-          label="3PA"
-        />
-        <StatCard
-          value={formatPercentage(
-            player.stats[Stat.ThreePointMakes],
-            player.stats[Stat.ThreePointAttempts],
-          )}
-          label="3P%"
-        />
-        <StatCard value={(player.stats[Stat.FreeThrowsMade] / divisor).toFixed(1)} label="FTM" />
-        <StatCard
-          value={(player.stats[Stat.FreeThrowsAttempted] / divisor).toFixed(1)}
-          label="FTA"
-        />
-        <StatCard
-          value={formatPercentage(
-            player.stats[Stat.FreeThrowsMade],
-            player.stats[Stat.FreeThrowsAttempted],
-          )}
-          label="FT%"
-        />
-        <StatCard
-          value={(player.stats[Stat.OffensiveRebounds] / divisor).toFixed(1)}
-          label="Off Rebs"
-        />
-        <StatCard
-          value={(player.stats[Stat.DefensiveRebounds] / divisor).toFixed(1)}
-          label="Def Rebs"
-        />
-        <StatCard value={(player.stats[Stat.FoulsCommitted] / divisor).toFixed(1)} label="Fouls" />
-      </>
-    );
-  };
-
   const handleShareRecentGames = () => {
     // Show game count selector first
     setShowGameCountSelector(true);
@@ -366,18 +267,6 @@ export default function PlayerPage() {
             </TouchableOpacity>
           </View>
         )}
-
-        {/* Share Button */}
-        <TouchableOpacity
-          style={styles.shareGamesButton}
-          onPress={handleShareRecentGames}
-          disabled={isSharing}
-        >
-          <Feather name={isSharing ? "loader" : "share"} size={16} color={theme.colorOrangePeel} />
-          <Text style={styles.shareGamesButtonText}>
-            {isSharing ? "Sharing..." : "Share Recent Games"}
-          </Text>
-        </TouchableOpacity>
       </>
     );
   };
@@ -436,24 +325,31 @@ export default function PlayerPage() {
       <View style={styles.padding}>
         {/* Player Stats */}
         <View style={styles.section}>
-          <View style={styles.statsHeader}>
-            <Text style={styles.sectionTitle}>Player Stats</Text>
-            <TouchableOpacity style={styles.expandBtn} onPress={toggleExpanded}>
-              <Text style={styles.expandText}>{isExpanded ? "Less" : "More"}</Text>
-              <Text style={styles.expandArrow}>{isExpanded ? "▲" : "▼"}</Text>
-            </TouchableOpacity>
-          </View>
-          <View style={styles.statsGrid}>
-            {getMainStats()}
-            {isExpanded && getExpandedStats()}
-          </View>
+          <Text style={styles.sectionTitle}>Player Stats</Text>
+          <PlayerStatsTable player={player} />
         </View>
 
         {/* Recent Games */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Recent Games</Text>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Recent Games</Text>
+            {playerGames.length > 0 && (
+              <View style={{ paddingRight: 12 }}>
+                <TouchableOpacity
+                  onPress={handleShareRecentGames}
+                  disabled={isSharing}
+                  hitSlop={20}
+                >
+                  <Feather
+                    name={isSharing ? "loader" : "share"}
+                    size={20}
+                    color={theme.colorOrangePeel}
+                  />
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
           <View style={styles.recentGames}>{renderRecentGames()}</View>
-          <ViewAllButton text="View All Games" onPress={() => router.navigate("/games")} />
         </View>
 
         {/* Team Information */}
@@ -555,34 +451,11 @@ const styles = StyleSheet.create({
     color: theme.colorOnyx,
     marginBottom: 15,
   },
-  statsHeader: {
+  sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     marginBottom: 15,
-  },
-  expandBtn: {
-    backgroundColor: theme.colorBlue,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 6,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-  },
-  expandText: {
-    color: theme.colorWhite,
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  expandArrow: {
-    color: theme.colorWhite,
-    fontSize: 12,
-  },
-  statsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
   },
   teamCard: {
     flexDirection: "row",
@@ -634,24 +507,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colorLightGrey,
     overflow: "hidden",
-  },
-  shareGamesButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    backgroundColor: theme.colorWhite,
-    borderWidth: 1,
-    borderColor: theme.colorOrangePeel,
-    borderRadius: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    marginTop: 12,
-  },
-  shareGamesButtonText: {
-    color: theme.colorOrangePeel,
-    fontSize: 14,
-    fontWeight: "600",
   },
   paginationContainer: {
     flexDirection: "row",

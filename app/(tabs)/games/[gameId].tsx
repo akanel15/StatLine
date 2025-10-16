@@ -45,6 +45,8 @@ import { StandardBackButton } from "@/components/StandardBackButton";
 import { EditGameModal } from "@/components/EditGameModal";
 import { handleStatUpdate as handleStatUpdateLogic } from "@/logic/statUpdates";
 import type { StatUpdateStoreActions } from "@/logic/statUpdates";
+import { useHelpStore } from "@/store/helpStore";
+import { ContextualTooltip } from "@/components/shared/ContextualTooltip";
 
 export default function GamePage() {
   const { gameId } = useRoute().params as { gameId: string }; // Access playerId from route params
@@ -53,6 +55,7 @@ export default function GamePage() {
   const teamId = useTeamStore(state => state.currentTeamId);
   const getTeamSafely = useTeamStore(state => state.getTeamSafely);
   const getGameSafely = useGameStore(state => state.getGameSafely);
+  const game = useGameStore(state => state.games[gameId]);
 
   const sets = useSetStore(state => state.sets);
   const setList = Object.values(sets);
@@ -93,6 +96,13 @@ export default function GamePage() {
   const [showSetsSection, setShowSetsSection] = useState(teamSets.length > 0);
   const [activeTab, setActiveTab] = useState<"boxscore" | "playbyplay">("boxscore");
 
+  // Help hints
+  const hasSeenGameFlowHint = useHelpStore(state => state.hasSeenGameFlowHint);
+  const hasSeenSetResetHint = useHelpStore(state => state.hasSeenSetResetHint);
+  const markHintAsSeen = useHelpStore(state => state.markHintAsSeen);
+  const [showGameFlowHint, setShowGameFlowHint] = useState(false);
+  const [showSetResetHint, setShowSetResetHint] = useState(false);
+
   //game stats
   const updateBoxScore = useGameStore(state => state.updateBoxScore);
   const updateTotals = useGameStore(state => state.updateTotals);
@@ -109,8 +119,6 @@ export default function GamePage() {
   //set stats
   const updateSetStats = useSetStore(state => state.updateStats);
   const updateSetRunCount = useSetStore(state => state.incrementRunCount);
-
-  const game = getGameSafely(gameId);
 
   // Move handleShare outside the useLayoutEffect so it's accessible
   const handleShare = async () => {
@@ -171,6 +179,30 @@ export default function GamePage() {
       setShowSubstitutions(true);
     }
   }, [game]);
+
+  // Show game flow hint on first game visit (only for active games)
+  useEffect(() => {
+    // Only show game flow hint if:
+    // 1. Game exists and is not finished
+    // 2. User hasn't seen the hint
+    // 3. Substitution overlay is NOT showing (priority to substitution hint)
+    if (game && !game.isFinished && !hasSeenGameFlowHint && !showSubstitutions) {
+      setShowGameFlowHint(true);
+      // Mark as seen immediately when shown (not on dismiss)
+      markHintAsSeen("gameFlow");
+    }
+  }, [game, hasSeenGameFlowHint, markHintAsSeen, showSubstitutions]);
+
+  // Reset overlay states when game finishes to ensure clean render
+  useLayoutEffect(() => {
+    if (game?.isFinished) {
+      setShowOverlay(false);
+      setShowSets(false);
+      setShowBoxScore(false);
+      setShowSubstitutions(false);
+      setShowEditModal(false);
+    }
+  }, [game?.isFinished]);
 
   useEffect(() => {
     if (!game) return;
@@ -449,6 +481,24 @@ export default function GamePage() {
     setShowOverlay(true);
   };
 
+  const handleSetSelection = (setId: string) => {
+    setSelectedPlay(setId);
+    // Show set reset hint on first set selection
+    if (!hasSeenSetResetHint && setId !== "") {
+      setShowSetResetHint(true);
+      // Mark as seen immediately when shown (not on dismiss)
+      markHintAsSeen("setReset");
+    }
+  };
+
+  const handleDismissGameFlowHint = () => {
+    setShowGameFlowHint(false);
+  };
+
+  const handleDismissSetResetHint = () => {
+    setShowSetResetHint(false);
+  };
+
   const handleStatPress = (category: ActionType, action: string) => {
     const stats = StatMapping[category]?.[action];
 
@@ -519,31 +569,33 @@ export default function GamePage() {
         </View>
 
         {/* Content Area */}
-        <View style={styles.contentContainer}>
+        <View style={styles.contentContainer} key={`content-${gameId}-${game.isFinished}`}>
           {activeTab === "boxscore" ? (
-            <View style={styles.boxScoreContainer}>
-              <BoxScoreOverlay gameId={gameId} onClose={() => {}} hideCloseButton={true} />
-            </View>
+            <BoxScoreOverlay gameId={gameId} onClose={() => {}} hideCloseButton={true} />
           ) : (
             <CompletedGamePlayByPlay gameId={gameId} />
           )}
         </View>
 
-        {/* Bottom Action Buttons */}
-        <View style={styles.bottomActionsContainer}>
-          <Pressable
-            style={styles.actionButton}
-            onPress={isSharing ? () => {} : handleShare}
-            disabled={isSharing}
-          >
-            <Feather
-              name={isSharing ? "loader" : "upload"}
-              size={20}
-              color={theme.colorOrangePeel}
-            />
-            <Text style={styles.actionButtonText}>{isSharing ? "Sharing..." : "Share Game"}</Text>
-          </Pressable>
-        </View>
+        {/* Bottom Action Buttons - Only show when Box Score tab is active */}
+        {activeTab === "boxscore" && (
+          <View style={styles.bottomActionsContainer}>
+            <Pressable
+              style={styles.actionButton}
+              onPress={isSharing ? () => {} : handleShare}
+              disabled={isSharing}
+            >
+              <Feather
+                name={isSharing ? "loader" : "upload"}
+                size={20}
+                color={theme.colorOrangePeel}
+              />
+              <Text style={styles.actionButtonText}>
+                {isSharing ? "Sharing..." : "Share Box Score"}
+              </Text>
+            </Pressable>
+          </View>
+        )}
 
         {/* Edit Game Modal */}
         <EditGameModal
@@ -581,6 +633,30 @@ export default function GamePage() {
       <View style={styles.teamsContainer}>
         <MatchUpDisplay game={game} />
       </View>
+
+      {/* Absolute Positioned Tooltips Over Play-by-Play - Only show when NOT in overlay mode */}
+      {!showOverlay && !showSets && !showSubstitutions && !showBoxScore && showGameFlowHint && (
+        <View style={styles.absoluteTooltipContainer} pointerEvents="box-none">
+          <ContextualTooltip
+            message="Tap a player, then select their action. Optional: Tap a set first to track which plays you run."
+            onDismiss={handleDismissGameFlowHint}
+            autoDismiss={true}
+            autoDismissDelay={10000}
+          />
+        </View>
+      )}
+
+      {!showOverlay && !showSets && !showSubstitutions && !showBoxScore && showSetResetHint && (
+        <View style={styles.absoluteTooltipContainer} pointerEvents="box-none">
+          <ContextualTooltip
+            message="Sets auto-reset after field goal attempts and turnovers."
+            onDismiss={handleDismissSetResetHint}
+            autoDismiss={true}
+            autoDismissDelay={10000}
+          />
+        </View>
+      )}
+
       {showOverlay ? (
         <StatOverlay onClose={handleCloseOverlay} onStatPress={handleStatPress} />
       ) : showSets ? (
@@ -666,7 +742,7 @@ export default function GamePage() {
                       key={set.id}
                       title={set.name}
                       selected={selectedPlay === set.id}
-                      onPress={() => setSelectedPlay(set.id)}
+                      onPress={() => handleSetSelection(set.id)}
                     />
                   ))}
                   <SetRadioButton
@@ -741,7 +817,7 @@ const styles = StyleSheet.create({
   playByPlayContainer: {
     flex: 1,
     marginTop: 4,
-    marginBottom: 10,
+    marginBottom: 6,
     padding: 4,
     borderWidth: 1,
     borderColor: "gray",
@@ -783,19 +859,21 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: 12,
+    paddingVertical: 8,
     paddingHorizontal: 8,
     backgroundColor: theme.colorWhite,
-    marginTop: 4,
+    marginTop: 2,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: theme.colorLightGrey,
   },
   periodButton: {
+    width: 100,
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
     gap: 4,
-    paddingVertical: 6,
+    paddingVertical: 2,
     paddingHorizontal: 12,
   },
   periodButtonDisabled: {
@@ -810,11 +888,12 @@ const styles = StyleSheet.create({
     color: theme.colorGrey,
   },
   periodInfo: {
+    flex: 1,
     alignItems: "center",
     justifyContent: "center",
   },
   periodLabel: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "700",
     color: theme.colorOnyx,
   },
@@ -828,9 +907,6 @@ const styles = StyleSheet.create({
     left: -9999,
     top: -9999,
     opacity: 0,
-  },
-  boxScoreContainer: {
-    flex: 1,
   },
   tabSwitcher: {
     flexDirection: "row",
@@ -891,5 +967,12 @@ const styles = StyleSheet.create({
     color: theme.colorOrangePeel,
     fontSize: 16,
     fontWeight: "600",
+  },
+  absoluteTooltipContainer: {
+    position: "absolute",
+    top: 160,
+    left: 14,
+    right: 14,
+    zIndex: 900,
   },
 });
