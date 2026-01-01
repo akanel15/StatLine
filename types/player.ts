@@ -15,7 +15,7 @@ export type GameNumbersType = {
 export type PlayerType = {
   id: string;
   name: string;
-  number: number;
+  number: string;
   teamId: string;
   imageUri?: string;
   gameNumbers: GameNumbersType;
@@ -32,7 +32,7 @@ export const initialGameNumbers: GameNumbersType = {
 export const createPlayer = (
   id: string,
   name: string,
-  number: number,
+  number: string,
   teamId: string,
   imageUri?: string,
 ): PlayerType => ({

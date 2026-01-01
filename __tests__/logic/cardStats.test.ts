@@ -13,7 +13,7 @@ import { Team } from "@/types/game";
 function createPlayer(
   id: string,
   name: string,
-  number: number,
+  number: string,
   teamId: string,
   imageUri?: string,
 ): PlayerType {
@@ -53,15 +53,15 @@ function createTeam(id: string, name: string, imageUri?: string): TeamType {
 
 describe("cardStats", () => {
   describe("formatStatForCard", () => {
-    it("should format number to 1 decimal place", () => {
+    it("should format decimal numbers to 1 decimal place", () => {
       expect(formatStatForCard(12.456)).toBe("12.5");
       expect(formatStatForCard(8.12)).toBe("8.1");
-      expect(formatStatForCard(0)).toBe("0.0");
     });
 
-    it("should handle whole numbers", () => {
-      expect(formatStatForCard(10)).toBe("10.0");
-      expect(formatStatForCard(5)).toBe("5.0");
+    it("should format whole numbers without decimals", () => {
+      expect(formatStatForCard(0)).toBe("0");
+      expect(formatStatForCard(10)).toBe("10");
+      expect(formatStatForCard(5)).toBe("5");
     });
 
     it("should round correctly", () => {
@@ -118,7 +118,7 @@ describe("cardStats", () => {
 
   describe("calculatePlayerCardStats", () => {
     it("should return zeros when player has no games", () => {
-      const player = createPlayer("player1", "LeBron James", 23, "team1");
+      const player = createPlayer("player1", "LeBron James", "23", "team1");
 
       const result = calculatePlayerCardStats(player);
 
@@ -131,7 +131,7 @@ describe("cardStats", () => {
     });
 
     it("should calculate correct averages for player with games", () => {
-      const player = createPlayer("player1", "LeBron James", 23, "team1");
+      const player = createPlayer("player1", "LeBron James", "23", "team1");
       player.gameNumbers.gamesPlayed = 5;
       player.stats[Stat.Points] = 125;
       player.stats[Stat.Assists] = 35;
@@ -147,7 +147,7 @@ describe("cardStats", () => {
     });
 
     it("should handle single game stats", () => {
-      const player = createPlayer("player1", "LeBron James", 23, "team1");
+      const player = createPlayer("player1", "LeBron James", "23", "team1");
       player.gameNumbers.gamesPlayed = 1;
       player.stats[Stat.Points] = 30;
       player.stats[Stat.Assists] = 10;
@@ -163,7 +163,7 @@ describe("cardStats", () => {
     });
 
     it("should handle decimal averages", () => {
-      const player = createPlayer("player1", "LeBron James", 23, "team1");
+      const player = createPlayer("player1", "LeBron James", "23", "team1");
       player.gameNumbers.gamesPlayed = 3;
       player.stats[Stat.Points] = 80;
       player.stats[Stat.Assists] = 20;
@@ -179,7 +179,7 @@ describe("cardStats", () => {
     });
 
     it("should handle player with only offensive rebounds", () => {
-      const player = createPlayer("player1", "LeBron James", 23, "team1");
+      const player = createPlayer("player1", "LeBron James", "23", "team1");
       player.gameNumbers.gamesPlayed = 2;
       player.stats[Stat.Points] = 40;
       player.stats[Stat.Assists] = 10;
@@ -195,7 +195,7 @@ describe("cardStats", () => {
     });
 
     it("should handle player with only defensive rebounds", () => {
-      const player = createPlayer("player1", "LeBron James", 23, "team1");
+      const player = createPlayer("player1", "LeBron James", "23", "team1");
       player.gameNumbers.gamesPlayed = 2;
       player.stats[Stat.Points] = 40;
       player.stats[Stat.Assists] = 10;
@@ -211,7 +211,7 @@ describe("cardStats", () => {
     });
 
     it("should handle player with zero stats", () => {
-      const player = createPlayer("player1", "Bench Player", 12, "team1");
+      const player = createPlayer("player1", "Bench Player", "12", "team1");
       player.gameNumbers.gamesPlayed = 3;
       // All stats remain at 0
 

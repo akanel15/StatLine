@@ -73,6 +73,9 @@ export default function NewGame() {
       style={styles.container}
       keyboardShouldPersistTaps="handled"
       contentContainerStyle={styles.contentContainer}
+      extraScrollHeight={120}
+      enableAutomaticScroll={true}
+      enableOnAndroid={true}
     >
       <View style={styles.centered}>
         <OpponentImage

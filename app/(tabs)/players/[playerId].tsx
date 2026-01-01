@@ -76,9 +76,9 @@ export default function PlayerPage() {
       return;
     }
 
-    const numberValue = editedNumber.trim() === "" ? undefined : parseInt(editedNumber, 10);
-    if (editedNumber.trim() !== "" && (isNaN(numberValue!) || numberValue! < 0)) {
-      Alert.alert("Validation Error", "Player number must be a valid positive number");
+    const numberValue = editedNumber.trim() === "" ? undefined : editedNumber.trim();
+    if (editedNumber.trim() !== "" && !/^\d+$/.test(editedNumber.trim())) {
+      Alert.alert("Validation Error", "Player number must be a whole number (no decimals)");
       return;
     }
 

@@ -73,6 +73,9 @@ export default function NewTeam() {
       style={styles.container}
       keyboardShouldPersistTaps="handled"
       contentContainerStyle={styles.contentContainer}
+      extraScrollHeight={120}
+      enableAutomaticScroll={true}
+      enableOnAndroid={true}
     >
       <TouchableOpacity
         style={styles.centered}

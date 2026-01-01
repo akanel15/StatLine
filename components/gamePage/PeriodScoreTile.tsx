@@ -68,7 +68,7 @@ export default function PeriodScoreTile({ game }: PeriodScoreTileProps) {
 
             {/* Team Row */}
             <View style={styles.periodScores}>
-              <StatLineImage imageUri={teamInfo.imageUri} size={40} />
+              <StatLineImage imageUri={teamInfo?.imageUri} size={40} />
               {getPeriodTotals(Team.Us).map((period, index) => (
                 <Text key={index} style={styles.score}>
                   {period}
@@ -120,7 +120,7 @@ export default function PeriodScoreTile({ game }: PeriodScoreTileProps) {
 
       {/* Team Row */}
       <View style={styles.stretchRow}>
-        <StatLineImage imageUri={teamInfo.imageUri} size={40} />
+        <StatLineImage imageUri={teamInfo?.imageUri} size={40} />
         {getPeriodTotals(Team.Us).map((period, index) => (
           <Text key={index} style={styles.stretchScore}>
             {period}

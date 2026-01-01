@@ -7,12 +7,14 @@ import { router } from "expo-router";
 
 type RecentGamesTableProps = {
   games: GameType[];
-  context: "team" | "player";
+  context: "team" | "player" | "set";
   playerId?: string; // Required for player context
+  setId?: string; // Required for set context
 };
 
-export function RecentGamesTable({ games, context, playerId }: RecentGamesTableProps) {
-  const headings = [
+export function RecentGamesTable({ games, context, playerId, setId }: RecentGamesTableProps) {
+  // Build headings based on context
+  const baseHeadings = [
     "PTS",
     "REB",
     "AST",
@@ -40,9 +42,12 @@ export function RecentGamesTable({ games, context, playerId }: RecentGamesTableP
     "+/-",
   ];
 
-  const formatStats = (stats: StatsType): string[] => {
+  // Add RUNS as first column for set context
+  const headings = context === "set" ? ["RUNS", ...baseHeadings] : baseHeadings;
+
+  const formatStats = (stats: StatsType, runCount?: number): string[] => {
     const safeDivide = (num: number, den: number) =>
-      den === 0 ? "-" : Math.round((num / den) * 100).toString() + "%";
+      den === 0 ? "-" : num === 0 ? "0%" : Math.round((num / den) * 100).toString() + "%";
 
     const fgm = stats[Stat.TwoPointMakes] + stats[Stat.ThreePointMakes];
     const fga = stats[Stat.TwoPointAttempts] + stats[Stat.ThreePointAttempts];
@@ -56,7 +61,7 @@ export function RecentGamesTable({ games, context, playerId }: RecentGamesTableP
       fgm -
       (fga + stats[Stat.Turnovers]);
 
-    return [
+    const baseStats = [
       stats[Stat.Points].toString(),
       (stats[Stat.DefensiveRebounds] + stats[Stat.OffensiveRebounds]).toString(),
       stats[Stat.Assists].toString(),
@@ -83,6 +88,9 @@ export function RecentGamesTable({ games, context, playerId }: RecentGamesTableP
       efficiency.toString(),
       stats[Stat.PlusMinus].toString(),
     ];
+
+    // Prepend run count if provided (for set context)
+    return runCount !== undefined ? [runCount.toString(), ...baseStats] : baseStats;
   };
 
   // Process all games
@@ -99,6 +107,11 @@ export function RecentGamesTable({ games, context, playerId }: RecentGamesTableP
     } else if (context === "player" && playerId) {
       const playerStats = game.boxScore[playerId] ?? { ...initialBaseStats };
       statsToShow = formatStats(playerStats);
+    } else if (context === "set" && setId) {
+      const setData = game.sets[setId];
+      const setStats = setData?.stats ?? { ...initialBaseStats };
+      const runCount = setData?.runCount ?? 0;
+      statsToShow = formatStats(setStats, runCount);
     } else {
       statsToShow = formatStats({ ...initialBaseStats });
     }

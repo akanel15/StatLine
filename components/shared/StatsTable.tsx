@@ -43,7 +43,10 @@ const HEADINGS = [
 const formatStats = (stats: StatsType, divisor: number): string[] => {
   const safeDivisor = divisor || 1;
   const safeDivide = (num: number, den: number) =>
-    den === 0 ? "-" : Math.round((num / den) * 100).toString() + "%";
+    den === 0 ? "-" : num === 0 ? "0%" : Math.round((num / den) * 100).toString() + "%";
+  const formatStat = (value: number): string => {
+    return value % 1 === 0 ? value.toFixed(0) : value.toFixed(1);
+  };
 
   const fgm = stats[Stat.TwoPointMakes] + stats[Stat.ThreePointMakes];
   const fga = stats[Stat.TwoPointAttempts] + stats[Stat.ThreePointAttempts];
@@ -58,31 +61,31 @@ const formatStats = (stats: StatsType, divisor: number): string[] => {
     (fga + stats[Stat.Turnovers]);
 
   return [
-    (stats[Stat.Points] / safeDivisor).toFixed(1),
-    ((stats[Stat.DefensiveRebounds] + stats[Stat.OffensiveRebounds]) / safeDivisor).toFixed(1),
-    (stats[Stat.Assists] / safeDivisor).toFixed(1),
-    (stats[Stat.Steals] / safeDivisor).toFixed(1),
-    (stats[Stat.Blocks] / safeDivisor).toFixed(1),
-    (fgm / safeDivisor).toFixed(1),
-    (fga / safeDivisor).toFixed(1),
+    formatStat(stats[Stat.Points] / safeDivisor),
+    formatStat((stats[Stat.DefensiveRebounds] + stats[Stat.OffensiveRebounds]) / safeDivisor),
+    formatStat(stats[Stat.Assists] / safeDivisor),
+    formatStat(stats[Stat.Steals] / safeDivisor),
+    formatStat(stats[Stat.Blocks] / safeDivisor),
+    formatStat(fgm / safeDivisor),
+    formatStat(fga / safeDivisor),
     safeDivide(fgm, fga),
-    (stats[Stat.TwoPointMakes] / safeDivisor).toFixed(1),
-    (stats[Stat.TwoPointAttempts] / safeDivisor).toFixed(1),
+    formatStat(stats[Stat.TwoPointMakes] / safeDivisor),
+    formatStat(stats[Stat.TwoPointAttempts] / safeDivisor),
     safeDivide(stats[Stat.TwoPointMakes], stats[Stat.TwoPointAttempts]),
-    (stats[Stat.ThreePointMakes] / safeDivisor).toFixed(1),
-    (stats[Stat.ThreePointAttempts] / safeDivisor).toFixed(1),
+    formatStat(stats[Stat.ThreePointMakes] / safeDivisor),
+    formatStat(stats[Stat.ThreePointAttempts] / safeDivisor),
     safeDivide(stats[Stat.ThreePointMakes], stats[Stat.ThreePointAttempts]),
-    (stats[Stat.FreeThrowsMade] / safeDivisor).toFixed(1),
-    (stats[Stat.FreeThrowsAttempted] / safeDivisor).toFixed(1),
+    formatStat(stats[Stat.FreeThrowsMade] / safeDivisor),
+    formatStat(stats[Stat.FreeThrowsAttempted] / safeDivisor),
     safeDivide(stats[Stat.FreeThrowsMade], stats[Stat.FreeThrowsAttempted]),
-    (stats[Stat.OffensiveRebounds] / safeDivisor).toFixed(1),
-    (stats[Stat.DefensiveRebounds] / safeDivisor).toFixed(1),
-    (stats[Stat.Turnovers] / safeDivisor).toFixed(1),
-    (stats[Stat.FoulsCommitted] / safeDivisor).toFixed(1),
-    (stats[Stat.FoulsDrawn] / safeDivisor).toFixed(1),
-    (stats[Stat.Deflections] / safeDivisor).toFixed(1),
-    (efficiency / safeDivisor).toFixed(1),
-    (stats[Stat.PlusMinus] / safeDivisor).toFixed(1),
+    formatStat(stats[Stat.OffensiveRebounds] / safeDivisor),
+    formatStat(stats[Stat.DefensiveRebounds] / safeDivisor),
+    formatStat(stats[Stat.Turnovers] / safeDivisor),
+    formatStat(stats[Stat.FoulsCommitted] / safeDivisor),
+    formatStat(stats[Stat.FoulsDrawn] / safeDivisor),
+    formatStat(stats[Stat.Deflections] / safeDivisor),
+    formatStat(efficiency / safeDivisor),
+    formatStat(stats[Stat.PlusMinus] / safeDivisor),
   ];
 };
 

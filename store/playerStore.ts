@@ -8,7 +8,7 @@ import { Stat } from "@/types/stats";
 
 type PlayerState = {
   players: Record<string, PlayerType>;
-  addPlayer: (name: string, number: number, teamId: string, imageUri?: string) => Promise<void>;
+  addPlayer: (name: string, number: string, teamId: string, imageUri?: string) => Promise<void>;
   removePlayer: (playerId: string) => void;
   updatePlayer: (
     playerId: string,
@@ -24,7 +24,7 @@ export const usePlayerStore = create(
   persist<PlayerState>(
     (set, get) => ({
       players: {},
-      addPlayer: async (name: string, number: number, teamId: string, imageUri?: string) => {
+      addPlayer: async (name: string, number: string, teamId: string, imageUri?: string) => {
         const savedImageUri =
           FileSystem.documentDirectory +
           `${new Date().getTime()}-${imageUri?.split("/").slice(-1)[0]}`;

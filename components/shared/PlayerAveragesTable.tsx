@@ -58,7 +58,7 @@ export function PlayerAveragesTable({
   const formatAverages = (
     averages: ReturnType<typeof calculatePlayerAverages>,
   ): { formatted: string[]; raw: number[] } => {
-    const safeDivide = (num: number, den: number) => (den === 0 ? 0 : (num / den) * 100);
+    const safeDivide = (num: number, den: number) => (den === 0 ? -1 : (num / den) * 100);
 
     const raw = [
       averages[Stat.Points],
@@ -104,10 +104,10 @@ export function PlayerAveragesTable({
     const formatted = raw.map((value, index) => {
       // Format percentages (indices 7, 10, 13, 16 are FG%, 2P%, 3P%, FT%)
       if ([7, 10, 13, 16].includes(index)) {
-        return value === 0 ? "-" : Math.round(value).toString() + "%";
+        return value === -1 ? "-" : Math.round(value).toString() + "%";
       }
-      // Format other stats to 1 decimal place
-      return value.toFixed(1);
+      // Format other stats - remove .0 for whole numbers
+      return value % 1 === 0 ? value.toFixed(0) : value.toFixed(1);
     });
 
     return { formatted, raw };
@@ -119,7 +119,10 @@ export function PlayerAveragesTable({
   const playerAverageEntries: PlayerAverageEntry[] = playersWithGames.map(player => {
     const averages = calculatePlayerAverages(player.stats, player.gameNumbers.gamesPlayed);
     const { formatted, raw } = formatAverages(averages);
-    const displayName = player.number ? `#${player.number} ${player.name}` : player.name;
+    const displayName =
+      player.number !== undefined && player.number !== null && player.number !== ""
+        ? `#${player.number} ${player.name}`
+        : player.name;
 
     return {
       id: player.id,

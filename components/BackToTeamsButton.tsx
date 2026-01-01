@@ -9,9 +9,8 @@ interface BackToTeamsButtonProps {
 
 export function BackToTeamsButton({ hitSlop = 20 }: BackToTeamsButtonProps) {
   const handlePress = () => {
-    // Navigate to teams page and reset history to prevent back button issues
-    router.dismissAll();
-    router.replace("/");
+    // Use router.back() for proper back animation (left-to-right slide)
+    router.back();
   };
 
   return (

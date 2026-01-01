@@ -160,6 +160,38 @@ From WARP.md:
 5. **Code Standards** - TypeScript, functional components only
 6. **Git Management** - Let user handle commits and pushes
 
+### Codebase Search Best Practices
+
+**CRITICAL:** During planning/initial code understanding phase, ALWAYS use the Task tool with Explore agent to prevent session stalling.
+
+**When to Use Explore Agent:**
+- **Planning stage** - Understanding existing code before making changes
+- Finding files by patterns ("find all test files")
+- Searching code for keywords ("where is authentication handled?")
+- Understanding codebase structure ("explain the navigation system")
+- Locating implementations ("find where player stats are calculated")
+
+**Pattern:**
+```typescript
+// ✗ BAD - Can stall session during planning
+Grep(pattern: "calculatePlayerAverages", glob: "**/*.ts")
+
+// ✓ GOOD - Fast, non-blocking during planning
+Task(
+  subagent_type: "Explore",
+  description: "Find player stats calculation",
+  prompt: "Search for calculatePlayerAverages implementation in the logic/ directory"
+)
+```
+
+**Thoroughness levels:** "quick" (basic search), "medium" (moderate exploration), "very thorough" (comprehensive)
+
+**Exception:** Only use Glob/Grep directly when:
+- User provides exact file path
+- Already past planning phase and working on specific files
+- Searching within 1-2 specific known files
+- Simple, narrow pattern in small directory
+
 ## Basketball Domain Model
 
 ### Game Flow

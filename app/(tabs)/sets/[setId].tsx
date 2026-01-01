@@ -1,4 +1,4 @@
-import { useLayoutEffect, useState, useEffect } from "react";
+import { useLayoutEffect, useState, useEffect, useRef } from "react";
 import { useRoute } from "@react-navigation/native";
 import { useNavigation } from "@react-navigation/native";
 import {
@@ -9,13 +9,15 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  Modal,
 } from "react-native";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
+import Feather from "@expo/vector-icons/Feather";
 import { theme } from "@/theme";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { useSetStore } from "@/store/setStore";
 import { useTeamStore } from "@/store/teamStore";
-import { Stat } from "@/types/stats";
+import { useGameStore } from "@/store/gameStore";
 import { StatLineImage } from "@/components/StatLineImage";
 import { SetStatsTable } from "@/components/shared/SetStatsTable";
 import { IconAvatar } from "@/components/shared/IconAvatar";
@@ -23,15 +25,28 @@ import { router } from "expo-router";
 import { confirmSetDeletion } from "@/utils/playerDeletion";
 import { LoadingState } from "@/components/LoadingState";
 import { StandardBackButton } from "@/components/StandardBackButton";
+import { RecentGamesTable } from "@/components/shared/RecentGamesTable";
+import ViewShot from "react-native-view-shot";
+import { ShareableSetRecentGamesTable } from "@/components/shared/ShareableSetRecentGamesTable";
+import { shareBoxScoreImage } from "@/utils/shareBoxScore";
+import { sanitizeFileName } from "@/utils/filename";
+import { GameCountSelectorModal } from "@/components/shared/GameCountSelectorModal";
 
 export default function SetPage() {
   const { setId } = useRoute().params as { setId: string };
   const navigation = useNavigation();
   const getSetSafely = useSetStore(state => state.getSetSafely);
   const teams = useTeamStore(state => state.teams);
+  const games = useGameStore(state => state.games);
 
   const [isEditMode, setIsEditMode] = useState(false);
   const [editedName, setEditedName] = useState("");
+  const [isSharing, setIsSharing] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [showGameCountSelector, setShowGameCountSelector] = useState(false);
+  const [selectedGameCount, setSelectedGameCount] = useState(3);
+  const [currentPage, setCurrentPage] = useState(0);
+  const shareableRef = useRef<ViewShot>(null);
 
   const set = getSetSafely(setId);
   const setName = set?.name || "Set";
@@ -109,17 +124,123 @@ export default function SetPage() {
   }
 
   const team = teams[set?.teamId || ""];
+  const gameList = Object.values(games);
+  const setGames = gameList.filter(game => game.activeSets.includes(setId) && game.sets[setId]);
 
-  const getEfficiencyRating = () => {
-    const divisor = set.runCount || 1;
-    const pointsPerRun = set.stats[Stat.Points] / divisor;
-    const assistsPerRun = set.stats[Stat.Assists] / divisor;
-    const reboundsPerRun =
-      (set.stats[Stat.OffensiveRebounds] + set.stats[Stat.DefensiveRebounds]) / divisor;
-    const turnoversPerRun = set.stats[Stat.Turnovers] / divisor;
+  const handleShareRecentGames = () => {
+    // Show game count selector first
+    setShowGameCountSelector(true);
+  };
 
-    // Simple efficiency formula: (Points + Assists + Rebounds - Turnovers) per run
-    return ((pointsPerRun + assistsPerRun + reboundsPerRun - turnoversPerRun) * 10).toFixed(1);
+  const handleGameCountSelected = (count: number) => {
+    if (isSharing) return;
+
+    setSelectedGameCount(count);
+
+    // Close selector modal and wait before starting share process
+    setTimeout(() => {
+      setIsSharing(true);
+      setShowShareModal(true);
+
+      // Additional delay to ensure ViewShot modal is rendered
+      setTimeout(async () => {
+        try {
+          if (shareableRef.current) {
+            const rawTitle = `${set.name} Recent Games`;
+            const fileName = sanitizeFileName(rawTitle);
+
+            await shareBoxScoreImage(shareableRef, `${set.name} Recent Games`, fileName);
+          }
+        } catch (error) {
+          console.error("Error sharing games:", error);
+        } finally {
+          setIsSharing(false);
+          setShowShareModal(false);
+        }
+      }, 500);
+    }, 300);
+  };
+
+  const renderRecentGames = () => {
+    if (setGames.length === 0) {
+      return (
+        <View style={{ padding: 20, alignItems: "center" }}>
+          <Text style={{ color: theme.colorGrey, fontSize: 14 }}>
+            No games played yet. Start a game with this set to start tracking stats!
+          </Text>
+        </View>
+      );
+    }
+
+    const gamesPerPage = 5;
+    const totalGames = setGames.length;
+    const totalPages = Math.ceil(totalGames / gamesPerPage);
+    const startIndex = currentPage * gamesPerPage;
+    const endIndex = Math.min(startIndex + gamesPerPage, totalGames);
+    const currentGames = setGames.slice(startIndex, endIndex);
+
+    return (
+      <>
+        <View style={styles.gamesTableContainer}>
+          <RecentGamesTable games={currentGames} context="set" setId={setId} />
+        </View>
+
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <View style={styles.paginationContainer}>
+            <TouchableOpacity
+              style={[
+                styles.paginationButton,
+                currentPage === 0 && styles.paginationButtonDisabled,
+              ]}
+              onPress={() => setCurrentPage(prev => Math.max(0, prev - 1))}
+              disabled={currentPage === 0}
+            >
+              <Feather
+                name="chevron-left"
+                size={20}
+                color={currentPage === 0 ? theme.colorGrey : theme.colorBlue}
+              />
+              <Text
+                style={[
+                  styles.paginationButtonText,
+                  currentPage === 0 && styles.paginationButtonTextDisabled,
+                ]}
+              >
+                Previous
+              </Text>
+            </TouchableOpacity>
+
+            <Text style={styles.paginationInfo}>
+              Games {startIndex + 1}-{endIndex} of {totalGames}
+            </Text>
+
+            <TouchableOpacity
+              style={[
+                styles.paginationButton,
+                currentPage === totalPages - 1 && styles.paginationButtonDisabled,
+              ]}
+              onPress={() => setCurrentPage(prev => Math.min(totalPages - 1, prev + 1))}
+              disabled={currentPage === totalPages - 1}
+            >
+              <Text
+                style={[
+                  styles.paginationButtonText,
+                  currentPage === totalPages - 1 && styles.paginationButtonTextDisabled,
+                ]}
+              >
+                Next
+              </Text>
+              <Feather
+                name="chevron-right"
+                size={20}
+                color={currentPage === totalPages - 1 ? theme.colorGrey : theme.colorBlue}
+              />
+            </TouchableOpacity>
+          </View>
+        )}
+      </>
+    );
   };
 
   const handleTeamPress = () => {
@@ -160,16 +281,27 @@ export default function SetPage() {
           <SetStatsTable set={set} />
         </View>
 
-        {/* Efficiency Rating */}
+        {/* Recent Games */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Efficiency</Text>
-          <View style={styles.efficiencyCard}>
-            <Text style={styles.efficiencyScore}>{getEfficiencyRating()}</Text>
-            <Text style={styles.efficiencyLabel}>Efficiency Rating</Text>
-            <Text style={styles.efficiencyDescription}>
-              (Points + Assists + Rebounds - Turnovers) × 10 per run
-            </Text>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Recent Games</Text>
+            {setGames.length > 0 && (
+              <View style={{ paddingRight: 12 }}>
+                <TouchableOpacity
+                  onPress={handleShareRecentGames}
+                  disabled={isSharing}
+                  hitSlop={20}
+                >
+                  <Feather
+                    name={isSharing ? "loader" : "share"}
+                    size={20}
+                    color={theme.colorOrangePeel}
+                  />
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
+          <View style={styles.recentGames}>{renderRecentGames()}</View>
         </View>
 
         {/* Team Information */}
@@ -209,6 +341,39 @@ export default function SetPage() {
         {/* Bottom spacing */}
         <View style={{ marginBottom: 100 }} />
       </View>
+
+      {/* Game Count Selector Modal */}
+      <GameCountSelectorModal
+        visible={showGameCountSelector}
+        onClose={() => setShowGameCountSelector(false)}
+        onSelect={handleGameCountSelected}
+        totalGames={setGames.length}
+      />
+
+      {/* Hidden Modal for Capturing Game Stats for Share */}
+      <Modal
+        visible={showShareModal}
+        transparent={true}
+        animationType="none"
+        onRequestClose={() => setShowShareModal(false)}
+      >
+        <View style={styles.hiddenModalContainer}>
+          <ViewShot
+            ref={shareableRef}
+            options={{
+              format: "png",
+              quality: 0.9,
+              result: "tmpfile",
+            }}
+          >
+            <ShareableSetRecentGamesTable
+              games={setGames.slice(0, selectedGameCount)}
+              setId={setId}
+              setName={set.name}
+            />
+          </ViewShot>
+        </View>
+      </Modal>
     </KeyboardAwareScrollView>
   );
 }
@@ -248,31 +413,55 @@ const styles = StyleSheet.create({
     color: theme.colorOnyx,
     marginBottom: 15,
   },
-  efficiencyCard: {
-    backgroundColor: theme.colorLightGrey,
-    borderRadius: 16,
-    padding: 24,
+  sectionHeader: {
+    flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 15,
+  },
+  recentGames: {
+    backgroundColor: theme.colorWhite,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: theme.colorLightGrey,
   },
-  efficiencyScore: {
-    fontSize: 48,
-    fontWeight: "800",
-    color: theme.colorOrangePeel,
-    marginBottom: 8,
+  gamesTableContainer: {
+    backgroundColor: theme.colorWhite,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: theme.colorLightGrey,
+    overflow: "hidden",
   },
-  efficiencyLabel: {
-    fontSize: 16,
+  paginationContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    backgroundColor: theme.colorWhite,
+  },
+  paginationButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+  },
+  paginationButtonDisabled: {
+    opacity: 0.4,
+  },
+  paginationButtonText: {
+    color: theme.colorBlue,
+    fontSize: 14,
     fontWeight: "600",
-    color: theme.colorOnyx,
-    marginBottom: 8,
   },
-  efficiencyDescription: {
-    fontSize: 12,
+  paginationButtonTextDisabled: {
     color: theme.colorGrey,
-    textAlign: "center",
-    lineHeight: 16,
+  },
+  paginationInfo: {
+    fontSize: 13,
+    fontWeight: "500",
+    color: theme.colorGrey,
   },
   teamCard: {
     flexDirection: "row",
@@ -362,5 +551,11 @@ const styles = StyleSheet.create({
     color: theme.colorOnyx,
     fontSize: 16,
     fontWeight: "600",
+  },
+  hiddenModalContainer: {
+    position: "absolute",
+    left: -9999,
+    top: -9999,
+    opacity: 0,
   },
 });

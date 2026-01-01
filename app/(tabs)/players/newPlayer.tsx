@@ -16,17 +16,21 @@ export default function NewPlayer() {
   const teamId = useTeamStore(state => state.currentTeamId);
   const router = useRouter();
   const [playerName, setPlayerName] = useState<string>();
-  const [playerNumber, setPlayerNumber] = useState<number>();
+  const [playerNumber, setPlayerNumber] = useState<string>();
   const [imageUri, setImageUri] = useState<string>();
 
   const handleSubmit = () => {
     if (!playerName) {
       return Alert.alert("Validation Error", "Please give the player a name");
     }
-    if (playerNumber === undefined || playerNumber === null) {
+    if (!playerNumber || playerNumber.trim() === "") {
       return Alert.alert("Validation Error", "Please give the player a number");
     }
-    addPlayer(playerName, playerNumber, teamId, imageUri);
+    // Validate that the number is a whole number (no decimals)
+    if (!/^\d+$/.test(playerNumber.trim())) {
+      return Alert.alert("Validation Error", "Player number must be a whole number (no decimals)");
+    }
+    addPlayer(playerName, playerNumber.trim(), teamId, imageUri);
 
     //naviate to player page set up players
     router.back();
@@ -50,6 +54,9 @@ export default function NewPlayer() {
       style={styles.container}
       keyboardShouldPersistTaps="handled"
       contentContainerStyle={styles.contentContainer}
+      extraScrollHeight={120}
+      enableAutomaticScroll={true}
+      enableOnAndroid={true}
     >
       <TouchableOpacity
         style={styles.centered}
@@ -60,7 +67,7 @@ export default function NewPlayer() {
           <PlayerImage
             player={
               {
-                number: playerNumber || 0,
+                number: playerNumber || "0",
                 imageUri: imageUri,
               } as PlayerType
             }
@@ -89,7 +96,7 @@ export default function NewPlayer() {
         style={styles.input}
         keyboardType="numeric"
         placeholder="0"
-        onChangeText={newPlayerNumber => setPlayerNumber(parseInt(newPlayerNumber))}
+        onChangeText={newPlayerNumber => setPlayerNumber(newPlayerNumber)}
       ></TextInput>
 
       <StatLineButton title="Add Player" onPress={handleSubmit}></StatLineButton>

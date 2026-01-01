@@ -5,12 +5,12 @@ import { Team } from "@/types/game";
 import { calculatePlayerAverages } from "./playerAverages";
 
 /**
- * Format a stat value for display on a card (1 decimal place)
+ * Format a stat value for display on a card (removes unnecessary decimals)
  * @param value - The stat value to format
- * @returns Formatted string with 1 decimal place
+ * @returns Formatted string without decimal for whole numbers, 1 decimal otherwise
  */
 export function formatStatForCard(value: number): string {
-  return value.toFixed(1);
+  return value % 1 === 0 ? value.toFixed(0) : value.toFixed(1);
 }
 
 /**

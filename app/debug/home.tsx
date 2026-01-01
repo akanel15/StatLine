@@ -62,6 +62,14 @@ const debugSections: DebugSection[] = [
     icon: "🎲",
     route: "/debug/gameSimulator",
     color: theme.colorPurple,
+  },
+  {
+    id: "swipeableList",
+    title: "Swipeable Drag List",
+    description: "Test swipeable and draggable list component",
+    icon: "📝",
+    route: "/debug/swipeable-list",
+    color: theme.colorOrangePeel,
   }
 ];
 

@@ -13,7 +13,11 @@ export default function App() {
   const playersList = Object.values(players);
   const teamPlayers = playersList
     .filter(player => player.teamId === teamId)
-    .sort((a, b) => a.number - b.number);
+    .sort((a, b) => {
+      const numA = parseInt(a.number) || 0;
+      const numB = parseInt(b.number) || 0;
+      return numA - numB;
+    });
 
   return (
     <FlatList

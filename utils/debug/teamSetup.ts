@@ -4,7 +4,7 @@ import { useSetStore } from "@/store/setStore";
 
 export interface PlayerData {
   name: string;
-  number: number;
+  number: string;
 }
 
 export interface TeamSetupConfig {
@@ -58,16 +58,16 @@ export async function setupTeam(config: TeamSetupConfig): Promise<string> {
 export const VIKES_DIV1_MEN_CONFIG: TeamSetupConfig = {
   teamName: "Vikes Div 1 Men",
   players: [
-    { name: "Nick Kanellis", number: 24 },
-    { name: "Alex Kanellis", number: 15 },
-    { name: "Jake Heath", number: 50 },
-    { name: "Caleb Bruggeman", number: 43 },
-    { name: "Matt Hart", number: 11 },
-    { name: "Cormac Bohanna", number: 4 },
-    { name: "Joshua Hamilton", number: 70 },
-    { name: "Mike Zuccolo", number: 41 },
-    { name: "Liam Costello", number: 18 },
-    { name: "Ian Baker", number: 37 },
+    { name: "Nick Kanellis", number: "24" },
+    { name: "Alex Kanellis", number: "15" },
+    { name: "Jake Heath", number: "50" },
+    { name: "Caleb Bruggeman", number: "43" },
+    { name: "Matt Hart", number: "11" },
+    { name: "Cormac Bohanna", number: "4" },
+    { name: "Joshua Hamilton", number: "70" },
+    { name: "Mike Zuccolo", number: "41" },
+    { name: "Liam Costello", number: "18" },
+    { name: "Ian Baker", number: "37" },
   ],
   sets: ["Flow", "Irish", "Downs"],
 };

@@ -30,10 +30,16 @@ export function TopPlayerCard({ player, primaryStat, secondaryStat, onPress }: T
       </View>
       <View style={styles.playerStats}>
         <Text style={styles.primaryStat}>
-          {primaryStat.value.toFixed(1)} {getStatLabel(primaryStat.stat)}
+          {primaryStat.value % 1 === 0
+            ? primaryStat.value.toFixed(0)
+            : primaryStat.value.toFixed(1)}{" "}
+          {getStatLabel(primaryStat.stat)}
         </Text>
         <Text style={styles.secondaryStat}>
-          {secondaryStat.value.toFixed(1)} {getStatLabel(secondaryStat.stat)}
+          {secondaryStat.value % 1 === 0
+            ? secondaryStat.value.toFixed(0)
+            : secondaryStat.value.toFixed(1)}{" "}
+          {getStatLabel(secondaryStat.stat)}
         </Text>
       </View>
     </TouchableOpacity>

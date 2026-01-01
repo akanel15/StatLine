@@ -43,7 +43,7 @@ function generateMinimalSeed(): DebugSnapshot {
     players[playerId] = createPlayer(
       playerId,
       `Player ${i}`,
-      i,
+      i.toString(),
       teamId,
       undefined,
     );
@@ -129,7 +129,7 @@ function generateFullSeasonSeed(): DebugSnapshot {
       const player = createPlayer(
         playerId,
         `${position} ${i}`,
-        i,
+        i.toString(),
         teamId,
         undefined,
       );
@@ -273,30 +273,30 @@ function generateEdgeCasesSeed(): DebugSnapshot {
 
   // Create some players with edge case data
   const playerConfigs = [
-    { name: "Normal Player", number: 1, hasIssues: false },
+    { name: "Normal Player", number: "1", hasIssues: false },
     {
       name: "Player with Wrong Team",
-      number: 2,
+      number: "2",
       hasIssues: true,
       issue: "wrongTeam",
     },
     {
       name: "Player with Negative Stats",
-      number: 3,
+      number: "3",
       hasIssues: true,
       issue: "negativeStats",
     },
     {
       name: "Player with Huge Stats",
-      number: 4,
+      number: "4",
       hasIssues: true,
       issue: "hugeStats",
     },
     {
-      name: "Player Missing Number",
-      number: 0,
+      name: "Player with Special Number 00",
+      number: "00",
       hasIssues: true,
-      issue: "badNumber",
+      issue: "specialNumber",
     },
   ];
 

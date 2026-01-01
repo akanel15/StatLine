@@ -48,7 +48,7 @@ export function BoxScoreTable({
 
   const formatStats = (stats: StatsType): string[] => {
     const safeDivide = (num: number, den: number) =>
-      den === 0 ? "-" : Math.round((num / den) * 100).toString() + "%";
+      den === 0 ? "-" : num === 0 ? "0%" : Math.round((num / den) * 100).toString() + "%";
 
     return [
       stats[Stat.Points].toString(),
@@ -98,7 +98,10 @@ export function BoxScoreTable({
     const player = players[playerId];
     const playerName = player ? player.name : getPlayerDisplayName(playerId);
     const playerNumber = player?.number;
-    const displayName = playerNumber ? `#${playerNumber} ${playerName}` : playerName;
+    const displayName =
+      playerNumber !== undefined && playerNumber !== null && playerNumber !== ""
+        ? `#${playerNumber} ${playerName}`
+        : playerName;
 
     return {
       id: playerId,

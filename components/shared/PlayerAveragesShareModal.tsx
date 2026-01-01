@@ -94,19 +94,18 @@ export function PlayerAveragesShareModal({
               <ScrollView style={styles.playerList} showsVerticalScrollIndicator={true}>
                 {eligiblePlayers.map(player => {
                   const isSelected = selectedPlayerIds.has(player.id);
-                  const displayName = player.number
-                    ? `#${player.number} ${player.name}`
-                    : player.name;
-                  const ppg = (player.stats[Stat.Points] / player.gameNumbers.gamesPlayed).toFixed(
-                    1,
-                  );
-                  const rpg = (
+                  const displayName =
+                    player.number !== undefined && player.number !== null && player.number !== ""
+                      ? `#${player.number} ${player.name}`
+                      : player.name;
+                  const ppgValue = player.stats[Stat.Points] / player.gameNumbers.gamesPlayed;
+                  const ppg = ppgValue % 1 === 0 ? ppgValue.toFixed(0) : ppgValue.toFixed(1);
+                  const rpgValue =
                     (player.stats[Stat.DefensiveRebounds] + player.stats[Stat.OffensiveRebounds]) /
-                    player.gameNumbers.gamesPlayed
-                  ).toFixed(1);
-                  const apg = (player.stats[Stat.Assists] / player.gameNumbers.gamesPlayed).toFixed(
-                    1,
-                  );
+                    player.gameNumbers.gamesPlayed;
+                  const rpg = rpgValue % 1 === 0 ? rpgValue.toFixed(0) : rpgValue.toFixed(1);
+                  const apgValue = player.stats[Stat.Assists] / player.gameNumbers.gamesPlayed;
+                  const apg = apgValue % 1 === 0 ? apgValue.toFixed(0) : apgValue.toFixed(1);
 
                   return (
                     <TouchableOpacity

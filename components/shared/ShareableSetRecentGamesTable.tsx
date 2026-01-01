@@ -4,22 +4,18 @@ import { initialBaseStats, Stat, StatsType } from "@/types/stats";
 import { theme } from "@/theme";
 import { Result } from "@/types/player";
 
-type ShareableRecentGamesTableProps = {
+type ShareableSetRecentGamesTableProps = {
   games: GameType[];
-  context: "team" | "player";
-  playerId?: string; // Required for player context
-  playerName?: string; // For player context title
-  teamName?: string; // For team context title
+  setId: string;
+  setName: string;
 };
 
-export function ShareableRecentGamesTable({
+export function ShareableSetRecentGamesTable({
   games,
-  context,
-  playerId,
-  playerName,
-  teamName,
-}: ShareableRecentGamesTableProps) {
-  const headings = [
+  setId,
+  setName,
+}: ShareableSetRecentGamesTableProps) {
+  const baseHeadings = [
     "PTS",
     "REB",
     "AST",
@@ -47,7 +43,10 @@ export function ShareableRecentGamesTable({
     "+/-",
   ];
 
-  const formatStats = (stats: StatsType): string[] => {
+  // Add RUNS as first column for sets
+  const headings = ["RUNS", ...baseHeadings];
+
+  const formatStats = (stats: StatsType, runCount: number): string[] => {
     const safeDivide = (num: number, den: number) =>
       den === 0 ? "-" : num === 0 ? "0%" : Math.round((num / den) * 100).toString() + "%";
 
@@ -63,7 +62,7 @@ export function ShareableRecentGamesTable({
       fgm -
       (fga + stats[Stat.Turnovers]);
 
-    return [
+    const baseStats = [
       stats[Stat.Points].toString(),
       (stats[Stat.DefensiveRebounds] + stats[Stat.OffensiveRebounds]).toString(),
       stats[Stat.Assists].toString(),
@@ -90,6 +89,9 @@ export function ShareableRecentGamesTable({
       efficiency.toString(),
       stats[Stat.PlusMinus].toString(),
     ];
+
+    // Prepend run count
+    return [runCount.toString(), ...baseStats];
   };
 
   // Build game rows with stats
@@ -99,16 +101,11 @@ export function ShareableRecentGamesTable({
     const result: Result =
       ourScore > theirScore ? Result.Win : ourScore < theirScore ? Result.Loss : Result.Draw;
 
-    // Get stats based on context
-    let statsToShow: string[];
-    if (context === "team") {
-      statsToShow = formatStats(game.statTotals[Team.Us]);
-    } else if (context === "player" && playerId) {
-      const playerStats = game.boxScore[playerId] ?? { ...initialBaseStats };
-      statsToShow = formatStats(playerStats);
-    } else {
-      statsToShow = formatStats({ ...initialBaseStats });
-    }
+    // Get set stats for this game
+    const setData = game.sets[setId];
+    const setStats = setData?.stats ?? { ...initialBaseStats };
+    const runCount = setData?.runCount ?? 0;
+    const statsToShow = formatStats(setStats, runCount);
 
     return {
       id: game.id,
@@ -119,10 +116,7 @@ export function ShareableRecentGamesTable({
     };
   });
 
-  const displayTitle =
-    context === "team"
-      ? `${teamName || "Team"} - Recent Games`
-      : `${playerName || "Player"} - Recent Games`;
+  const displayTitle = `${setName} - Recent Games`;
 
   return (
     <View style={styles.container}>

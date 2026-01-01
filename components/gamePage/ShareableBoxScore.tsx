@@ -27,7 +27,9 @@ export default function ShareableBoxScore({ game, players }: ShareableBoxScorePr
 
       {/* Score Summary */}
       <View style={styles.scoreSection}>
-        <PeriodScoreTile game={game} />
+        <View style={styles.scoreContainer}>
+          <PeriodScoreTile game={game} />
+        </View>
       </View>
 
       {/* Full Box Score Table - No Scrolling */}
@@ -38,6 +40,11 @@ export default function ShareableBoxScore({ game, players }: ShareableBoxScorePr
         scrollable={false}
         getPlayerDisplayName={getPlayerDisplayName}
       />
+
+      {/* Footer */}
+      <View style={styles.footer}>
+        <Text style={styles.footerText}>Generated with StatLine</Text>
+      </View>
     </View>
   );
 }
@@ -45,8 +52,8 @@ export default function ShareableBoxScore({ game, players }: ShareableBoxScorePr
 const styles = StyleSheet.create({
   container: {
     backgroundColor: "white",
-    padding: 16,
-    minWidth: 1200, // Ensure enough width for all stats
+    padding: 20,
+    minWidth: 1600, // Ensure enough width for all 25 stat columns + sticky column + padding (prevents +/- cutoff)
   },
   titleSection: {
     alignItems: "center",
@@ -60,5 +67,21 @@ const styles = StyleSheet.create({
   },
   scoreSection: {
     marginBottom: 24,
+  },
+  scoreContainer: {
+    padding: 12,
+    borderWidth: 1,
+    borderColor: theme.colorLightGrey,
+    borderRadius: 8,
+    overflow: "visible",
+  },
+  footer: {
+    marginTop: 16,
+    alignItems: "center",
+  },
+  footerText: {
+    fontSize: 10,
+    color: theme.colorGrey,
+    fontStyle: "italic",
   },
 });

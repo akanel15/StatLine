@@ -43,13 +43,13 @@ describe("Player Store", () => {
     it("should add a new player without image", async () => {
       const store = usePlayerStore.getState();
 
-      await store.addPlayer("John Doe", 23, "team-1");
+      await store.addPlayer("John Doe", "23", "team-1");
 
       const players = usePlayerStore.getState().players;
       expect(Object.keys(players)).toHaveLength(1);
       expect(players["test-player-id"]).toBeDefined();
       expect(players["test-player-id"].name).toBe("John Doe");
-      expect(players["test-player-id"].number).toBe(23);
+      expect(players["test-player-id"].number).toBe("23");
       expect(players["test-player-id"].teamId).toBe("team-1");
       expect(players["test-player-id"].imageUri).toBeUndefined();
       expect(players["test-player-id"].gameNumbers.gamesPlayed).toBe(0);
@@ -61,7 +61,7 @@ describe("Player Store", () => {
       const mockFileSystem = require("expo-file-system/legacy");
       const store = usePlayerStore.getState();
 
-      await store.addPlayer("Jane Smith", 10, "team-1", "file://test-image.jpg");
+      await store.addPlayer("Jane Smith", "10", "team-1", "file://test-image.jpg");
 
       expect(mockFileSystem.copyAsync).toHaveBeenCalled();
       const players = usePlayerStore.getState().players;
@@ -73,7 +73,7 @@ describe("Player Store", () => {
       const store = usePlayerStore.getState();
 
       // First add a player
-      store.addPlayer("John Doe", 23, "team-1");
+      store.addPlayer("John Doe", "23", "team-1");
       expect(Object.keys(usePlayerStore.getState().players)).toHaveLength(1);
 
       // Then remove the player
@@ -98,7 +98,7 @@ describe("Player Store", () => {
   describe("Game Statistics Updates", () => {
     beforeEach(async () => {
       const store = usePlayerStore.getState();
-      await store.addPlayer("John Doe", 23, "team-1");
+      await store.addPlayer("John Doe", "23", "team-1");
     });
 
     it("should update games played for wins", () => {
@@ -165,7 +165,7 @@ describe("Player Store", () => {
   describe("Game Statistics Reversion", () => {
     beforeEach(async () => {
       const store = usePlayerStore.getState();
-      await store.addPlayer("John Doe", 23, "team-1");
+      await store.addPlayer("John Doe", "23", "team-1");
       // Add some games first
       store.updateGamesPlayed("test-player-id", Result.Win);
       store.updateGamesPlayed("test-player-id", Result.Win);
@@ -222,7 +222,7 @@ describe("Player Store", () => {
   describe("Player Statistics Updates", () => {
     beforeEach(async () => {
       const store = usePlayerStore.getState();
-      await store.addPlayer("John Doe", 23, "team-1");
+      await store.addPlayer("John Doe", "23", "team-1");
     });
 
     it("should update player statistics", () => {
@@ -287,7 +287,7 @@ describe("Player Store", () => {
     it("should maintain separate player data", async () => {
       const store = usePlayerStore.getState();
 
-      await store.addPlayer("Player 1", 10, "team-1");
+      await store.addPlayer("Player 1", "10", "team-1");
       const player1Id = "test-player-id";
 
       // Mock UUID to return different ID for second player
@@ -295,7 +295,7 @@ describe("Player Store", () => {
       const mockUuid = require("react-native-uuid");
       mockUuid.v4.mockReturnValueOnce("test-player-id-2");
 
-      await store.addPlayer("Player 2", 20, "team-2");
+      await store.addPlayer("Player 2", "20", "team-2");
 
       store.updateStats(player1Id, Stat.Points, 15);
       store.updateStats("test-player-id-2", Stat.Points, 25);
@@ -312,7 +312,7 @@ describe("Player Store", () => {
     it("should preserve unchanged fields when updating", async () => {
       const store = usePlayerStore.getState();
 
-      await store.addPlayer("John Doe", 23, "team-1", "file://image.jpg");
+      await store.addPlayer("John Doe", "23", "team-1", "file://image.jpg");
 
       const originalPlayer = usePlayerStore.getState().players["test-player-id"];
       const originalName = originalPlayer.name;
@@ -333,7 +333,7 @@ describe("Player Store", () => {
     it("should handle undefined or null stat values gracefully", async () => {
       const store = usePlayerStore.getState();
 
-      await store.addPlayer("John Doe", 23, "team-1");
+      await store.addPlayer("John Doe", "23", "team-1");
 
       // The stats should initialize to 0, not undefined
       const player = usePlayerStore.getState().players["test-player-id"];
@@ -347,7 +347,7 @@ describe("Player Store", () => {
     it("should handle undefined or null game number values gracefully", async () => {
       const store = usePlayerStore.getState();
 
-      await store.addPlayer("John Doe", 23, "team-1");
+      await store.addPlayer("John Doe", "23", "team-1");
 
       // The game numbers should initialize to 0
       const player = usePlayerStore.getState().players["test-player-id"];

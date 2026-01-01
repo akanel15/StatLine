@@ -61,7 +61,7 @@ export function SortableBoxScoreTable({
   ];
 
   const formatStats = (stats: StatsType): { formatted: string[]; raw: number[] } => {
-    const safeDivide = (num: number, den: number) => (den === 0 ? 0 : (num / den) * 100);
+    const safeDivide = (num: number, den: number) => (den === 0 ? -1 : (num / den) * 100);
 
     const raw = [
       stats[Stat.Points],
@@ -105,7 +105,7 @@ export function SortableBoxScoreTable({
     const formatted = raw.map((value, index) => {
       // Format percentages (indices 7, 10, 13, 16 are FG%, 2P%, 3P%, FT%)
       if ([7, 10, 13, 16].includes(index)) {
-        return value === 0 ? "-" : Math.round(value).toString() + "%";
+        return value === -1 ? "-" : Math.round(value).toString() + "%";
       }
       return value.toString();
     });
@@ -119,7 +119,10 @@ export function SortableBoxScoreTable({
     const player = players[playerId];
     const playerName = player ? player.name : getPlayerDisplayName(playerId);
     const playerNumber = player?.number;
-    const displayName = playerNumber ? `#${playerNumber} ${playerName}` : playerName;
+    const displayName =
+      playerNumber !== undefined && playerNumber !== null && playerNumber !== ""
+        ? `#${playerNumber} ${playerName}`
+        : playerName;
     const { formatted, raw } = formatStats(game.boxScore[playerId] ?? { ...initialBaseStats });
 
     return {

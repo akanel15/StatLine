@@ -10,6 +10,7 @@ type Props = {
   onPress: () => void;
   opponentName?: string;
   size?: "normal" | "large";
+  allowMultilineText?: boolean;
 };
 
 export function GamePlayerButton({
@@ -18,6 +19,7 @@ export function GamePlayerButton({
   onPress,
   opponentName,
   size = "normal",
+  allowMultilineText = true,
 }: Props) {
   const handlePress = () => {
     if (Platform.OS !== "web") {
@@ -27,6 +29,21 @@ export function GamePlayerButton({
   };
 
   const playerNumber = player?.number;
+  const playerName = player?.name || (playerId ? getPlayerDisplayName(playerId) : "Unknown Player");
+
+  // Determine the text to display based on whether multiline is allowed
+  const getDisplayText = () => {
+    if (opponentName) {
+      return "Opponent";
+    }
+
+    if (playerNumber !== undefined && playerNumber !== null && playerNumber !== "") {
+      // Always show number on its own line, then the name (which may wrap at word boundaries)
+      return `#${playerNumber}\n${playerName}`;
+    }
+
+    return playerName;
+  };
 
   return (
     <Pressable
@@ -40,15 +57,11 @@ export function GamePlayerButton({
       ]}
     >
       <Text
-        numberOfLines={2}
+        numberOfLines={allowMultilineText ? 3 : 2}
         ellipsizeMode="tail"
         style={[styles.text, { color: opponentName ? theme.colorWhite : theme.colorBlack }]}
       >
-        {opponentName
-          ? "Opponent"
-          : playerNumber
-            ? `#${playerNumber}\n${player?.name || (playerId ? getPlayerDisplayName(playerId) : "Unknown Player")}`
-            : player?.name || (playerId ? getPlayerDisplayName(playerId) : "Unknown Player")}
+        {getDisplayText()}
       </Text>
     </Pressable>
   );

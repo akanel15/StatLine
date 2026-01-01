@@ -98,7 +98,11 @@ export default function SubstitutionOverlay({ gameId, onClose }: SubstitutionOve
         <View style={styles.column}>
           <Text style={styles.subHeading}>Active Players</Text>
           <FlatList
-            data={selectedActive.sort((a, b) => a.number - b.number)}
+            data={selectedActive.sort((a, b) => {
+              const numA = parseInt(a.number) || 0;
+              const numB = parseInt(b.number) || 0;
+              return numA - numB;
+            })}
             keyExtractor={item => item.id}
             renderItem={({ item }) => (
               <Pressable
@@ -121,7 +125,11 @@ export default function SubstitutionOverlay({ gameId, onClose }: SubstitutionOve
         <View style={styles.column}>
           <Text style={styles.subHeading}>Bench</Text>
           <FlatList
-            data={selectedBench.sort((a, b) => a.number - b.number)}
+            data={selectedBench.sort((a, b) => {
+              const numA = parseInt(a.number) || 0;
+              const numB = parseInt(b.number) || 0;
+              return numA - numB;
+            })}
             keyExtractor={item => item.id}
             renderItem={({ item }) => (
               <Pressable style={styles.playerBox} onPress={() => toggleBenchPlayer(item)}>

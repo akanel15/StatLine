@@ -26,6 +26,9 @@ export default function NewSet() {
       style={styles.container}
       keyboardShouldPersistTaps="handled"
       contentContainerStyle={styles.contentContainer}
+      extraScrollHeight={120}
+      enableAutomaticScroll={true}
+      enableOnAndroid={true}
     >
       <Text style={styles.header}>Set Name</Text>
       <TextInput
