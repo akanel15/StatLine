@@ -342,10 +342,11 @@ describe("Game Store", () => {
       const game = useGameStore.getState().games["test-game-id"];
       expect(game.periods[0][Team.Us]).toBe(2);
       expect(game.periods[0].playByPlay).toHaveLength(1);
-      expect(game.periods[0].playByPlay[0]).toEqual({
+      expect(game.periods[0].playByPlay[0]).toMatchObject({
         playerId: "player-1",
         action: Stat.TwoPointMakes,
       });
+      expect(game.periods[0].playByPlay[0].id).toBeDefined(); // Plays now have unique IDs
     });
 
     it("should handle three point makes correctly", () => {
@@ -561,6 +562,294 @@ describe("Game Store", () => {
 
       expect(consoleSpy).toHaveBeenCalledWith("Game with ID non-existent not found.");
       consoleSpy.mockRestore();
+    });
+  });
+
+  describe("Period Deletion", () => {
+    beforeEach(() => {
+      const store = useGameStore.getState();
+      store.addGame("team-1", "Opponent Team", PeriodType.Quarters);
+    });
+
+    it("should delete a period and merge plays into previous period", () => {
+      const store = useGameStore.getState();
+
+      // Add plays to Q1 and Q2 (updatePeriods auto-creates periods)
+      store.updatePeriods("test-game-id", "player-1", Stat.TwoPointMakes, 0, Team.Us);
+      store.updatePeriods("test-game-id", "player-2", Stat.ThreePointMakes, 1, Team.Us);
+
+      // Verify we have 2 periods before deletion
+      let game = useGameStore.getState().games["test-game-id"];
+      expect(game.periods).toHaveLength(2);
+
+      // Delete Q2 (period index 1)
+      store.deletePeriod("test-game-id", 1);
+
+      game = useGameStore.getState().games["test-game-id"];
+      expect(game.periods).toHaveLength(1);
+      expect(game.periods[0].playByPlay).toHaveLength(2);
+      expect(game.periods[0][Team.Us]).toBe(5); // 2 + 3 points merged
+    });
+
+    it("should not allow deleting Q1 (period 0)", () => {
+      const consoleSpy = jest.spyOn(console, "warn").mockImplementation();
+      const store = useGameStore.getState();
+
+      store.deletePeriod("test-game-id", 0);
+
+      expect(consoleSpy).toHaveBeenCalledWith("Cannot delete first period (Q1/H1).");
+      consoleSpy.mockRestore();
+    });
+
+    it("should merge opponent scores when deleting period", () => {
+      const store = useGameStore.getState();
+
+      // updatePeriods auto-creates periods
+      store.updatePeriods("test-game-id", "Opponent", Stat.TwoPointMakes, 0, Team.Opponent);
+      store.updatePeriods("test-game-id", "Opponent", Stat.ThreePointMakes, 1, Team.Opponent);
+
+      store.deletePeriod("test-game-id", 1);
+
+      const game = useGameStore.getState().games["test-game-id"];
+      expect(game.periods[0][Team.Opponent]).toBe(5);
+    });
+
+    it("should handle deleting period with no plays", () => {
+      const store = useGameStore.getState();
+
+      // Add play to Q1 only
+      store.updatePeriods("test-game-id", "player-1", Stat.TwoPointMakes, 0, Team.Us);
+
+      // Create Q2 with no plays
+      store.createNewPeriod("test-game-id");
+
+      store.deletePeriod("test-game-id", 1);
+
+      const game = useGameStore.getState().games["test-game-id"];
+      expect(game.periods).toHaveLength(1);
+      expect(game.periods[0].playByPlay).toHaveLength(1);
+    });
+
+    it("should warn when deleting from non-existent game", () => {
+      const consoleSpy = jest.spyOn(console, "warn").mockImplementation();
+      const store = useGameStore.getState();
+
+      store.deletePeriod("non-existent", 1);
+
+      expect(consoleSpy).toHaveBeenCalledWith("Game with ID non-existent not found.");
+      consoleSpy.mockRestore();
+    });
+
+    it("should warn when deleting non-existent period", () => {
+      const consoleSpy = jest.spyOn(console, "warn").mockImplementation();
+      const store = useGameStore.getState();
+
+      store.deletePeriod("test-game-id", 5);
+
+      expect(consoleSpy).toHaveBeenCalledWith("Period 5 does not exist.");
+      consoleSpy.mockRestore();
+    });
+
+    it("should preserve play order when merging", () => {
+      const store = useGameStore.getState();
+
+      // Add plays to Q1
+      store.updatePeriods("test-game-id", "player-1", Stat.TwoPointMakes, 0, Team.Us);
+
+      // Create Q2 and add plays
+      store.createNewPeriod("test-game-id");
+      store.updatePeriods("test-game-id", "player-2", Stat.ThreePointMakes, 1, Team.Us);
+
+      store.deletePeriod("test-game-id", 1);
+
+      const game = useGameStore.getState().games["test-game-id"];
+      // Q2 plays should be prepended (they're newer)
+      expect(game.periods[0].playByPlay[0].playerId).toBe("player-2");
+      expect(game.periods[0].playByPlay[1].playerId).toBe("player-1");
+    });
+  });
+
+  describe("Unified Play List and Reordering", () => {
+    beforeEach(() => {
+      const store = useGameStore.getState();
+      store.addGame("team-1", "Opponent Team", PeriodType.Quarters);
+    });
+
+    it("should return unified play list in chronological order", () => {
+      const store = useGameStore.getState();
+
+      // Add plays to multiple periods
+      store.updatePeriods("test-game-id", "player-1", Stat.TwoPointMakes, 0, Team.Us);
+      store.updatePeriods("test-game-id", "player-2", Stat.ThreePointMakes, 0, Team.Us);
+      store.updatePeriods("test-game-id", "player-3", Stat.TwoPointMakes, 1, Team.Us);
+
+      const unifiedList = store.getUnifiedPlayList("test-game-id");
+
+      expect(unifiedList).toHaveLength(3);
+      // First play from period 0
+      expect(unifiedList[0].play.playerId).toBe("player-1");
+      expect(unifiedList[0].periodIndex).toBe(0);
+      expect(unifiedList[0].cumulativeIndex).toBe(0);
+      // Second play from period 0
+      expect(unifiedList[1].play.playerId).toBe("player-2");
+      expect(unifiedList[1].periodIndex).toBe(0);
+      expect(unifiedList[1].cumulativeIndex).toBe(1);
+      // First play from period 1
+      expect(unifiedList[2].play.playerId).toBe("player-3");
+      expect(unifiedList[2].periodIndex).toBe(1);
+      expect(unifiedList[2].cumulativeIndex).toBe(2);
+    });
+
+    it("should return empty list for non-existent game", () => {
+      const store = useGameStore.getState();
+
+      const unifiedList = store.getUnifiedPlayList("non-existent");
+
+      expect(unifiedList).toEqual([]);
+    });
+
+    it("should return empty list for game with no plays", () => {
+      const store = useGameStore.getState();
+
+      const unifiedList = store.getUnifiedPlayList("test-game-id");
+
+      expect(unifiedList).toEqual([]);
+    });
+
+    it("should handle periods with no plays", () => {
+      const store = useGameStore.getState();
+
+      // Add play to period 0
+      store.updatePeriods("test-game-id", "player-1", Stat.TwoPointMakes, 0, Team.Us);
+      // Skip period 1
+      // Add play to period 2
+      store.updatePeriods("test-game-id", "player-2", Stat.ThreePointMakes, 2, Team.Us);
+
+      const unifiedList = store.getUnifiedPlayList("test-game-id");
+
+      expect(unifiedList).toHaveLength(2);
+      expect(unifiedList[0].periodIndex).toBe(0);
+      expect(unifiedList[1].periodIndex).toBe(2);
+    });
+
+    it("should move play within same period", () => {
+      const store = useGameStore.getState();
+
+      // Add three plays to period 0
+      store.updatePeriods("test-game-id", "player-1", Stat.TwoPointMakes, 0, Team.Us);
+      store.updatePeriods("test-game-id", "player-2", Stat.ThreePointMakes, 0, Team.Us);
+      store.updatePeriods("test-game-id", "player-3", Stat.TwoPointMakes, 0, Team.Us);
+
+      // Move the most recent play (index 0) to the end (index 2)
+      store.movePlayBetweenPeriods("test-game-id", 0, 0, 0, 2);
+
+      const game = useGameStore.getState().games["test-game-id"];
+      expect(game.periods[0].playByPlay).toHaveLength(3);
+      // player-3 was at index 0, should now be at index 2
+      expect(game.periods[0].playByPlay[2].playerId).toBe("player-3");
+    });
+
+    it("should move play between different periods", () => {
+      const store = useGameStore.getState();
+
+      // Add plays to period 0 and 1
+      store.updatePeriods("test-game-id", "player-1", Stat.TwoPointMakes, 0, Team.Us);
+      store.updatePeriods("test-game-id", "player-2", Stat.ThreePointMakes, 1, Team.Us);
+
+      // Move play from period 0 to period 1
+      store.movePlayBetweenPeriods("test-game-id", 0, 0, 1, 0);
+
+      const game = useGameStore.getState().games["test-game-id"];
+      expect(game.periods[0].playByPlay).toHaveLength(0);
+      expect(game.periods[1].playByPlay).toHaveLength(2);
+      expect(game.periods[1].playByPlay[0].playerId).toBe("player-1");
+    });
+
+    it("should update scores when moving play between periods", () => {
+      const store = useGameStore.getState();
+
+      // Add 2-point play to period 0
+      store.updatePeriods("test-game-id", "player-1", Stat.TwoPointMakes, 0, Team.Us);
+
+      // Verify initial scores
+      let game = useGameStore.getState().games["test-game-id"];
+      expect(game.periods[0][Team.Us]).toBe(2);
+
+      // Move play to period 1
+      store.movePlayBetweenPeriods("test-game-id", 0, 0, 1, 0);
+
+      game = useGameStore.getState().games["test-game-id"];
+      expect(game.periods[0][Team.Us]).toBe(0); // Removed from period 0
+      expect(game.periods[1][Team.Us]).toBe(2); // Added to period 1
+    });
+
+    it("should handle moving opponent plays", () => {
+      const store = useGameStore.getState();
+
+      // Add opponent play
+      store.updatePeriods("test-game-id", "Opponent", Stat.ThreePointMakes, 0, Team.Opponent);
+
+      // Move to different period
+      store.movePlayBetweenPeriods("test-game-id", 0, 0, 1, 0);
+
+      const game = useGameStore.getState().games["test-game-id"];
+      expect(game.periods[0][Team.Opponent]).toBe(0);
+      expect(game.periods[1][Team.Opponent]).toBe(3);
+    });
+
+    it("should warn when moving play from non-existent game", () => {
+      const consoleSpy = jest.spyOn(console, "warn").mockImplementation();
+      const store = useGameStore.getState();
+
+      store.movePlayBetweenPeriods("non-existent", 0, 0, 1, 0);
+
+      expect(consoleSpy).toHaveBeenCalledWith("Game with ID non-existent not found.");
+      consoleSpy.mockRestore();
+    });
+
+    it("should warn when moving from invalid period", () => {
+      const consoleSpy = jest.spyOn(console, "warn").mockImplementation();
+      const store = useGameStore.getState();
+
+      store.movePlayBetweenPeriods("test-game-id", 5, 0, 1, 0);
+
+      expect(consoleSpy).toHaveBeenCalledWith("Invalid period indices: from 5, to 1");
+      consoleSpy.mockRestore();
+    });
+
+    it("should warn when moving from invalid index", () => {
+      const consoleSpy = jest.spyOn(console, "warn").mockImplementation();
+      const store = useGameStore.getState();
+
+      // Add one play
+      store.updatePeriods("test-game-id", "player-1", Stat.TwoPointMakes, 0, Team.Us);
+
+      // Try to move from invalid index
+      store.movePlayBetweenPeriods("test-game-id", 0, 10, 1, 0);
+
+      expect(consoleSpy).toHaveBeenCalledWith("Invalid fromIndex: 10");
+      consoleSpy.mockRestore();
+    });
+
+    it("should handle non-scoring plays when moving", () => {
+      const store = useGameStore.getState();
+
+      // Add non-scoring play
+      store.updatePeriods("test-game-id", "player-1", Stat.DefensiveRebounds, 0, Team.Us);
+
+      // Verify score is 0
+      let game = useGameStore.getState().games["test-game-id"];
+      expect(game.periods[0][Team.Us]).toBe(0);
+
+      // Move play
+      store.movePlayBetweenPeriods("test-game-id", 0, 0, 1, 0);
+
+      // Scores should still be 0
+      game = useGameStore.getState().games["test-game-id"];
+      expect(game.periods[0][Team.Us]).toBe(0);
+      expect(game.periods[1][Team.Us]).toBe(0);
+      expect(game.periods[1].playByPlay).toHaveLength(1);
+      expect(game.periods[1].playByPlay[0].action).toBe(Stat.DefensiveRebounds);
     });
   });
 });

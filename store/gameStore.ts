@@ -1,10 +1,17 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import uuid from "react-native-uuid";
-import { GameType, PeriodType, Team, createGame } from "@/types/game";
+import { GameType, PeriodType, Team, createGame, PlayByPlayType } from "@/types/game";
 import { initialBaseStats, Stat, StatsType } from "@/types/stats";
 import { useSetStore } from "./setStore";
+import { debouncedAsyncStorage } from "@/utils/debounceAsyncStorage";
+
+export type UnifiedPlayEntry = {
+  play: PlayByPlayType;
+  periodIndex: number;
+  indexInPeriod: number;
+  cumulativeIndex: number;
+};
 
 type GameState = {
   games: Record<string, GameType>;
@@ -29,11 +36,30 @@ type GameState = {
   incrementSetRunCount: (gameId: string, setId: string) => void;
   addPlayersToGamePlayedList: (gameId: string, playerIds: string[]) => void;
   removePlayFromPeriod: (gameId: string, period: number, playIndex: number) => void;
+  reorderPlaysInPeriod: (
+    gameId: string,
+    period: number,
+    fromIndex: number,
+    toIndex: number,
+  ) => void;
   undoLastEvent: (gameId: string, period: number) => void;
   resetPeriod: (gameId: string, period: number) => void;
   markGameAsFinished: (gameId: string) => void;
   markGameAsActive: (gameId: string) => void;
   getGameSafely: (gameId: string) => GameType | null;
+  getUnifiedPlayList: (gameId: string) => UnifiedPlayEntry[];
+  movePlayBetweenPeriods: (
+    gameId: string,
+    fromPeriod: number,
+    fromIndex: number,
+    toPeriod: number,
+    toIndex: number,
+  ) => void;
+  movePeriodDivider: (gameId: string, periodIndex: number, newPlayIndex: number) => void;
+  createNewPeriod: (gameId: string) => number;
+  updateAllPeriods: (gameId: string, newPeriods: any[]) => void;
+  deletePeriod: (gameId: string, periodIndex: number) => void;
+  migratePlayIds: () => { gamesUpdated: number; playsUpdated: number };
 };
 
 export const useGameStore = create(
@@ -201,8 +227,9 @@ export const useGameStore = create(
             [team]: (updatedPeriods[period]?.[team] ?? 0) + scoreIncrease,
           };
 
-          // Add new play-by-play event
+          // Add new play-by-play event with unique ID for stable rendering
           updatedPeriods[period].playByPlay.unshift({
+            id: uuid.v4() as string,
             playerId,
             action: stat,
           });
@@ -382,10 +409,97 @@ export const useGameStore = create(
         });
       },
       removePlayFromPeriod: (gameId: string, period: number, playIndex: number) => {
-        const game = get().games[gameId];
-        if (game && game.periods[period] && game.periods[period].playByPlay) {
-          game.periods[period].playByPlay.splice(playIndex, 1);
-        }
+        set(state => {
+          const game = state.games[gameId];
+          if (!game?.periods[period]?.playByPlay) {
+            console.warn(`Cannot remove play: invalid game/period/playByPlay`);
+            return state;
+          }
+
+          const playByPlay = [...game.periods[period].playByPlay];
+
+          if (playIndex < 0 || playIndex >= playByPlay.length) {
+            console.warn(`Invalid playIndex: ${playIndex}`);
+            return state;
+          }
+
+          const [removedPlay] = playByPlay.splice(playIndex, 1);
+
+          // Calculate points to subtract from period score
+          let points = 0;
+          if (removedPlay.action === Stat.TwoPointMakes) points = 2;
+          if (removedPlay.action === Stat.ThreePointMakes) points = 3;
+          if (removedPlay.action === Stat.FreeThrowsMade) points = 1;
+
+          const team = removedPlay.playerId === "Opponent" ? Team.Opponent : Team.Us;
+
+          const updatedPeriods = [...game.periods];
+          updatedPeriods[period] = {
+            ...updatedPeriods[period],
+            playByPlay,
+            [team]: Math.max(0, (updatedPeriods[period][team] || 0) - points),
+          };
+
+          return {
+            games: {
+              ...state.games,
+              [gameId]: { ...game, periods: updatedPeriods },
+            },
+          };
+        });
+      },
+      reorderPlaysInPeriod: (
+        gameId: string,
+        period: number,
+        fromIndex: number,
+        toIndex: number,
+      ) => {
+        set(state => {
+          const game = state.games[gameId];
+          if (!game?.periods[period]?.playByPlay) {
+            console.warn(`Cannot reorder plays: invalid game/period/playByPlay`);
+            return state;
+          }
+
+          const playByPlay = [...game.periods[period].playByPlay];
+
+          // Validate indices
+          if (
+            fromIndex < 0 ||
+            fromIndex >= playByPlay.length ||
+            toIndex < 0 ||
+            toIndex >= playByPlay.length
+          ) {
+            console.warn(`Invalid indices: fromIndex=${fromIndex}, toIndex=${toIndex}`);
+            return state;
+          }
+
+          // IMPORTANT: playByPlay is stored newest-first (unshift)
+          // fromIndex and toIndex refer to this reversed array
+
+          // Remove from old position
+          const [play] = playByPlay.splice(fromIndex, 1);
+
+          // Insert at new position
+          playByPlay.splice(toIndex, 0, play);
+
+          // Update period with new order
+          const updatedPeriods = [...game.periods];
+          updatedPeriods[period] = {
+            ...updatedPeriods[period],
+            playByPlay,
+          };
+
+          // Period scores don't change (same plays, just reordered)
+          // Score DISPLAY recalculation happens in component
+
+          return {
+            games: {
+              ...state.games,
+              [gameId]: { ...game, periods: updatedPeriods },
+            },
+          };
+        });
       },
       resetPeriod: (gameId: string, period: number) => {
         set(state => {
@@ -461,7 +575,7 @@ export const useGameStore = create(
         const game = state.games[gameId];
         if (!game) return null;
 
-        // Check if game needs data repair
+        // Check if game needs data repair (null periods or missing playByPlay)
         let needsRepair = false;
         const repairedPeriods = game.periods.map(period => {
           // Handle null periods (skipped quarters/halves)
@@ -504,10 +618,302 @@ export const useGameStore = create(
 
         return game;
       },
+
+      getUnifiedPlayList: (gameId: string) => {
+        const game = get().games[gameId];
+        if (!game || !game.periods) return [];
+
+        const unifiedList: UnifiedPlayEntry[] = [];
+        let cumulativeIndex = 0;
+
+        // Iterate through periods in order (Q1, Q2, Q3, Q4, OT, etc.)
+        game.periods.forEach((period, periodIndex) => {
+          if (!period || !period.playByPlay || !Array.isArray(period.playByPlay)) return;
+
+          // Plays are stored in reverse chronological order (newest first)
+          // So we iterate in reverse to get chronological order for display
+          for (let i = period.playByPlay.length - 1; i >= 0; i--) {
+            unifiedList.push({
+              play: period.playByPlay[i],
+              periodIndex,
+              indexInPeriod: i,
+              cumulativeIndex,
+            });
+            cumulativeIndex++;
+          }
+        });
+
+        return unifiedList;
+      },
+
+      movePlayBetweenPeriods: (
+        gameId: string,
+        fromPeriod: number,
+        fromIndex: number,
+        toPeriod: number,
+        toIndex: number,
+      ) => {
+        set(state => {
+          const game = state.games[gameId];
+          if (!game) {
+            console.warn(`Game with ID ${gameId} not found.`);
+            return state;
+          }
+
+          const updatedPeriods = [...game.periods];
+
+          // Validate source period exists
+          if (!updatedPeriods[fromPeriod]) {
+            console.warn(`Invalid period indices: from ${fromPeriod}, to ${toPeriod}`);
+            return state;
+          }
+
+          // Ensure destination period exists (create if needed)
+          if (!updatedPeriods[toPeriod]) {
+            updatedPeriods[toPeriod] = {
+              [Team.Us]: 0,
+              [Team.Opponent]: 0,
+              playByPlay: [],
+            };
+          }
+
+          const fromPlayByPlay = [...updatedPeriods[fromPeriod].playByPlay];
+          const toPlayByPlay =
+            fromPeriod === toPeriod ? fromPlayByPlay : [...updatedPeriods[toPeriod].playByPlay];
+
+          // Validate indices
+          if (fromIndex < 0 || fromIndex >= fromPlayByPlay.length) {
+            console.warn(`Invalid fromIndex: ${fromIndex}`);
+            return state;
+          }
+
+          // Remove play from source period
+          const [playToMove] = fromPlayByPlay.splice(fromIndex, 1);
+
+          // Calculate points for the play
+          let points = 0;
+          if (playToMove.action === Stat.TwoPointMakes) points = 2;
+          if (playToMove.action === Stat.ThreePointMakes) points = 3;
+          if (playToMove.action === Stat.FreeThrowsMade) points = 1;
+
+          const team = playToMove.playerId === "Opponent" ? Team.Opponent : Team.Us;
+
+          // Update scores for source period (subtract)
+          updatedPeriods[fromPeriod] = {
+            ...updatedPeriods[fromPeriod],
+            playByPlay: fromPlayByPlay,
+            [team]: (updatedPeriods[fromPeriod][team] || 0) - points,
+          };
+
+          // Add play to destination period
+          const insertIndex = Math.min(toIndex, toPlayByPlay.length);
+          toPlayByPlay.splice(insertIndex, 0, playToMove);
+
+          // Update scores for destination period (add)
+          updatedPeriods[toPeriod] = {
+            ...updatedPeriods[toPeriod],
+            playByPlay: toPlayByPlay,
+            [team]: (updatedPeriods[toPeriod][team] || 0) + points,
+          };
+
+          return {
+            games: {
+              ...state.games,
+              [gameId]: {
+                ...game,
+                periods: updatedPeriods,
+              },
+            },
+          };
+        });
+      },
+
+      createNewPeriod: (gameId: string) => {
+        let newPeriodIndex = 0;
+        set(state => {
+          const game = state.games[gameId];
+          if (!game) {
+            console.warn(`Game with ID ${gameId} not found.`);
+            return state;
+          }
+
+          newPeriodIndex = game.periods.length;
+
+          const newPeriod = {
+            [Team.Us]: 0,
+            [Team.Opponent]: 0,
+            playByPlay: [],
+          };
+
+          return {
+            games: {
+              ...state.games,
+              [gameId]: {
+                ...game,
+                periods: [...game.periods, newPeriod],
+              },
+            },
+          };
+        });
+        return newPeriodIndex;
+      },
+
+      updateAllPeriods: (gameId: string, newPeriods: any[]) => {
+        set(state => {
+          const game = state.games[gameId];
+          if (!game) {
+            console.warn(`Game with ID ${gameId} not found.`);
+            return state;
+          }
+
+          return {
+            games: {
+              ...state.games,
+              [gameId]: {
+                ...game,
+                periods: newPeriods,
+              },
+            },
+          };
+        });
+      },
+
+      deletePeriod: (gameId: string, periodIndex: number) => {
+        set(state => {
+          const game = state.games[gameId];
+          if (!game) {
+            console.warn(`Game with ID ${gameId} not found.`);
+            return state;
+          }
+
+          // Cannot delete Q1/H1 (period 0)
+          if (periodIndex === 0) {
+            console.warn("Cannot delete first period (Q1/H1).");
+            return state;
+          }
+
+          // Cannot delete non-existent period
+          if (!game.periods[periodIndex]) {
+            console.warn(`Period ${periodIndex} does not exist.`);
+            return state;
+          }
+
+          const updatedPeriods = [...game.periods];
+          const deletedPeriod = updatedPeriods[periodIndex];
+          const prevPeriod = updatedPeriods[periodIndex - 1];
+
+          // Move all plays from deleted period to previous period
+          // Plays are stored newest-first, so prepend deleted period's plays
+          // to maintain relative chronological order (deleted plays happened "after")
+          const mergedPlayByPlay = [...deletedPeriod.playByPlay, ...prevPeriod.playByPlay];
+
+          // Update previous period with merged plays and combined scores
+          updatedPeriods[periodIndex - 1] = {
+            [Team.Us]: prevPeriod[Team.Us] + deletedPeriod[Team.Us],
+            [Team.Opponent]: prevPeriod[Team.Opponent] + deletedPeriod[Team.Opponent],
+            playByPlay: mergedPlayByPlay,
+          };
+
+          // Remove the deleted period
+          updatedPeriods.splice(periodIndex, 1);
+
+          return {
+            games: {
+              ...state.games,
+              [gameId]: {
+                ...game,
+                periods: updatedPeriods,
+              },
+            },
+          };
+        });
+      },
+
+      movePeriodDivider: (gameId: string, periodIndex: number, newPlayIndex: number) => {
+        set(state => {
+          const game = state.games[gameId];
+          if (!game) {
+            console.warn(`Game with ID ${gameId} not found.`);
+            return state;
+          }
+
+          // Get unified play list to understand the cumulative structure
+          const unifiedList = get().getUnifiedPlayList(gameId);
+          if (newPlayIndex < 0 || newPlayIndex > unifiedList.length) {
+            console.warn(`Invalid newPlayIndex: ${newPlayIndex}`);
+            return state;
+          }
+
+          // Determine which period the new index falls into
+          let targetPeriod = 0;
+          if (newPlayIndex < unifiedList.length) {
+            targetPeriod = unifiedList[newPlayIndex].periodIndex;
+          } else if (unifiedList.length > 0) {
+            // If at the end, use the last period + 1
+            targetPeriod = unifiedList[unifiedList.length - 1].periodIndex;
+          }
+
+          // If moving divider to same period, no change needed
+          if (targetPeriod === periodIndex) {
+            return state;
+          }
+
+          // This is a simplified implementation - reassigning plays between periods
+          // In a full implementation, you would redistribute plays based on the divider position
+          console.log(
+            `Moving period ${periodIndex} divider to position ${newPlayIndex} (target period: ${targetPeriod})`,
+          );
+
+          // For now, return state unchanged - this would require more complex logic
+          // to properly redistribute plays across periods
+          return state;
+        });
+      },
+
+      migratePlayIds: () => {
+        const state = get();
+        let gamesUpdated = 0;
+        let playsUpdated = 0;
+
+        const updatedGames = { ...state.games };
+
+        Object.entries(updatedGames).forEach(([gameId, game]) => {
+          let gameNeedsUpdate = false;
+
+          const updatedPeriods = game.periods.map((period, periodIndex) => {
+            if (!period?.playByPlay) return period;
+
+            const updatedPlays = period.playByPlay.map((play, playIndex) => {
+              if (!play.id) {
+                playsUpdated++;
+                gameNeedsUpdate = true;
+                return { ...play, id: `migrated-${gameId}-${periodIndex}-${playIndex}` };
+              }
+              return play;
+            });
+
+            return { ...period, playByPlay: updatedPlays };
+          });
+
+          if (gameNeedsUpdate) {
+            gamesUpdated++;
+            updatedGames[gameId] = { ...game, periods: updatedPeriods };
+          }
+        });
+
+        if (gamesUpdated > 0) {
+          set({ games: updatedGames });
+        }
+
+        console.log(`Migration complete: ${gamesUpdated} games, ${playsUpdated} plays updated`);
+        return { gamesUpdated, playsUpdated };
+      },
     }),
     {
       name: "statline-game-store",
-      storage: createJSONStorage(() => AsyncStorage),
+      // Use debounced AsyncStorage to prevent blocking UI during rapid drag operations
+      // Writes are batched and delayed by 300ms, improving drag responsiveness
+      storage: createJSONStorage(() => debouncedAsyncStorage),
     },
   ),
 );

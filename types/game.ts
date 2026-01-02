@@ -12,6 +12,7 @@ export enum PeriodType {
 }
 
 export type PlayByPlayType = {
+  id: string; // Unique identifier for stable rendering during drag operations
   playerId: string;
   action: Stat;
 };

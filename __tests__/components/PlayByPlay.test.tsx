@@ -30,9 +30,9 @@ describe("PlayByPlay Cumulative Scoring Logic", () => {
           [Team.Us]: 5,
           [Team.Opponent]: 3,
           playByPlay: [
-            { playerId: "player-2", action: Stat.TwoPointMakes }, // +2 = 5
-            { playerId: "Opponent", action: Stat.ThreePointMakes }, // +3 = 3
-            { playerId: "player-1", action: Stat.ThreePointMakes }, // +3 = 3
+            { id: "play-0-0", playerId: "player-2", action: Stat.TwoPointMakes }, // +2 = 5
+            { id: "play-0-1", playerId: "Opponent", action: Stat.ThreePointMakes }, // +3 = 3
+            { id: "play-0-2", playerId: "player-1", action: Stat.ThreePointMakes }, // +3 = 3
           ],
         },
         // Period 1: Team scores 4 more, Opponent scores 2 more
@@ -40,9 +40,9 @@ describe("PlayByPlay Cumulative Scoring Logic", () => {
           [Team.Us]: 4,
           [Team.Opponent]: 2,
           playByPlay: [
-            { playerId: "player-1", action: Stat.TwoPointMakes }, // Should show 9-5 cumulative
-            { playerId: "Opponent", action: Stat.TwoPointMakes }, // Should show 7-5 cumulative
-            { playerId: "player-2", action: Stat.TwoPointMakes }, // Should show 7-3 cumulative
+            { id: "play-1-0", playerId: "player-1", action: Stat.TwoPointMakes }, // Should show 9-5 cumulative
+            { id: "play-1-1", playerId: "Opponent", action: Stat.TwoPointMakes }, // Should show 7-5 cumulative
+            { id: "play-1-2", playerId: "player-2", action: Stat.TwoPointMakes }, // Should show 7-3 cumulative
           ],
         },
       ]);
@@ -93,14 +93,14 @@ describe("PlayByPlay Cumulative Scoring Logic", () => {
           [Team.Us]: 10,
           [Team.Opponent]: 8,
           playByPlay: [
-            { playerId: "player-1", action: Stat.TwoPointMakes }, // Most recent: +2 team
-            { playerId: "Opponent", action: Stat.TwoPointMakes }, // +2 opponent
-            { playerId: "player-2", action: Stat.ThreePointMakes }, // +3 team
-            { playerId: "Opponent", action: Stat.ThreePointMakes }, // +3 opponent
-            { playerId: "player-1", action: Stat.FreeThrowsMade }, // +1 team
-            { playerId: "player-1", action: Stat.TwoPointMakes }, // +2 team
-            { playerId: "Opponent", action: Stat.ThreePointMakes }, // +3 opponent
-            { playerId: "player-1", action: Stat.TwoPointMakes }, // Oldest: +2 team
+            { id: "play-0-0", playerId: "player-1", action: Stat.TwoPointMakes }, // Most recent: +2 team
+            { id: "play-0-1", playerId: "Opponent", action: Stat.TwoPointMakes }, // +2 opponent
+            { id: "play-0-2", playerId: "player-2", action: Stat.ThreePointMakes }, // +3 team
+            { id: "play-0-3", playerId: "Opponent", action: Stat.ThreePointMakes }, // +3 opponent
+            { id: "play-0-4", playerId: "player-1", action: Stat.FreeThrowsMade }, // +1 team
+            { id: "play-0-5", playerId: "player-1", action: Stat.TwoPointMakes }, // +2 team
+            { id: "play-0-6", playerId: "Opponent", action: Stat.ThreePointMakes }, // +3 opponent
+            { id: "play-0-7", playerId: "player-1", action: Stat.TwoPointMakes }, // Oldest: +2 team
           ],
         },
       ]);
@@ -157,8 +157,8 @@ describe("PlayByPlay Cumulative Scoring Logic", () => {
           [Team.Us]: 3,
           [Team.Opponent]: 2,
           playByPlay: [
-            { playerId: "player-1", action: Stat.ThreePointMakes },
-            { playerId: "Opponent", action: Stat.TwoPointMakes },
+            { id: "play-1-0", playerId: "player-1", action: Stat.ThreePointMakes },
+            { id: "play-1-1", playerId: "Opponent", action: Stat.TwoPointMakes },
           ],
         },
       ]);

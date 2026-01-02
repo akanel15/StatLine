@@ -17,15 +17,15 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { theme } from "@/theme";
-import { PeriodType, PlayByPlayType, Team } from "@/types/game";
+import { PlayByPlayType, Team } from "@/types/game";
 import { SetRadioButton } from "@/components/SetRadioButton";
 import { useSetStore } from "@/store/setStore";
 import StatOverlay from "@/components/gamePage/StatOverlay";
 import SetOverlay from "@/components/gamePage/SetOverlay";
 import SubstitutionOverlay from "@/components/gamePage/SubstitutionOverlay";
-import PlayByPlay from "@/components/gamePage/PlayByPlay";
+import UnifiedPlayByPlay from "@/components/gamePage/UnifiedPlayByPlay";
 import BoxScoreOverlay from "@/components/gamePage/BoxScoreOverlay";
-import CompletedGamePlayByPlay from "@/components/gamePage/CompletedGamePlayByPlay";
+import CompletedUnifiedPlayByPlay from "@/components/gamePage/CompletedUnifiedPlayByPlay";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import Feather from "@expo/vector-icons/Feather";
 import MatchUpDisplay from "@/components/MatchUpDisplay";
@@ -74,20 +74,6 @@ export default function GamePage() {
   const [showBoxScore, setShowBoxScore] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState<string>("");
 
-  // Start at the last period with plays instead of Q1
-  const [selectedPeriod, setSelectedPeriod] = useState(() => {
-    const currentGame = getGameSafely(gameId);
-    if (currentGame?.periods && currentGame.periods.length > 0) {
-      // Find the last period that has plays
-      for (let i = currentGame.periods.length - 1; i >= 0; i--) {
-        const period = currentGame.periods[i];
-        if (period?.playByPlay && period.playByPlay.length > 0) {
-          return i;
-        }
-      }
-    }
-    return 0; // Default to first period if no plays found
-  });
   const [freeThrowToggle, setFreeThrowToggle] = useState<boolean>(false);
   const [isSharing, setIsSharing] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
@@ -95,6 +81,7 @@ export default function GamePage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showSetsSection, setShowSetsSection] = useState(teamSets.length > 0);
   const [activeTab, setActiveTab] = useState<"boxscore" | "playbyplay">("boxscore");
+  const [expandPlayByPlay, setExpandPlayByPlay] = useState(false);
 
   // Help hints
   const hasSeenGameFlowHint = useHelpStore(state => state.hasSeenGameFlowHint);
@@ -379,6 +366,20 @@ export default function GamePage() {
 
   function handleStatUpdate({ stats, gameId, teamId, playerId, setId }: StatUpdateType) {
     // Use the extracted stat update logic
+    // selectedPeriod is now dynamic - use the last period with plays or create a new one
+    const currentGame = getGameSafely(gameId);
+    let selectedPeriod = 0;
+    if (currentGame?.periods && currentGame.periods.length > 0) {
+      // Find the last period that has plays, or use the last period
+      for (let i = currentGame.periods.length - 1; i >= 0; i--) {
+        const period = currentGame.periods[i];
+        if (period?.playByPlay && period.playByPlay.length > 0) {
+          selectedPeriod = i;
+          break;
+        }
+      }
+    }
+
     handleStatUpdateLogic(storeActions, {
       stats,
       gameId,
@@ -573,7 +574,7 @@ export default function GamePage() {
           {activeTab === "boxscore" ? (
             <BoxScoreOverlay gameId={gameId} onClose={() => {}} hideCloseButton={true} />
           ) : (
-            <CompletedGamePlayByPlay gameId={gameId} />
+            <CompletedUnifiedPlayByPlay gameId={gameId} />
           )}
         </View>
 
@@ -672,68 +673,38 @@ export default function GamePage() {
       ) : showBoxScore ? (
         <BoxScoreOverlay gameId={gameId} onClose={() => setShowBoxScore(false)} />
       ) : (
-        <View>
-          <View style={styles.periodContainer}>
-            <TouchableOpacity
-              style={[styles.periodButton, selectedPeriod === 0 && styles.periodButtonDisabled]}
-              onPress={() => setSelectedPeriod(selectedPeriod - 1)}
-              disabled={selectedPeriod === 0}
-            >
-              <Feather
-                name="chevron-left"
-                size={20}
-                color={selectedPeriod === 0 ? theme.colorGrey : theme.colorBlue}
-              />
-              <Text
-                style={[
-                  styles.periodButtonText,
-                  selectedPeriod === 0 && styles.periodButtonTextDisabled,
-                ]}
-              >
-                Previous
-              </Text>
-            </TouchableOpacity>
-
-            <View style={styles.periodInfo}>
-              {selectedPeriod + 1 <= game.periodType ? (
-                // regulation
-                game.periodType === PeriodType.Quarters ? (
-                  <Text style={styles.periodLabel}>Q{selectedPeriod + 1}</Text>
-                ) : (
-                  <Text style={styles.periodLabel}>Half {selectedPeriod + 1}</Text>
-                )
-              ) : (
-                <Text style={styles.periodLabel}>OT{selectedPeriod + 1 - game.periodType}</Text>
-              )}
-            </View>
-
-            <TouchableOpacity
-              style={styles.periodButton}
-              onPress={() => setSelectedPeriod(selectedPeriod + 1)}
-            >
-              <Text style={styles.periodButtonText}>Next</Text>
-              <Feather name="chevron-right" size={20} color={theme.colorBlue} />
-            </TouchableOpacity>
+        <View style={{ flex: 1 }}>
+          <View
+            style={[
+              styles.playByPlayContainer,
+              expandPlayByPlay && styles.playByPlayContainerExpanded,
+            ]}
+          >
+            <UnifiedPlayByPlay
+              gameId={gameId}
+              onDeletePlay={removePlay}
+              isExpanded={expandPlayByPlay}
+              onToggleExpand={() => setExpandPlayByPlay(!expandPlayByPlay)}
+            />
           </View>
-          <View style={styles.playByPlayContainer}>
-            <PlayByPlay gameId={gameId} period={selectedPeriod} onDeletePlay={removePlay} />
-          </View>
-          <View style={styles.bottomSection}>
+          <View style={[styles.bottomSection, expandPlayByPlay && styles.bottomSectionMinimized]}>
             <View style={styles.section}>
-              <View style={styles.headingRow}>
-                <Text style={styles.heading}>Sets</Text>
-                <Pressable
-                  hitSlop={10}
-                  onPress={() => setShowSetsSection(prev => !prev)}
-                  accessibilityRole="button"
-                  accessibilityLabel={showSetsSection ? "Collapse sets" : "Expand sets"}
-                >
-                  <Ionicons
-                    name={showSetsSection ? "chevron-up" : "chevron-down"}
-                    size={20}
-                    color={theme.colorOrangePeel}
-                  />
-                </Pressable>
+              <View style={styles.headingRowWithToggle}>
+                <View style={styles.centeredHeadingWrapper}>
+                  <Text style={styles.heading}>Sets</Text>
+                  <Pressable
+                    hitSlop={10}
+                    onPress={() => setShowSetsSection(prev => !prev)}
+                    accessibilityRole="button"
+                    accessibilityLabel={showSetsSection ? "Collapse sets" : "Expand sets"}
+                  >
+                    <Ionicons
+                      name={showSetsSection ? "chevron-up" : "chevron-down"}
+                      size={20}
+                      color={theme.colorOrangePeel}
+                    />
+                  </Pressable>
+                </View>
               </View>
               {showSetsSection && (
                 <View style={styles.rowContainer}>
@@ -764,12 +735,14 @@ export default function GamePage() {
                     player={player}
                     onPress={() => handlePlayerPress(player.id)}
                     size={showSetsSection ? "normal" : "large"}
+                    allowMultilineText={!showSetsSection}
                   />
                 ))}
                 <GamePlayerButton
                   onPress={() => handlePlayerPress("Opponent")}
                   opponentName={game.opposingTeamName}
                   size={showSetsSection ? "normal" : "large"}
+                  allowMultilineText={!showSetsSection}
                 />
               </View>
             </View>
@@ -815,19 +788,23 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   playByPlayContainer: {
-    flex: 1,
+    flex: 2,
     marginTop: 4,
     marginBottom: 6,
-    padding: 4,
     borderWidth: 1,
-    borderColor: "gray",
-    borderRadius: 8,
-    justifyContent: "center",
-    alignItems: "center",
-    minHeight: 140,
+    borderColor: theme.colorLightGrey,
+    borderRadius: 12,
+    overflow: "hidden",
+  },
+  playByPlayContainerExpanded: {
+    flex: 8,
+    marginBottom: 0,
   },
   bottomSection: {
     justifyContent: "flex-end",
+  },
+  bottomSectionMinimized: {
+    display: "none",
   },
   section: {
     marginBottom: 4,
@@ -838,11 +815,14 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 2,
   },
-  headingRow: {
-    flexDirection: "row",
+  headingRowWithToggle: {
     alignItems: "center",
     justifyContent: "center",
-    gap: 6,
+  },
+  centeredHeadingWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
   },
   rowContainer: {
     flexDirection: "row",
@@ -854,48 +834,6 @@ const styles = StyleSheet.create({
   split: {
     flex: 1,
     maxWidth: "50%",
-  },
-  periodContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 8,
-    paddingHorizontal: 8,
-    backgroundColor: theme.colorWhite,
-    marginTop: 2,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: theme.colorLightGrey,
-  },
-  periodButton: {
-    width: 100,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 4,
-    paddingVertical: 2,
-    paddingHorizontal: 12,
-  },
-  periodButtonDisabled: {
-    opacity: 0.4,
-  },
-  periodButtonText: {
-    color: theme.colorBlue,
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  periodButtonTextDisabled: {
-    color: theme.colorGrey,
-  },
-  periodInfo: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  periodLabel: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: theme.colorOnyx,
   },
   headerButtonText: {
     color: theme.colorOrangePeel,

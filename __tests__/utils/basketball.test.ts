@@ -31,18 +31,21 @@ describe("Basketball Utilities", () => {
   describe("getPointsForPlay", () => {
     it("should return correct points for scoring plays", () => {
       const threePointPlay: PlayByPlayType = {
+        id: "test-1",
         playerId: "player-1",
         action: Stat.ThreePointMakes,
       };
       expect(getPointsForPlay(threePointPlay)).toBe(3);
 
       const twoPointPlay: PlayByPlayType = {
+        id: "test-2",
         playerId: "player-2",
         action: Stat.TwoPointMakes,
       };
       expect(getPointsForPlay(twoPointPlay)).toBe(2);
 
       const freeThrowPlay: PlayByPlayType = {
+        id: "test-3",
         playerId: "player-3",
         action: Stat.FreeThrowsMade,
       };
@@ -51,12 +54,14 @@ describe("Basketball Utilities", () => {
 
     it("should return 0 points for non-scoring plays", () => {
       const assistPlay: PlayByPlayType = {
+        id: "test-4",
         playerId: "player-1",
         action: Stat.Assists,
       };
       expect(getPointsForPlay(assistPlay)).toBe(0);
 
       const reboundPlay: PlayByPlayType = {
+        id: "test-5",
         playerId: "Opponent",
         action: Stat.DefensiveRebounds,
       };
@@ -65,6 +70,7 @@ describe("Basketball Utilities", () => {
 
     it("should handle opponent plays correctly", () => {
       const opponentPlay: PlayByPlayType = {
+        id: "test-6",
         playerId: "Opponent",
         action: Stat.ThreePointMakes,
       };
