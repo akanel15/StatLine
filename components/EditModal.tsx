@@ -110,7 +110,7 @@ export function EditModal({ visible, title, fields, onSave, onCancel }: EditModa
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
         <View style={styles.header}>
-          <TouchableOpacity onPress={handleCancel} style={styles.cancelButton}>
+          <TouchableOpacity onPress={handleCancel} style={styles.cancelButton} hitSlop={10}>
             <FontAwesome5 name="times" size={20} color={theme.colorGrey} />
           </TouchableOpacity>
           <Text style={styles.title}>{title}</Text>

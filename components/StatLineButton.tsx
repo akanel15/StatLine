@@ -6,9 +6,19 @@ type Props = {
   title: string;
   onPress: () => void;
   color?: string;
+  accessibilityLabel?: string;
+  accessibilityHint?: string;
+  disabled?: boolean;
 };
 
-export function StatLineButton({ title, onPress, color }: Props) {
+export function StatLineButton({
+  title,
+  onPress,
+  color,
+  accessibilityLabel,
+  accessibilityHint,
+  disabled,
+}: Props) {
   const handlePress = () => {
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -19,6 +29,11 @@ export function StatLineButton({ title, onPress, color }: Props) {
   return (
     <Pressable
       onPress={handlePress}
+      disabled={disabled}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel || title}
+      accessibilityHint={accessibilityHint}
+      accessibilityState={{ disabled }}
       style={({ pressed }) => {
         if (pressed) {
           return [styles.button, styles.buttonPressed];

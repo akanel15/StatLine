@@ -93,21 +93,25 @@ export const executeGameCompletion = (
   const canCompleteNow = canCompleteGame(freshGame);
 
   if (!canCompleteNow) {
-    console.log(
-      `${logPrefix}: Attempted to complete already finished game:`,
-      completionData.gameId,
-    );
+    if (__DEV__) {
+      console.log(
+        `${logPrefix}: Attempted to complete already finished game:`,
+        completionData.gameId,
+      );
+    }
     return false;
   }
 
-  console.log(
-    `${logPrefix}: Starting completion - Game:`,
-    completionData.gameId,
-    "Result:",
-    completionData.result,
-    "Players:",
-    completionData.participants.length,
-  );
+  if (__DEV__) {
+    console.log(
+      `${logPrefix}: Starting completion - Game:`,
+      completionData.gameId,
+      "Result:",
+      completionData.result,
+      "Players:",
+      completionData.participants.length,
+    );
+  }
 
   // Mark game as finished FIRST to prevent double execution
   actions.markGameAsFinished();
@@ -120,7 +124,9 @@ export const executeGameCompletion = (
     actions.updatePlayerGameNumbers(playerId, completionData.result);
   });
 
-  console.log(`${logPrefix}: Completion successful - Game marked as finished`);
+  if (__DEV__) {
+    console.log(`${logPrefix}: Completion successful - Game marked as finished`);
+  }
   return true;
 };
 

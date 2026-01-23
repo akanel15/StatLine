@@ -17,9 +17,21 @@ export function TeamCard({ team }: { team: TeamType }) {
   const record = formatRecord(team.gameNumbers);
   const teamPPG = calculateTeamPPG(team);
 
+  // Create accessibility label with team info
+  const accessibilityLabel =
+    gamesPlayed > 0
+      ? `${team.name}, ${record} record, ${formatStatForCard(teamPPG)} points per game`
+      : `${team.name}, no games played yet`;
+
   return (
     <Link href={`/${team.id}`} asChild>
-      <Pressable style={styles.teamCard} onPress={handlePress}>
+      <Pressable
+        style={styles.teamCard}
+        onPress={handlePress}
+        accessibilityRole="button"
+        accessibilityLabel={accessibilityLabel}
+        accessibilityHint="Double tap to view team details"
+      >
         <StatLineImage size={80} imageUri={team.imageUri} />
 
         <View style={styles.details}>

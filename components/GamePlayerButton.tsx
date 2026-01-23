@@ -45,9 +45,23 @@ export function GamePlayerButton({
     return playerName;
   };
 
+  // Create accessibility label
+  const getAccessibilityLabel = () => {
+    if (opponentName) {
+      return `Select opponent ${opponentName}`;
+    }
+    if (playerNumber) {
+      return `Select ${playerName}, number ${playerNumber}`;
+    }
+    return `Select ${playerName}`;
+  };
+
   return (
     <Pressable
       onPress={handlePress}
+      accessibilityRole="button"
+      accessibilityLabel={getAccessibilityLabel()}
+      accessibilityHint="Double tap to select this player"
       style={({ pressed }) => [
         size === "large" ? styles.buttonLarge : styles.button,
         {

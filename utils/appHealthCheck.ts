@@ -34,7 +34,9 @@ export function syncGameCounts(): boolean {
     correctGameCounts();
     return true;
   } catch (error) {
-    console.error("Error syncing game counts:", error);
+    if (__DEV__) {
+      console.error("Error syncing game counts:", error);
+    }
     return false;
   }
 }
@@ -52,7 +54,9 @@ export async function runAppLoadHealthCheck(): Promise<HealthCheckReport> {
     gamesMarkedComplete = markAllGamesAsComplete();
   } catch (error) {
     const errorMsg = `Failed to mark games complete: ${error}`;
-    console.error(`❌ ${errorMsg}`);
+    if (__DEV__) {
+      console.error(`❌ ${errorMsg}`);
+    }
     errors.push(errorMsg);
   }
 
@@ -62,24 +66,30 @@ export async function runAppLoadHealthCheck(): Promise<HealthCheckReport> {
     gameCountsFixed = syncGameCounts();
     if (!gameCountsFixed) {
       const errorMsg = "Failed to sync game counts";
-      console.error(`❌ ${errorMsg}`);
+      if (__DEV__) {
+        console.error(`❌ ${errorMsg}`);
+      }
       errors.push(errorMsg);
     }
   } catch (error) {
     const errorMsg = `Failed to sync game counts: ${error}`;
-    console.error(`❌ ${errorMsg}`);
+    if (__DEV__) {
+      console.error(`❌ ${errorMsg}`);
+    }
     errors.push(errorMsg);
   }
 
   const duration = Date.now() - startTime;
 
-  // Single log at the end
-  if (errors.length === 0) {
-    console.log(
-      `✅ Health check complete: marked ${gamesMarkedComplete} games complete, synced counts`,
-    );
-  } else {
-    console.warn(`⚠️ Health check completed with ${errors.length} errors`);
+  // Single log at the end (dev only)
+  if (__DEV__) {
+    if (errors.length === 0) {
+      console.log(
+        `✅ Health check complete: marked ${gamesMarkedComplete} games complete, synced counts`,
+      );
+    } else {
+      console.warn(`⚠️ Health check completed with ${errors.length} errors`);
+    }
   }
 
   return {

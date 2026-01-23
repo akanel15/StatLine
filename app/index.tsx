@@ -1,7 +1,7 @@
 import { TeamCard } from "@/components/TeamCard";
 import { theme } from "@/theme";
 import { router } from "expo-router";
-import { FlatList, StyleSheet, View } from "react-native";
+import { FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { StatLineButton } from "@/components/StatLineButton";
 import { useTeamStore } from "@/store/teamStore";
 import { Link } from "expo-router";
@@ -12,10 +12,12 @@ export default function App() {
   const teams = useTeamStore(state => state.teams);
   const teamList = Object.values(teams);
 
-  // Run health check on app load
+  // Run health check on app load to ensure data integrity
   useEffect(() => {
     runAppLoadHealthCheck().then(report => {
-      console.log("Health check report:", report);
+      if (__DEV__) {
+        console.log("Health check report:", report);
+      }
     });
   }, []);
 
@@ -31,16 +33,25 @@ export default function App() {
         }
       />
 
-      {/* Debug Section */}
-      <View style={styles.debugSection}>
-        <Link href="/debug/home" asChild>
-          <StatLineButton
-            title="🔧 Debug & Development Tools"
-            color={theme.colorGrey}
-            onPress={() => {}}
-          />
-        </Link>
+      {/* Footer with Privacy Policy link */}
+      <View style={styles.footer}>
+        <TouchableOpacity onPress={() => router.navigate("/privacy")} hitSlop={10}>
+          <Text style={styles.privacyLink}>Privacy Policy</Text>
+        </TouchableOpacity>
       </View>
+
+      {/* Debug Section - Development only */}
+      {__DEV__ && (
+        <View style={styles.debugSection}>
+          <Link href="/debug/home" asChild>
+            <StatLineButton
+              title="🔧 Debug & Development Tools"
+              color={theme.colorGrey}
+              onPress={() => {}}
+            />
+          </Link>
+        </View>
+      )}
     </View>
   );
 }
@@ -70,5 +81,16 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: theme.colorLightGrey,
     backgroundColor: theme.colorWhite,
+  },
+  footer: {
+    paddingVertical: 12,
+    alignItems: "center",
+    borderTopWidth: 1,
+    borderTopColor: theme.colorLightGrey,
+    backgroundColor: theme.colorWhite,
+  },
+  privacyLink: {
+    color: theme.colorGrey,
+    fontSize: 14,
   },
 });

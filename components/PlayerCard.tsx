@@ -8,9 +8,20 @@ import { calculatePlayerCardStats, formatStatForCard } from "@/logic/cardStats";
 export function PlayerCard({ player }: { player: PlayerType }) {
   const { ppg, rpg, apg, gamesPlayed } = calculatePlayerCardStats(player);
 
+  // Create accessibility label with player info
+  const accessibilityLabel =
+    gamesPlayed > 0
+      ? `${player.name}, ${formatStatForCard(ppg)} points, ${formatStatForCard(rpg)} rebounds, ${formatStatForCard(apg)} assists per game, ${gamesPlayed} games played`
+      : `${player.name}, no stats yet`;
+
   return (
     <Link href={`/players/${player.id}`} asChild>
-      <Pressable style={styles.playerCard}>
+      <Pressable
+        style={styles.playerCard}
+        accessibilityRole="button"
+        accessibilityLabel={accessibilityLabel}
+        accessibilityHint="Double tap to view player details"
+      >
         <PlayerImage player={player} size={60}></PlayerImage>
         <View style={styles.details}>
           <Text numberOfLines={1} style={styles.playerName}>

@@ -6,9 +6,10 @@ type Props = {
   title: string;
   onPress: () => void;
   backgroundColor?: string;
+  accessibilityLabel?: string;
 };
 
-export function GameStatButton({ title, onPress, backgroundColor }: Props) {
+export function GameStatButton({ title, onPress, backgroundColor, accessibilityLabel }: Props) {
   const handlePress = () => {
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -19,6 +20,9 @@ export function GameStatButton({ title, onPress, backgroundColor }: Props) {
   return (
     <Pressable
       onPress={handlePress}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel || title}
+      accessibilityHint="Double tap to add this stat"
       style={({ pressed }) => {
         if (pressed) {
           return [styles.button, styles.buttonPressed];

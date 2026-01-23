@@ -402,7 +402,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   padding: {
-    padding: 4,
+    padding: 12,
   },
   section: {
     marginBottom: 30,

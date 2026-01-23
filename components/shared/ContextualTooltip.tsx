@@ -50,7 +50,7 @@ export function ContextualTooltip({
       <View style={styles.content}>
         <Ionicons name="information-circle" size={20} color={theme.colorOrangePeel} />
         <Text style={styles.message}>{message}</Text>
-        <Pressable hitSlop={10} onPress={onDismiss} style={styles.closeButton}>
+        <Pressable hitSlop={12} onPress={onDismiss} style={styles.closeButton}>
           <Ionicons name="close" size={20} color={theme.colorGrey} />
         </Pressable>
       </View>
@@ -93,7 +93,7 @@ const styles = StyleSheet.create({
     color: theme.colorOnyx,
   },
   closeButton: {
-    padding: 4,
+    padding: 8,
   },
   progressBarContainer: {
     height: 3,

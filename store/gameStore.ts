@@ -860,9 +860,11 @@ export const useGameStore = create(
 
           // This is a simplified implementation - reassigning plays between periods
           // In a full implementation, you would redistribute plays based on the divider position
-          console.log(
-            `Moving period ${periodIndex} divider to position ${newPlayIndex} (target period: ${targetPeriod})`,
-          );
+          if (__DEV__) {
+            console.log(
+              `Moving period ${periodIndex} divider to position ${newPlayIndex} (target period: ${targetPeriod})`,
+            );
+          }
 
           // For now, return state unchanged - this would require more complex logic
           // to properly redistribute plays across periods
@@ -905,7 +907,9 @@ export const useGameStore = create(
           set({ games: updatedGames });
         }
 
-        console.log(`Migration complete: ${gamesUpdated} games, ${playsUpdated} plays updated`);
+        if (__DEV__) {
+          console.log(`Migration complete: ${gamesUpdated} games, ${playsUpdated} plays updated`);
+        }
         return { gamesUpdated, playsUpdated };
       },
     }),

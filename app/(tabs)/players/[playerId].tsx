@@ -440,7 +440,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colorOnyx,
   },
   padding: {
-    padding: 4,
+    padding: 12,
   },
   section: {
     marginBottom: 30,

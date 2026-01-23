@@ -211,7 +211,9 @@ export function cascadeDeleteGame(gameId: string): void {
       }
     });
 
-    console.log(`Reverted game counts and stats for finished game ${gameId} (${result})`);
+    if (__DEV__) {
+      console.log(`Reverted game counts and stats for finished game ${gameId} (${result})`);
+    }
   }
 
   // Finally, delete the game

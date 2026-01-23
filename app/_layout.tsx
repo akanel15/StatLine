@@ -23,11 +23,15 @@ export default function Layout() {
           }}
         ></Stack.Screen>
         <Stack.Screen name="newTeam" options={{ title: "New team" }}></Stack.Screen>
+        <Stack.Screen name="privacy" options={{ title: "Privacy Policy" }}></Stack.Screen>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }}></Stack.Screen>
-        <Stack.Screen
-          name="debug"
-          options={{ title: "Debug: Game Count Management" }}
-        ></Stack.Screen>
+        {/* Debug route - only in development */}
+        {__DEV__ && (
+          <Stack.Screen
+            name="debug"
+            options={{ title: "Debug: Game Count Management" }}
+          ></Stack.Screen>
+        )}
       </Stack>
     </ErrorBoundary>
   );
