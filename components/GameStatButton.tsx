@@ -1,3 +1,4 @@
+import { memo, useCallback } from "react";
 import { theme } from "@/theme";
 import { StyleSheet, Text, Pressable, Platform } from "react-native";
 import * as Haptics from "expo-haptics";
@@ -9,13 +10,19 @@ type Props = {
   accessibilityLabel?: string;
 };
 
-export function GameStatButton({ title, onPress, backgroundColor, accessibilityLabel }: Props) {
-  const handlePress = () => {
+// Wrapped with memo to prevent unnecessary re-renders during rapid stat entry
+export const GameStatButton = memo(function GameStatButton({
+  title,
+  onPress,
+  backgroundColor,
+  accessibilityLabel,
+}: Props) {
+  const handlePress = useCallback(() => {
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       onPress();
     }
-  };
+  }, [onPress]);
 
   return (
     <Pressable
@@ -38,7 +45,7 @@ export function GameStatButton({ title, onPress, backgroundColor, accessibilityL
       <Text style={styles.text}>{title}</Text>
     </Pressable>
   );
-}
+});
 
 const styles = StyleSheet.create({
   text: {

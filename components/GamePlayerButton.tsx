@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { theme } from "@/theme";
 import { StyleSheet, Text, Pressable, Platform } from "react-native";
 import * as Haptics from "expo-haptics";
@@ -7,13 +8,13 @@ import { getPlayerDisplayName } from "@/utils/displayHelpers";
 type Props = {
   player?: PlayerType;
   playerId?: string; // Add playerId as optional prop for fallback lookup
-  onPress: () => void;
+  onPress: (playerId: string) => void;
   opponentName?: string;
   size?: "normal" | "large";
   allowMultilineText?: boolean;
 };
 
-export function GamePlayerButton({
+export const GamePlayerButton = memo(function GamePlayerButton({
   player,
   playerId,
   onPress,
@@ -25,7 +26,7 @@ export function GamePlayerButton({
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    onPress();
+    onPress(player?.id ?? playerId ?? "Opponent");
   };
 
   const playerNumber = player?.number;
@@ -79,7 +80,7 @@ export function GamePlayerButton({
       </Text>
     </Pressable>
   );
-}
+});
 
 const styles = StyleSheet.create({
   text: {

@@ -13,6 +13,19 @@ export type UnifiedPlayEntry = {
   cumulativeIndex: number;
 };
 
+// Types for batched stat updates
+export type BoxScoreUpdate = { playerId: string; stat: Stat; amount: number };
+export type TotalUpdate = { stat: Stat; amount: number; team: Team };
+export type PeriodUpdate = { playerId: string; stat: Stat; period: number; team: Team };
+export type SetStatUpdate = { setId: string; stat: Stat; amount: number };
+
+export type BatchStatUpdateParams = {
+  boxScoreUpdates: BoxScoreUpdate[];
+  totalUpdates: TotalUpdate[];
+  periodUpdate?: PeriodUpdate;
+  setStatUpdates: SetStatUpdate[];
+};
+
 type GameState = {
   games: Record<string, GameType>;
   addGame: (
@@ -28,6 +41,9 @@ type GameState = {
   ) => void;
   setActivePlayers: (gameId: string, newActivePlayers: string[]) => void;
   setActiveSets: (gameId: string, newActiveSets: string[]) => void;
+
+  // Batched stat update - performs all game updates in a single set() call
+  batchStatUpdate: (gameId: string, params: BatchStatUpdateParams) => void;
 
   updateBoxScore: (gameId: string, playerId: string, stat: Stat, amount: number) => void;
   updateTotals: (gameId: string, stat: Stat, amount: number, team: Team) => void;
@@ -146,6 +162,117 @@ export const useGameStore = create(
           };
         });
       },
+
+      // Batched stat update - performs ALL game-related stat updates in a single set() call
+      // This dramatically reduces re-renders by emitting only 1 state change instead of 8+
+      batchStatUpdate: (gameId: string, params: BatchStatUpdateParams) => {
+        set(state => {
+          const game = state.games[gameId];
+          if (!game) {
+            console.warn(`Game with ID ${gameId} not found.`);
+            return state;
+          }
+
+          // Clone the game object for mutations
+          let updatedBoxScore = { ...game.boxScore };
+          let updatedStatTotals = {
+            [Team.Us]: { ...game.statTotals[Team.Us] },
+            [Team.Opponent]: { ...game.statTotals[Team.Opponent] },
+          };
+          let updatedPeriods = [...game.periods];
+          let updatedSets = { ...game.sets };
+
+          // Apply box score updates
+          for (const update of params.boxScoreUpdates) {
+            const playerBoxScore: StatsType = updatedBoxScore[update.playerId]
+              ? { ...updatedBoxScore[update.playerId] }
+              : { ...initialBaseStats };
+            playerBoxScore[update.stat] = (playerBoxScore[update.stat] || 0) + update.amount;
+            updatedBoxScore[update.playerId] = playerBoxScore;
+          }
+
+          // Apply total updates
+          for (const update of params.totalUpdates) {
+            updatedStatTotals[update.team][update.stat] =
+              (updatedStatTotals[update.team][update.stat] || 0) + update.amount;
+          }
+
+          // Apply period update (play-by-play)
+          if (params.periodUpdate) {
+            const { playerId, stat, period, team } = params.periodUpdate;
+
+            // Ensure the period index exists
+            if (!updatedPeriods[period]) {
+              updatedPeriods[period] = {
+                [Team.Us]: 0,
+                [Team.Opponent]: 0,
+                playByPlay: [],
+              };
+            }
+
+            let scoreIncrease = 0;
+            if (stat === Stat.TwoPointMakes) scoreIncrease = 2;
+            if (stat === Stat.ThreePointMakes) scoreIncrease = 3;
+            if (stat === Stat.FreeThrowsMade) scoreIncrease = 1;
+
+            updatedPeriods[period] = {
+              ...updatedPeriods[period],
+              [team]: (updatedPeriods[period]?.[team] ?? 0) + scoreIncrease,
+              playByPlay: [
+                {
+                  id: uuid.v4() as string,
+                  playerId,
+                  action: stat,
+                },
+                ...updatedPeriods[period].playByPlay,
+              ],
+            };
+          }
+
+          // Apply set stat updates
+          for (const update of params.setStatUpdates) {
+            let existingSet = updatedSets[update.setId];
+
+            // If set doesn't exist in game yet, initialize it from global set store
+            if (!existingSet) {
+              const globalSet = useSetStore.getState().sets[update.setId];
+              if (globalSet) {
+                existingSet = {
+                  id: globalSet.id,
+                  name: globalSet.name,
+                  teamId: globalSet.teamId,
+                  runCount: 0,
+                  stats: { ...initialBaseStats },
+                };
+              } else {
+                continue; // Skip if set not found
+              }
+            }
+
+            updatedSets[update.setId] = {
+              ...existingSet,
+              stats: {
+                ...existingSet.stats,
+                [update.stat]: (existingSet.stats[update.stat] || 0) + update.amount,
+              },
+            };
+          }
+
+          return {
+            games: {
+              ...state.games,
+              [gameId]: {
+                ...game,
+                boxScore: updatedBoxScore,
+                statTotals: updatedStatTotals,
+                periods: updatedPeriods,
+                sets: updatedSets,
+              },
+            },
+          };
+        });
+      },
+
       //USED TO UPDATE AN INDIVIDUAL STAT FOR OUR TEAM IN THE BOX SCORE AND STAT TOTALS VALUES
       updateBoxScore: (gameId: string, playerId: string, stat: Stat, amount: number) => {
         set(state => {

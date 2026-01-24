@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { theme } from "@/theme";
 import { StyleSheet, Text, Pressable, Platform } from "react-native";
 import * as Haptics from "expo-haptics";
@@ -11,7 +12,7 @@ type Props = {
   disabled?: boolean;
 };
 
-export function StatLineButton({
+export const StatLineButton = memo(function StatLineButton({
   title,
   onPress,
   color,
@@ -44,7 +45,7 @@ export function StatLineButton({
       <Text style={styles.text}>{title}</Text>
     </Pressable>
   );
-}
+});
 
 const styles = StyleSheet.create({
   text: {

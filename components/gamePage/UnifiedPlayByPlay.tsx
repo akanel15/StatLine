@@ -18,10 +18,16 @@ import SwipeablePeriodDivider from "./SwipeablePeriodDivider";
 // Time in ms to lock gestures after a drag completes
 const DRAG_COOLDOWN_MS = 300;
 
+// Item heights for getItemLayout (must match styled heights in components)
+const PLAY_TILE_HEIGHT = 48;
+const DIVIDER_HEIGHT = 44;
+
 type UnifiedPlayByPlayProps = {
   gameId: string;
   isExpanded?: boolean;
   onToggleExpand?: () => void;
+  currentPeriod: number; // Controlled from parent
+  onPeriodChange: (period: number) => void; // Callback to parent when period changes
 };
 
 type PlayItem = {
@@ -44,6 +50,8 @@ export default function UnifiedPlayByPlay({
   gameId,
   isExpanded = false,
   onToggleExpand,
+  currentPeriod,
+  onPeriodChange,
 }: UnifiedPlayByPlayProps) {
   const game = useGameStore(state => state.games[gameId]);
   const removePlayFromPeriod = useGameStore(state => state.removePlayFromPeriod);
@@ -53,23 +61,28 @@ export default function UnifiedPlayByPlay({
   const updateAllPeriods = useGameStore(state => state.updateAllPeriods);
   const deletePeriod = useGameStore(state => state.deletePeriod);
 
-  // Period navigation state - start at last period for in-progress games
-  const [currentPeriod, setCurrentPeriod] = useState(() => {
-    if (game && !game.isFinished && game.periods.length > 0) {
-      return game.periods.length - 1;
-    }
-    return 0;
-  });
+  // Period navigation state is now controlled by parent (lifted state)
   const flatListRef = useRef<FlatList>(null);
+  const contentHeightRef = useRef(0);
+  const listHeightRef = useRef(0);
 
   // Drag lock to prevent gesture conflicts after drag ends
   const [isDragLocked, setIsDragLocked] = useState(false);
   const dragLockTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Use ref to track current period for the viewable items callback
+  // Use refs to track current values for the viewable items callback
   // This avoids stale closure issues when scrolling back to Q1
   const currentPeriodRef = useRef(currentPeriod);
   currentPeriodRef.current = currentPeriod;
+  const onPeriodChangeRef = useRef(onPeriodChange);
+  onPeriodChangeRef.current = onPeriodChange;
+
+  // Track periods length via ref to avoid re-creating handleContentSizeChange on every game update
+  const periodsLengthRef = useRef(game?.periods.length ?? 0);
+
+  useEffect(() => {
+    periodsLengthRef.current = game?.periods.length ?? 0;
+  }, [game?.periods.length]);
 
   // Track viewable items to auto-update header when scrolling
   const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
@@ -88,7 +101,7 @@ export default function UnifiedPlayByPlay({
 
     // Use ref to get current value, avoiding stale closure
     if (newPeriod !== currentPeriodRef.current) {
-      setCurrentPeriod(newPeriod);
+      onPeriodChangeRef.current(newPeriod);
     }
   }).current;
 
@@ -139,29 +152,70 @@ export default function UnifiedPlayByPlay({
     return items;
   }, [game?.periods]);
 
-  // One-time scroll to end for in-progress games
-  const hasScrolledRef = useRef(false);
+  // Scroll tracking refs
+  const hasInitialScrolledRef = useRef(false);
+  const shouldAutoScrollRef = useRef(false);
+  const prevItemCountRef = useRef(listItems.length);
+
+  // Determine if we need initial scroll (in-progress game with plays)
+  const needsInitialScroll = game && !game.isFinished && listItems.length > 0;
+
+  // Track when new items are added for auto-scroll
   useEffect(() => {
-    if (
-      !hasScrolledRef.current &&
-      game &&
-      !game.isFinished &&
-      listItems.length > 0 &&
-      flatListRef.current
-    ) {
-      // Small delay for layout to complete (initialNumToRender ensures all items are measured)
-      const timeout = setTimeout(() => {
+    // Skip if we haven't done initial scroll yet
+    if (!hasInitialScrolledRef.current) return;
+
+    // Flag that we should auto-scroll when content size changes
+    if (listItems.length > prevItemCountRef.current) {
+      shouldAutoScrollRef.current = true;
+    }
+
+    prevItemCountRef.current = listItems.length;
+  }, [listItems.length]);
+
+  // Handle content size change - scroll when content is measured
+  const handleContentSizeChange = useCallback(
+    (_width: number, height: number) => {
+      const prevHeight = contentHeightRef.current;
+      contentHeightRef.current = height;
+
+      // Initial scroll for in-progress games (triggered once content is measured)
+      if (
+        !hasInitialScrolledRef.current &&
+        needsInitialScroll &&
+        flatListRef.current &&
+        height > 0 &&
+        listHeightRef.current > 0
+      ) {
+        const scrollToY = Math.max(0, height - listHeightRef.current);
         try {
-          (flatListRef.current as any).scrollToEnd({ animated: false });
-          setCurrentPeriod(game.periods.length - 1);
-          hasScrolledRef.current = true;
+          (flatListRef.current as any).scrollToOffset({ offset: scrollToY, animated: false });
+          onPeriodChangeRef.current(periodsLengthRef.current - 1);
         } catch (error) {
           console.warn("Initial scroll failed:", error);
         }
-      }, 100);
-      return () => clearTimeout(timeout);
-    }
-  }, [game, listItems.length]);
+        hasInitialScrolledRef.current = true;
+        return;
+      }
+
+      // Auto-scroll when new items are added
+      if (shouldAutoScrollRef.current && flatListRef.current && height > prevHeight) {
+        const scrollToY = Math.max(0, height - listHeightRef.current);
+        try {
+          (flatListRef.current as any).scrollToOffset({ offset: scrollToY, animated: true });
+        } catch (error) {
+          console.warn("Auto-scroll failed:", error);
+        }
+        shouldAutoScrollRef.current = false;
+      }
+    },
+    [needsInitialScroll],
+  );
+
+  // Track the visible list height for accurate scroll calculations
+  const handleLayout = useCallback((event: { nativeEvent: { layout: { height: number } } }) => {
+    listHeightRef.current = event.nativeEvent.layout.height;
+  }, []);
 
   // Pre-calculate cumulative scores for all plays (optimized with useMemo)
   // This runs once when listItems changes, instead of recalculating on every render
@@ -186,6 +240,9 @@ export default function UnifiedPlayByPlay({
 
     return scores;
   }, [listItems]);
+
+  // Check if there are any plays (not just dividers) - memoized to avoid O(n) scan on every render
+  const hasPlays = useMemo(() => listItems.some(item => item.type === "play"), [listItems]);
 
   // Helper function to determine new period and position after drag
   const calculateNewPosition = (newData: ListItem[], dropIndex: number) => {
@@ -344,6 +401,22 @@ export default function UnifiedPlayByPlay({
     }, DRAG_COOLDOWN_MS);
   }, []);
 
+  // Provides item positions for virtualized scrolling - enables scrollToIndex without rendering
+  const getItemLayout = useCallback(
+    (_data: ArrayLike<ListItem> | null | undefined, index: number) => {
+      // Calculate offset by summing heights of all items before this index
+      let offset = 0;
+      for (let i = 0; i < index && i < listItems.length; i++) {
+        offset += listItems[i].type === "divider" ? DIVIDER_HEIGHT : PLAY_TILE_HEIGHT;
+      }
+
+      const length = listItems[index]?.type === "divider" ? DIVIDER_HEIGHT : PLAY_TILE_HEIGHT;
+
+      return { length, offset, index };
+    },
+    [listItems],
+  );
+
   const handleDragEnd = ({ data: newData, from, to }: DragEndParams<ListItem>) => {
     // Always engage drag lock after any drag operation
     engageDragLock();
@@ -444,9 +517,6 @@ export default function UnifiedPlayByPlay({
     );
   }
 
-  // Check if there are any plays (not just dividers)
-  const hasPlays = listItems.some(item => item.type === "play");
-
   if (!hasPlays) {
     return (
       <View style={styles.emptyContainer}>
@@ -493,7 +563,7 @@ export default function UnifiedPlayByPlay({
   const handlePrevious = () => {
     if (currentPeriod > 0) {
       const newPeriod = currentPeriod - 1;
-      setCurrentPeriod(newPeriod);
+      onPeriodChange(newPeriod);
       scrollToPeriod(newPeriod);
     }
   };
@@ -507,7 +577,7 @@ export default function UnifiedPlayByPlay({
     setTimeout(() => {
       if (game.periods[nextPeriod]) {
         // Period exists, just scroll to it
-        setCurrentPeriod(nextPeriod);
+        onPeriodChange(nextPeriod);
         scrollToPeriod(nextPeriod);
       } else if (isAtLastPeriod && currentPeriodHasNoPlays) {
         // At last period with no plays - scroll to bottom to show the header
@@ -515,7 +585,7 @@ export default function UnifiedPlayByPlay({
       } else {
         // Create new period
         const newPeriodIndex = createNewPeriod(gameId);
-        setCurrentPeriod(newPeriodIndex);
+        onPeriodChange(newPeriodIndex);
         // Scroll to end to show the new empty period header
         setTimeout(() => scrollToEnd(), 300);
       }
@@ -543,8 +613,12 @@ export default function UnifiedPlayByPlay({
         onDragEnd={handleDragEnd}
         onViewableItemsChanged={onViewableItemsChanged}
         viewabilityConfig={viewabilityConfig}
-        // For in-progress games, render all items so scrollToEnd has full content measured
-        initialNumToRender={game && !game.isFinished ? listItems.length : 10}
+        // Performance: Limit initial render to prevent blocking JS thread on long games
+        // scrollToEnd works via onContentSizeChange which updates as items render
+        initialNumToRender={20}
+        maxToRenderPerBatch={10}
+        windowSize={11}
+        getItemLayout={getItemLayout}
         onScrollToIndexFailed={info => {
           // Retry after a delay if scroll fails (used by period navigation)
           const wait = new Promise(resolve => setTimeout(resolve, 500));
@@ -559,6 +633,8 @@ export default function UnifiedPlayByPlay({
         contentContainerStyle={styles.listContentContainer}
         autoscrollSpeed={200}
         activationDistance={10}
+        onContentSizeChange={handleContentSizeChange}
+        onLayout={handleLayout}
       />
 
       {/* Floating Expand/Collapse Button */}
@@ -587,7 +663,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   listContentContainer: {
-    paddingBottom: 540, // Large bottom padding allows scrolling until divider is at top
+    paddingBottom: 38, // Padding to prevent content clipping at bottom
   },
   emptyContainer: {
     flex: 1,

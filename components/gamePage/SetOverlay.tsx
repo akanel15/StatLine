@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, memo } from "react";
 import { View, Text, StyleSheet, FlatList, Pressable } from "react-native";
 import { StatLineButton } from "@/components/StatLineButton";
 import { useGameStore } from "@/store/gameStore";
@@ -12,7 +12,8 @@ type SetOverlayProps = {
   onClose: () => void;
 };
 
-export default function SetOverlay({ gameId, onClose }: SetOverlayProps) {
+// Wrapped with memo to prevent unnecessary re-renders when parent state changes
+const SetOverlay = memo(function SetOverlay({ gameId, onClose }: SetOverlayProps) {
   const game = useGameStore(state => state.games[gameId]);
 
   const sets = useSetStore(state => state.sets);
@@ -104,7 +105,9 @@ export default function SetOverlay({ gameId, onClose }: SetOverlayProps) {
       </View>
     </View>
   );
-}
+});
+
+export default SetOverlay;
 
 const styles = StyleSheet.create({
   overlay: {

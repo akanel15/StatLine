@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { StatLineButton } from "@/components/StatLineButton";
 import { GameStatButton } from "@/components/GameStatButton";
@@ -16,7 +17,8 @@ type StatOverlayProps = {
   onStatPress: (category: ActionType, action: string) => void;
 };
 
-export default function StatOverlay({ onClose, onStatPress }: StatOverlayProps) {
+// Wrapped with memo to prevent unnecessary re-renders when parent state changes
+const StatOverlay = memo(function StatOverlay({ onClose, onStatPress }: StatOverlayProps) {
   return (
     <View style={styles.container}>
       <Text style={styles.heading}>Shooting</Text>
@@ -78,7 +80,9 @@ export default function StatOverlay({ onClose, onStatPress }: StatOverlayProps) 
       <StatLineButton onPress={onClose} title="Close" />
     </View>
   );
-}
+});
+
+export default StatOverlay;
 
 const styles = StyleSheet.create({
   container: {

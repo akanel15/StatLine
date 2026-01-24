@@ -3,9 +3,9 @@ import { GamePlayerButton } from "@/components/GamePlayerButton";
 import { useGameStore } from "@/store/gameStore";
 import { usePlayerStore } from "@/store/playerStore";
 import { useTeamStore } from "@/store/teamStore";
-import { ActionType, getStatsForAction, Stat, StatMapping } from "@/types/stats";
+import { ActionType, Stat, StatMapping } from "@/types/stats";
 import { useNavigation, useRoute } from "@react-navigation/core";
-import { useEffect, useLayoutEffect, useState, useRef } from "react";
+import { useEffect, useLayoutEffect, useState, useRef, useCallback, useMemo } from "react";
 import {
   Alert,
   Pressable,
@@ -17,7 +17,6 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { theme } from "@/theme";
-import { PlayByPlayType, Team } from "@/types/game";
 import { SetRadioButton } from "@/components/SetRadioButton";
 import { useSetStore } from "@/store/setStore";
 import StatOverlay from "@/components/gamePage/StatOverlay";
@@ -58,14 +57,17 @@ export default function GamePage() {
   const game = useGameStore(state => state.games[gameId]);
 
   const sets = useSetStore(state => state.sets);
-  const setList = Object.values(sets);
-  const teamSets = setList.filter(set => set.teamId === teamId);
-  const setIdList = teamSets.map(set => set.id);
+
+  // Memoize derived set calculations to prevent unnecessary re-renders
+  const teamSets = useMemo(
+    () => Object.values(sets).filter(set => set.teamId === teamId),
+    [sets, teamId],
+  );
+  const setIdList = useMemo(() => teamSets.map(set => set.id), [teamSets]);
 
   const navigation = useNavigation();
 
   const setActiveSets = useGameStore(state => state.setActiveSets);
-  const removePlayFromPeriod = useGameStore(state => state.removePlayFromPeriod);
 
   const [selectedPlay, setSelectedPlay] = useState<string>("");
   const [showOverlay, setShowOverlay] = useState(false);
@@ -83,6 +85,15 @@ export default function GamePage() {
   const [activeTab, setActiveTab] = useState<"boxscore" | "playbyplay">("boxscore");
   const [expandPlayByPlay, setExpandPlayByPlay] = useState(false);
 
+  // Current period for stat assignment - lifted from UnifiedPlayByPlay
+  // This ensures stats go to the period the user navigated to, not the last period with plays
+  const [currentPeriod, setCurrentPeriod] = useState(() => {
+    if (game && !game.isFinished && game.periods && game.periods.length > 0) {
+      return game.periods.length - 1;
+    }
+    return 0;
+  });
+
   // Help hints
   const hasSeenGameFlowHint = useHelpStore(state => state.hasSeenGameFlowHint);
   const hasSeenSetResetHint = useHelpStore(state => state.hasSeenSetResetHint);
@@ -90,22 +101,30 @@ export default function GamePage() {
   const [showGameFlowHint, setShowGameFlowHint] = useState(false);
   const [showSetResetHint, setShowSetResetHint] = useState(false);
 
-  //game stats
+  //game stats - individual methods (legacy fallback)
   const updateBoxScore = useGameStore(state => state.updateBoxScore);
   const updateTotals = useGameStore(state => state.updateTotals);
   const updatePeriods = useGameStore(state => state.updatePeriods);
   const updateGameSetStats = useGameStore(state => state.updateSetStats);
   const updateGameSetCounts = useGameStore(state => state.incrementSetRunCount);
+  // Batched game update (performance optimization)
+  const batchGameUpdate = useGameStore(state => state.batchStatUpdate);
 
   //team stats
   const updateTeamStats = useTeamStore(state => state.updateStats);
+  // Batched team update (performance optimization)
+  const batchTeamUpdate = useTeamStore(state => state.batchUpdateStats);
 
   //player stats
   const updatePlayerStats = usePlayerStore(state => state.updateStats);
+  // Batched player update (performance optimization)
+  const batchPlayerUpdate = usePlayerStore(state => state.batchUpdateStats);
 
   //set stats
   const updateSetStats = useSetStore(state => state.updateStats);
   const updateSetRunCount = useSetStore(state => state.incrementRunCount);
+  // Batched set update (performance optimization)
+  const batchSetUpdate = useSetStore(state => state.batchUpdateStats);
 
   // Move handleShare outside the useLayoutEffect so it's accessible
   const handleShare = async () => {
@@ -332,15 +351,75 @@ export default function GamePage() {
     showSubstitutions,
   ]);
 
+  // Memoized handlers - must be before conditional returns
+  const handlePlayerPress = useCallback((playerId: string) => {
+    setSelectedPlayer(playerId);
+    setShowOverlay(true);
+  }, []);
+
+  const handleSetSelection = useCallback(
+    (setId: string) => {
+      setSelectedPlay(setId);
+      // Show set reset hint on first set selection
+      if (!hasSeenSetResetHint && setId !== "") {
+        setShowSetResetHint(true);
+        // Mark as seen immediately when shown (not on dismiss)
+        markHintAsSeen("setReset");
+      }
+    },
+    [hasSeenSetResetHint, markHintAsSeen],
+  );
+
+  const handleResetSet = useCallback(() => {
+    setSelectedPlay("");
+  }, []);
+
+  const handleDismissGameFlowHint = useCallback(() => {
+    setShowGameFlowHint(false);
+  }, []);
+
+  const handleDismissSetResetHint = useCallback(() => {
+    setShowSetResetHint(false);
+  }, []);
+
+  const handleShowSubstitutions = useCallback(() => {
+    setShowSubstitutions(true);
+  }, []);
+
+  const handleShowSets = useCallback(() => {
+    setShowSets(true);
+  }, []);
+
+  const handleShowBoxScore = useCallback(() => {
+    setShowBoxScore(true);
+  }, []);
+
+  const handleToggleSetsSection = useCallback(() => {
+    setShowSetsSection(prev => !prev);
+  }, []);
+
+  const handleCloseOverlay = useCallback(() => {
+    setShowOverlay(false);
+  }, []);
+
+  // Memoize player and set lookups to prevent unnecessary array creation on every render
+  // These must be before the conditional return to satisfy React hooks rules
+  const activePlayers = useMemo(
+    () =>
+      (game?.activePlayers ?? [])
+        .map(playerId => players[playerId])
+        .filter(player => player !== undefined),
+    [game?.activePlayers, players],
+  );
+  const activeSets = useMemo(
+    () => (game?.activeSets ?? []).map(setId => sets[setId]).filter(Boolean),
+    [game?.activeSets, sets],
+  );
+
   // Show loading or error state if game doesn't exist
   if (!game) {
     return <LoadingState message="Loading game..." />;
   }
-
-  const activePlayers = game.activePlayers
-    .map(playerId => players[playerId])
-    .filter(player => player !== undefined); // Filter out undefined players
-  const activeSets = game.activeSets.map(setId => sets[setId]);
 
   //STAT FUNCTIONS
   type StatUpdateType = {
@@ -352,7 +431,9 @@ export default function GamePage() {
   };
 
   // Create store actions for the stat update logic
+  // Includes both individual methods (legacy) and batched methods (optimized)
   const storeActions: StatUpdateStoreActions = {
+    // Individual methods (legacy fallback)
     updateBoxScore,
     updateTotals,
     updatePeriods,
@@ -362,22 +443,22 @@ export default function GamePage() {
     updatePlayerStats,
     updateSetStats,
     incrementGlobalSetRunCount: updateSetRunCount,
+    // Batched methods (performance optimization - 4 store updates instead of 15+)
+    batchGameUpdate,
+    batchPlayerUpdate,
+    batchTeamUpdate,
+    batchSetUpdate,
   };
 
   function handleStatUpdate({ stats, gameId, teamId, playerId, setId }: StatUpdateType) {
-    // Use the extracted stat update logic
-    // selectedPeriod is now dynamic - use the last period with plays or create a new one
+    // Use the currentPeriod state (what the user navigated to)
+    // This ensures stats go to the correct period after creating a new one
     const currentGame = getGameSafely(gameId);
-    let selectedPeriod = 0;
-    if (currentGame?.periods && currentGame.periods.length > 0) {
-      // Find the last period that has plays, or use the last period
-      for (let i = currentGame.periods.length - 1; i >= 0; i--) {
-        const period = currentGame.periods[i];
-        if (period?.playByPlay && period.playByPlay.length > 0) {
-          selectedPeriod = i;
-          break;
-        }
-      }
+    let selectedPeriod = currentPeriod;
+
+    // Safety: ensure period exists (fall back to last period or 0 if out of bounds)
+    if (currentGame?.periods && selectedPeriod >= currentGame.periods.length) {
+      selectedPeriod = Math.max(0, currentGame.periods.length - 1);
     }
 
     handleStatUpdateLogic(storeActions, {
@@ -390,115 +471,6 @@ export default function GamePage() {
       activePlayers: game?.activePlayers || [],
     });
   }
-
-  // Helper function for plus/minus updates (used in reversePlayStats)
-  const updatePlusMinus = (team: Team, amount: number) => {
-    const adjustedAmount = team === Team.Opponent ? -amount : amount;
-
-    // Update team plus/minus
-    updateTeamStats(teamId, Stat.PlusMinus, adjustedAmount, Team.Us);
-    updateTotals(gameId, Stat.PlusMinus, adjustedAmount, Team.Us);
-
-    updateTeamStats(teamId, Stat.PlusMinus, -adjustedAmount, Team.Opponent);
-    updateTotals(gameId, Stat.PlusMinus, -adjustedAmount, Team.Opponent);
-
-    // Update plus/minus for all active players
-    game?.activePlayers.forEach(playerId => {
-      updateBoxScore(gameId, playerId, Stat.PlusMinus, adjustedAmount);
-      updatePlayerStats(playerId, Stat.PlusMinus, adjustedAmount);
-    });
-  };
-  const reversePlayStats = (playToRemove: PlayByPlayType) => {
-    const team = playToRemove.playerId === "Opponent" ? Team.Opponent : Team.Us;
-    const statsToReverse = getStatsForAction(playToRemove.action);
-
-    // Reverse each stat that was added
-    statsToReverse.forEach(stat => {
-      // Reverse all the updates (subtract instead of add)
-      updateBoxScore(gameId, playToRemove.playerId, stat, -1);
-      updateTotals(gameId, stat, -1, team);
-      updatePlayerStats(playToRemove.playerId, stat, -1);
-      updateTeamStats(teamId, stat, -1, team);
-
-      // Handle points reversal for scoring plays
-      switch (stat) {
-        case Stat.FreeThrowsMade:
-          updateTotals(gameId, Stat.Points, -1, team);
-          updateBoxScore(gameId, playToRemove.playerId, Stat.Points, -1);
-          updatePlayerStats(playToRemove.playerId, Stat.Points, -1);
-          updateTeamStats(teamId, Stat.Points, -1, team);
-          updatePlusMinus(team, -1);
-          break;
-        case Stat.TwoPointMakes:
-          updateTotals(gameId, Stat.Points, -2, team);
-          updateBoxScore(gameId, playToRemove.playerId, Stat.Points, -2);
-          updatePlayerStats(playToRemove.playerId, Stat.Points, -2);
-          updateTeamStats(teamId, Stat.Points, -2, team);
-          updatePlusMinus(team, -2);
-          break;
-        case Stat.ThreePointMakes:
-          updateTotals(gameId, Stat.Points, -3, team);
-          updateBoxScore(gameId, playToRemove.playerId, Stat.Points, -3);
-          updatePlayerStats(playToRemove.playerId, Stat.Points, -3);
-          updateTeamStats(teamId, Stat.Points, -3, team);
-          updatePlusMinus(team, -3);
-          break;
-      }
-    });
-  };
-
-  const removePlay = (playIndex: number, period: number) => {
-    // Check if period and playByPlay exist before accessing
-    if (!game.periods?.[period]?.playByPlay) {
-      return;
-    }
-
-    const playToRemove = game.periods[period].playByPlay[playIndex];
-    if (!playToRemove) {
-      return;
-    }
-
-    Alert.alert(
-      "Delete Play",
-      `Remove ${playToRemove.action} by ${playToRemove.playerId === "Opponent" ? "Opponent" : players[playToRemove.playerId]?.name}?`,
-      [
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: () => {
-            // Reverse the stats
-            reversePlayStats(playToRemove);
-            // Remove from playByPlay array
-            removePlayFromPeriod(gameId, period, playIndex);
-          },
-        },
-        { text: "Cancel", style: "cancel" },
-      ],
-    );
-  };
-
-  const handlePlayerPress = (playerId: string) => {
-    setSelectedPlayer(playerId);
-    setShowOverlay(true);
-  };
-
-  const handleSetSelection = (setId: string) => {
-    setSelectedPlay(setId);
-    // Show set reset hint on first set selection
-    if (!hasSeenSetResetHint && setId !== "") {
-      setShowSetResetHint(true);
-      // Mark as seen immediately when shown (not on dismiss)
-      markHintAsSeen("setReset");
-    }
-  };
-
-  const handleDismissGameFlowHint = () => {
-    setShowGameFlowHint(false);
-  };
-
-  const handleDismissSetResetHint = () => {
-    setShowSetResetHint(false);
-  };
 
   const handleStatPress = (category: ActionType, action: string) => {
     const stats = StatMapping[category]?.[action];
@@ -540,10 +512,6 @@ export default function GamePage() {
       setSelectedPlay("");
       setFreeThrowToggle(false);
     }
-  };
-
-  const handleCloseOverlay = () => {
-    setShowOverlay(false);
   };
 
   if (game.isFinished) {
@@ -682,9 +650,10 @@ export default function GamePage() {
           >
             <UnifiedPlayByPlay
               gameId={gameId}
-              onDeletePlay={removePlay}
               isExpanded={expandPlayByPlay}
               onToggleExpand={() => setExpandPlayByPlay(!expandPlayByPlay)}
+              currentPeriod={currentPeriod}
+              onPeriodChange={setCurrentPeriod}
             />
           </View>
           <View style={[styles.bottomSection, expandPlayByPlay && styles.bottomSectionMinimized]}>
@@ -694,7 +663,7 @@ export default function GamePage() {
                   <Text style={styles.heading}>Sets</Text>
                   <Pressable
                     hitSlop={10}
-                    onPress={() => setShowSetsSection(prev => !prev)}
+                    onPress={handleToggleSetsSection}
                     accessibilityRole="button"
                     accessibilityLabel={showSetsSection ? "Collapse sets" : "Expand sets"}
                   >
@@ -713,13 +682,15 @@ export default function GamePage() {
                       key={set.id}
                       title={set.name}
                       selected={selectedPlay === set.id}
-                      onPress={() => handleSetSelection(set.id)}
+                      onPress={handleSetSelection}
+                      setId={set.id}
                     />
                   ))}
                   <SetRadioButton
                     title="Reset"
                     selected={false}
-                    onPress={() => setSelectedPlay("")}
+                    onPress={handleResetSet}
+                    setId=""
                     reset={true}
                   />
                 </View>
@@ -733,13 +704,13 @@ export default function GamePage() {
                   <GamePlayerButton
                     key={player.id}
                     player={player}
-                    onPress={() => handlePlayerPress(player.id)}
+                    onPress={handlePlayerPress}
                     size={showSetsSection ? "normal" : "large"}
                     allowMultilineText={!showSetsSection}
                   />
                 ))}
                 <GamePlayerButton
-                  onPress={() => handlePlayerPress("Opponent")}
+                  onPress={handlePlayerPress}
                   opponentName={game.opposingTeamName}
                   size={showSetsSection ? "normal" : "large"}
                   allowMultilineText={!showSetsSection}
@@ -750,18 +721,18 @@ export default function GamePage() {
             <View style={styles.section}>
               <View style={styles.rowContainer}>
                 <View style={styles.split}>
-                  <StatLineButton onPress={() => setShowSubstitutions(true)} title="Sub Players" />
+                  <StatLineButton onPress={handleShowSubstitutions} title="Sub Players" />
                 </View>
                 <View style={styles.split}>
                   <StatLineButton
-                    onPress={() => setShowSets(true)}
+                    onPress={handleShowSets}
                     title="Change Sets"
                     color={theme.colorBlue}
                   />
                 </View>
                 <View style={styles.split}>
                   <StatLineButton
-                    onPress={() => setShowBoxScore(true)}
+                    onPress={handleShowBoxScore}
                     title="Box Score"
                     color={theme.colorOnyx}
                   />

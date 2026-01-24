@@ -8,6 +8,9 @@ import { Result } from "@/types/player";
 import { Stat } from "@/types/stats";
 import { Team } from "@/types/game";
 
+// Type for batched team stat updates
+export type TeamStatUpdate = { teamId: string; stat: Stat; amount: number; team: Team };
+
 type TeamState = {
   teams: Record<string, TeamType>;
   currentTeamId: string;
@@ -22,6 +25,8 @@ type TeamState = {
   updateGamesPlayed: (teamId: string, result: Result) => void;
   revertGameNumbers: (teamId: string, result: Result) => void;
   updateStats: (teamId: string, stat: Stat, amount: number, team: Team) => void;
+  // Batched stat update - performs all team updates in a single set() call
+  batchUpdateStats: (updates: TeamStatUpdate[]) => void;
   getTeamSafely: (teamId: string) => TeamType | null;
 };
 
@@ -193,6 +198,36 @@ export const useTeamStore = create(
           };
         });
       },
+
+      // Batched stat update - performs ALL team stat updates in a single set() call
+      // This dramatically reduces re-renders by emitting only 1 state change
+      batchUpdateStats(updates: TeamStatUpdate[]) {
+        if (updates.length === 0) return;
+
+        set(state => {
+          const updatedTeams = { ...state.teams };
+
+          for (const update of updates) {
+            const selectedTeam = updatedTeams[update.teamId];
+            if (!selectedTeam) continue;
+
+            updatedTeams[update.teamId] = {
+              ...selectedTeam,
+              stats: {
+                ...selectedTeam.stats,
+                [update.team]: {
+                  ...selectedTeam.stats[update.team],
+                  [update.stat]:
+                    (selectedTeam.stats[update.team][update.stat] || 0) + update.amount,
+                },
+              },
+            };
+          }
+
+          return { teams: updatedTeams };
+        });
+      },
+
       getTeamSafely: (teamId: string) => {
         const state = get();
         return state.teams[teamId] || null;

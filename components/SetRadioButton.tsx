@@ -1,14 +1,22 @@
+import { memo } from "react";
 import { theme } from "@/theme";
 import { Text, TouchableOpacity, StyleSheet } from "react-native";
 
 type RadioButtonProps = {
   title: string;
   selected: boolean;
-  onPress: () => void;
+  onPress: (setId: string) => void;
+  setId?: string;
   reset?: boolean;
 };
 
-export const SetRadioButton = ({ title, selected, onPress, reset }: RadioButtonProps) => {
+export const SetRadioButton = memo(function SetRadioButton({
+  title,
+  selected,
+  onPress,
+  setId = "",
+  reset,
+}: RadioButtonProps) {
   return (
     <TouchableOpacity
       style={[
@@ -17,7 +25,7 @@ export const SetRadioButton = ({ title, selected, onPress, reset }: RadioButtonP
           backgroundColor: reset ? theme.colorOnyx : selected ? theme.colorBlue : theme.colorWhite,
         },
       ]}
-      onPress={onPress}
+      onPress={() => onPress(setId)}
     >
       <Text
         style={[
@@ -29,7 +37,7 @@ export const SetRadioButton = ({ title, selected, onPress, reset }: RadioButtonP
       </Text>
     </TouchableOpacity>
   );
-};
+});
 
 const styles = StyleSheet.create({
   radioButton: {

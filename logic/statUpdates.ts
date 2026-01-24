@@ -1,12 +1,22 @@
 import { Stat } from "@/types/stats";
 import { Team } from "@/types/game";
+import type {
+  BoxScoreUpdate,
+  TotalUpdate,
+  PeriodUpdate,
+  SetStatUpdate as GameSetStatUpdate,
+  BatchStatUpdateParams,
+} from "@/store/gameStore";
+import type { PlayerStatUpdate } from "@/store/playerStore";
+import type { TeamStatUpdate } from "@/store/teamStore";
+import type { SetStatUpdate } from "@/store/setStore";
 
 /**
  * Store actions interface for dependency injection
  * This allows the stat update logic to work with any store implementation
  */
 export interface StatUpdateStoreActions {
-  // Game store actions
+  // Game store actions (individual - for backwards compatibility)
   updateBoxScore: (gameId: string, playerId: string, stat: Stat, amount: number) => void;
   updateTotals: (gameId: string, stat: Stat, amount: number, team: Team) => void;
   updatePeriods: (gameId: string, playerId: string, stat: Stat, period: number, team: Team) => void;
@@ -22,6 +32,12 @@ export interface StatUpdateStoreActions {
   // Set store actions
   updateSetStats: (setId: string, stat: Stat, amount: number) => void;
   incrementGlobalSetRunCount: (setId: string) => void;
+
+  // Batched store actions (for performance optimization)
+  batchGameUpdate?: (gameId: string, params: BatchStatUpdateParams) => void;
+  batchPlayerUpdate?: (updates: PlayerStatUpdate[]) => void;
+  batchTeamUpdate?: (updates: TeamStatUpdate[]) => void;
+  batchSetUpdate?: (updates: SetStatUpdate[]) => void;
 }
 
 /**
@@ -100,9 +116,231 @@ export function shouldUpdatePeriods(stats: Stat[]): {
 }
 
 /**
- * Updates plus/minus stats for all active players and teams
+ * Collector for batched updates - collects all updates before applying
  */
-function updatePlusMinusStats(
+interface BatchedUpdates {
+  gameUpdates: {
+    boxScoreUpdates: BoxScoreUpdate[];
+    totalUpdates: TotalUpdate[];
+    periodUpdate?: PeriodUpdate;
+    setStatUpdates: GameSetStatUpdate[];
+  };
+  playerUpdates: PlayerStatUpdate[];
+  teamUpdates: TeamStatUpdate[];
+  setUpdates: SetStatUpdate[];
+}
+
+/**
+ * Collects plus/minus updates for all active players and teams
+ */
+function collectPlusMinusUpdates(
+  collector: BatchedUpdates,
+  teamId: string,
+  activePlayers: string[],
+  team: Team,
+  points: number,
+): void {
+  const { usAmount, opponentAmount } = calculatePlusMinusForTeam(team, points);
+
+  // Collect team plus/minus for both teams
+  collector.teamUpdates.push({ teamId, stat: Stat.PlusMinus, amount: usAmount, team: Team.Us });
+  collector.gameUpdates.totalUpdates.push({
+    stat: Stat.PlusMinus,
+    amount: usAmount,
+    team: Team.Us,
+  });
+
+  collector.teamUpdates.push({
+    teamId,
+    stat: Stat.PlusMinus,
+    amount: opponentAmount,
+    team: Team.Opponent,
+  });
+  collector.gameUpdates.totalUpdates.push({
+    stat: Stat.PlusMinus,
+    amount: opponentAmount,
+    team: Team.Opponent,
+  });
+
+  // Collect plus/minus for all active players
+  for (const playerId of activePlayers) {
+    collector.gameUpdates.boxScoreUpdates.push({
+      playerId,
+      stat: Stat.PlusMinus,
+      amount: usAmount,
+    });
+    collector.playerUpdates.push({ playerId, stat: Stat.PlusMinus, amount: usAmount });
+  }
+}
+
+/**
+ * Collects all stat updates for a single stat action
+ */
+function collectSingleStatUpdates(
+  collector: BatchedUpdates,
+  params: StatUpdateParams,
+  stat: Stat,
+  team: Team,
+): void {
+  const { teamId, playerId, setId } = params;
+  const isOurPlayer = playerId !== "Opponent";
+
+  // Collect game-level tracking (for both teams)
+  collector.gameUpdates.boxScoreUpdates.push({ playerId, stat, amount: 1 });
+  collector.gameUpdates.totalUpdates.push({ stat, amount: 1, team });
+  collector.teamUpdates.push({ teamId, stat, amount: 1, team });
+  collector.gameUpdates.setStatUpdates.push({ setId, stat, amount: 1 });
+
+  // Only update player/set stores for our team's players
+  if (isOurPlayer) {
+    collector.playerUpdates.push({ playerId, stat, amount: 1 });
+    collector.setUpdates.push({ setId, stat, amount: 1 });
+  }
+}
+
+/**
+ * Collects points updates for a scoring play
+ */
+function collectPointsForScoringPlay(
+  collector: BatchedUpdates,
+  params: StatUpdateParams,
+  stat: Stat,
+  team: Team,
+): void {
+  const points = getPointsForStat(stat);
+  if (points === 0) return;
+
+  const { teamId, playerId, setId, activePlayers } = params;
+  const isOurPlayer = playerId !== "Opponent";
+
+  // Collect points in game-level tracking (for both teams)
+  collector.gameUpdates.totalUpdates.push({ stat: Stat.Points, amount: points, team });
+  collector.gameUpdates.boxScoreUpdates.push({ playerId, stat: Stat.Points, amount: points });
+  collector.teamUpdates.push({ teamId, stat: Stat.Points, amount: points, team });
+  collector.gameUpdates.setStatUpdates.push({ setId, stat: Stat.Points, amount: points });
+
+  // Only update player/set stores for our team's players
+  if (isOurPlayer) {
+    collector.playerUpdates.push({ playerId, stat: Stat.Points, amount: points });
+    collector.setUpdates.push({ setId, stat: Stat.Points, amount: points });
+  }
+
+  // Collect plus/minus for scoring plays
+  collectPlusMinusUpdates(collector, teamId, activePlayers, team, points);
+}
+
+/**
+ * Core stat update function - updates all stat tracking for a given action
+ * This is the pure logic extracted from [gameId].tsx handleStatUpdate
+ *
+ * PERFORMANCE OPTIMIZED: Uses batched updates when available to reduce
+ * re-renders from 15+ to 4 (one per store)
+ *
+ * @param stores - Store action functions (dependency injection)
+ * @param params - Parameters for the stat update
+ */
+export function handleStatUpdate(stores: StatUpdateStoreActions, params: StatUpdateParams): void {
+  const { stats, gameId, playerId, selectedPeriod } = params;
+  const team = playerId === "Opponent" ? Team.Opponent : Team.Us;
+
+  // Check if batched methods are available
+  const useBatching =
+    stores.batchGameUpdate &&
+    stores.batchPlayerUpdate &&
+    stores.batchTeamUpdate &&
+    stores.batchSetUpdate;
+
+  if (useBatching) {
+    // OPTIMIZED PATH: Collect all updates first, then apply in 4 batch calls
+    const collector: BatchedUpdates = {
+      gameUpdates: {
+        boxScoreUpdates: [],
+        totalUpdates: [],
+        periodUpdate: undefined,
+        setStatUpdates: [],
+      },
+      playerUpdates: [],
+      teamUpdates: [],
+      setUpdates: [],
+    };
+
+    // Collect play-by-play and period info
+    const { shouldUpdate, statToRecord } = shouldUpdatePeriods(stats);
+    if (shouldUpdate && statToRecord) {
+      collector.gameUpdates.periodUpdate = {
+        playerId,
+        stat: statToRecord,
+        period: selectedPeriod,
+        team,
+      };
+    }
+
+    // Collect all stat updates
+    for (const stat of stats) {
+      // Collect basic stat tracking
+      collectSingleStatUpdates(collector, params, stat, team);
+
+      // Collect points for scoring plays
+      if (isScoringPlay(stat)) {
+        collectPointsForScoringPlay(collector, params, stat, team);
+      }
+    }
+
+    // Apply all updates in 4 batched calls (1 per store)
+    stores.batchGameUpdate!(gameId, collector.gameUpdates);
+    stores.batchPlayerUpdate!(collector.playerUpdates);
+    stores.batchTeamUpdate!(collector.teamUpdates);
+    stores.batchSetUpdate!(collector.setUpdates);
+  } else {
+    // LEGACY PATH: Use individual store calls (for backwards compatibility)
+    // Update play-by-play and period info
+    const { shouldUpdate, statToRecord } = shouldUpdatePeriods(stats);
+    if (shouldUpdate && statToRecord) {
+      stores.updatePeriods(gameId, playerId, statToRecord, selectedPeriod, team);
+    }
+
+    // Update all stats using individual calls
+    stats.forEach(stat => {
+      // Update basic stat tracking
+      updateSingleStatLegacy(stores, params, stat, team);
+
+      // Handle points for scoring plays
+      if (isScoringPlay(stat)) {
+        updatePointsForScoringPlayLegacy(stores, params, stat, team);
+      }
+    });
+  }
+}
+
+/**
+ * Legacy: Updates all stats for a single stat action (individual calls)
+ */
+function updateSingleStatLegacy(
+  stores: StatUpdateStoreActions,
+  params: StatUpdateParams,
+  stat: Stat,
+  team: Team,
+): void {
+  const { gameId, teamId, playerId, setId } = params;
+  const isOurPlayer = playerId !== "Opponent";
+
+  // Update game-level tracking (for both teams)
+  stores.updateBoxScore(gameId, playerId, stat, 1);
+  stores.updateTotals(gameId, stat, 1, team);
+  stores.updateTeamStats(teamId, stat, 1, team);
+  stores.updateGameSetStats(gameId, setId, stat, 1);
+
+  // Only update player/set stores for our team's players
+  if (isOurPlayer) {
+    stores.updatePlayerStats(playerId, stat, 1);
+    stores.updateSetStats(setId, stat, 1);
+  }
+}
+
+/**
+ * Legacy: Updates plus/minus stats for all active players and teams
+ */
+function updatePlusMinusStatsLegacy(
   stores: StatUpdateStoreActions,
   gameId: string,
   teamId: string,
@@ -127,34 +365,9 @@ function updatePlusMinusStats(
 }
 
 /**
- * Updates all stats for a single stat action
+ * Legacy: Updates points for a scoring play
  */
-function updateSingleStat(
-  stores: StatUpdateStoreActions,
-  params: StatUpdateParams,
-  stat: Stat,
-  team: Team,
-): void {
-  const { gameId, teamId, playerId, setId } = params;
-  const isOurPlayer = playerId !== "Opponent";
-
-  // Update game-level tracking (for both teams)
-  stores.updateBoxScore(gameId, playerId, stat, 1);
-  stores.updateTotals(gameId, stat, 1, team);
-  stores.updateTeamStats(teamId, stat, 1, team);
-  stores.updateGameSetStats(gameId, setId, stat, 1);
-
-  // Only update player/set stores for our team's players
-  if (isOurPlayer) {
-    stores.updatePlayerStats(playerId, stat, 1);
-    stores.updateSetStats(setId, stat, 1);
-  }
-}
-
-/**
- * Updates points for a scoring play
- */
-function updatePointsForScoringPlay(
+function updatePointsForScoringPlayLegacy(
   stores: StatUpdateStoreActions,
   params: StatUpdateParams,
   stat: Stat,
@@ -179,36 +392,7 @@ function updatePointsForScoringPlay(
   }
 
   // Update plus/minus for scoring plays
-  updatePlusMinusStats(stores, gameId, teamId, activePlayers, team, points);
-}
-
-/**
- * Core stat update function - updates all stat tracking for a given action
- * This is the pure logic extracted from [gameId].tsx handleStatUpdate
- *
- * @param stores - Store action functions (dependency injection)
- * @param params - Parameters for the stat update
- */
-export function handleStatUpdate(stores: StatUpdateStoreActions, params: StatUpdateParams): void {
-  const { stats, gameId, playerId, selectedPeriod } = params;
-  const team = playerId === "Opponent" ? Team.Opponent : Team.Us;
-
-  // Update play-by-play and period info
-  const { shouldUpdate, statToRecord } = shouldUpdatePeriods(stats);
-  if (shouldUpdate && statToRecord) {
-    stores.updatePeriods(gameId, playerId, statToRecord, selectedPeriod, team);
-  }
-
-  // Update all stats
-  stats.forEach(stat => {
-    // Update basic stat tracking
-    updateSingleStat(stores, params, stat, team);
-
-    // Handle points for scoring plays
-    if (isScoringPlay(stat)) {
-      updatePointsForScoringPlay(stores, params, stat, team);
-    }
-  });
+  updatePlusMinusStatsLegacy(stores, gameId, teamId, activePlayers, team, points);
 }
 
 /**

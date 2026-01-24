@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
 import { View, Text, StyleSheet, FlatList, Pressable, Alert } from "react-native";
 import { StatLineButton } from "@/components/StatLineButton";
 import { useGameStore } from "@/store/gameStore";
@@ -14,7 +14,11 @@ type SubstitutionOverlayProps = {
   onClose: () => void;
 };
 
-export default function SubstitutionOverlay({ gameId, onClose }: SubstitutionOverlayProps) {
+// Wrapped with memo to prevent unnecessary re-renders when parent state changes
+const SubstitutionOverlay = memo(function SubstitutionOverlay({
+  gameId,
+  onClose,
+}: SubstitutionOverlayProps) {
   const game = useGameStore(state => state.games[gameId]);
   const addPlayerToGamePlayed = useGameStore(state => state.addPlayersToGamePlayedList);
 
@@ -154,7 +158,9 @@ export default function SubstitutionOverlay({ gameId, onClose }: SubstitutionOve
       </View>
     </View>
   );
-}
+});
+
+export default SubstitutionOverlay;
 
 const styles = StyleSheet.create({
   overlay: {

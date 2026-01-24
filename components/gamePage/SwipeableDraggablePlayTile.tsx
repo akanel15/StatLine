@@ -153,9 +153,9 @@ function SwipeableDraggablePlayTile({
 
 const styles = StyleSheet.create({
   container: {
+    height: 48, // Fixed height for getItemLayout in virtualized list
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 12,
     paddingHorizontal: 12,
     borderBottomWidth: 1,
     borderColor: theme.colorLightGrey,

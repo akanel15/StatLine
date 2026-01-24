@@ -6,6 +6,9 @@ import uuid from "react-native-uuid";
 import { createPlayer, PlayerType, Result } from "@/types/player";
 import { Stat } from "@/types/stats";
 
+// Type for batched player stat updates
+export type PlayerStatUpdate = { playerId: string; stat: Stat; amount: number };
+
 type PlayerState = {
   players: Record<string, PlayerType>;
   addPlayer: (name: string, number: string, teamId: string, imageUri?: string) => Promise<void>;
@@ -17,6 +20,8 @@ type PlayerState = {
   updateGamesPlayed: (playerId: string, result: Result) => void;
   revertGameNumbers: (playerId: string, result: Result) => void;
   updateStats: (playerId: string, stat: Stat, amount: number) => void;
+  // Batched stat update - performs all player updates in a single set() call
+  batchUpdateStats: (updates: PlayerStatUpdate[]) => void;
   getPlayerSafely: (playerId: string) => PlayerType | null;
 };
 
@@ -157,6 +162,32 @@ export const usePlayerStore = create(
           };
         });
       },
+
+      // Batched stat update - performs ALL player stat updates in a single set() call
+      // This dramatically reduces re-renders by emitting only 1 state change
+      batchUpdateStats: (updates: PlayerStatUpdate[]) => {
+        if (updates.length === 0) return;
+
+        set(state => {
+          const updatedPlayers = { ...state.players };
+
+          for (const update of updates) {
+            const player = updatedPlayers[update.playerId];
+            if (!player) continue;
+
+            updatedPlayers[update.playerId] = {
+              ...player,
+              stats: {
+                ...player.stats,
+                [update.stat]: (player.stats?.[update.stat] || 0) + update.amount,
+              },
+            };
+          }
+
+          return { players: updatedPlayers };
+        });
+      },
+
       getPlayerSafely: (playerId: string) => {
         const state = get();
         return state.players[playerId] || null;

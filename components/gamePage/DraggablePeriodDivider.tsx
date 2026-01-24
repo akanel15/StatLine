@@ -58,12 +58,13 @@ export default function DraggablePeriodDivider({
 
 const styles = StyleSheet.create({
   container: {
+    height: 44, // Fixed height for getItemLayout in virtualized list
     backgroundColor: theme.colorLightGrey,
-    paddingVertical: 8,
     paddingHorizontal: 12,
     borderBottomWidth: 1,
     borderBottomColor: theme.colorLightGrey,
     width: "100%",
+    justifyContent: "center",
   },
   activeContainer: {
     transform: [{ scale: 1.02 }],
