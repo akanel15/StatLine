@@ -16,7 +16,14 @@ export type UnifiedPlayEntry = {
 // Types for batched stat updates
 export type BoxScoreUpdate = { playerId: string; stat: Stat; amount: number };
 export type TotalUpdate = { stat: Stat; amount: number; team: Team };
-export type PeriodUpdate = { playerId: string; stat: Stat; period: number; team: Team };
+export type PeriodUpdate = {
+  playerId: string;
+  stat: Stat;
+  period: number;
+  team: Team;
+  activePlayers?: string[]; // Players on court for stat reversal
+  setId?: string; // Set/lineup in use for stat reversal
+};
 export type SetStatUpdate = { setId: string; stat: Stat; amount: number };
 
 export type BatchStatUpdateParams = {
@@ -199,7 +206,7 @@ export const useGameStore = create(
 
           // Apply period update (play-by-play)
           if (params.periodUpdate) {
-            const { playerId, stat, period, team } = params.periodUpdate;
+            const { playerId, stat, period, team, activePlayers, setId } = params.periodUpdate;
 
             // Ensure the period index exists
             if (!updatedPeriods[period]) {
@@ -223,6 +230,8 @@ export const useGameStore = create(
                   id: uuid.v4() as string,
                   playerId,
                   action: stat,
+                  activePlayers, // Store for stat reversal on delete
+                  setId, // Store for stat reversal on delete
                 },
                 ...updatedPeriods[period].playByPlay,
               ],

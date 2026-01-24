@@ -42,8 +42,9 @@ import ShareableBoxScore from "@/components/gamePage/ShareableBoxScore";
 import { sanitizeFileName } from "@/utils/filename";
 import { StandardBackButton } from "@/components/StandardBackButton";
 import { EditGameModal } from "@/components/EditGameModal";
-import { handleStatUpdate as handleStatUpdateLogic } from "@/logic/statUpdates";
+import { handleStatUpdate as handleStatUpdateLogic, handleStatReversal } from "@/logic/statUpdates";
 import type { StatUpdateStoreActions } from "@/logic/statUpdates";
+import type { PlayByPlayType } from "@/types/game";
 import { useHelpStore } from "@/store/helpStore";
 import { ContextualTooltip } from "@/components/shared/ContextualTooltip";
 
@@ -402,6 +403,55 @@ export default function GamePage() {
     setShowOverlay(false);
   }, []);
 
+  // Callback for when a play is about to be deleted - reverse stats before removal
+  const handlePlayDelete = useCallback(
+    (play: PlayByPlayType, _periodIndex: number) => {
+      // Create store actions for the stat reversal logic
+      const storeActionsForReversal: StatUpdateStoreActions = {
+        updateBoxScore,
+        updateTotals,
+        updatePeriods,
+        updateGameSetStats,
+        incrementSetRunCount: updateGameSetCounts,
+        updateTeamStats,
+        updatePlayerStats,
+        updateSetStats,
+        incrementGlobalSetRunCount: updateSetRunCount,
+        batchGameUpdate,
+        batchPlayerUpdate,
+        batchTeamUpdate,
+        batchSetUpdate,
+      };
+
+      handleStatReversal(storeActionsForReversal, {
+        play,
+        gameId,
+        teamId,
+        currentActivePlayers: game?.activePlayers || [],
+        currentSetId: selectedPlay,
+      });
+    },
+    [
+      gameId,
+      teamId,
+      game?.activePlayers,
+      selectedPlay,
+      updateBoxScore,
+      updateTotals,
+      updatePeriods,
+      updateGameSetStats,
+      updateGameSetCounts,
+      updateTeamStats,
+      updatePlayerStats,
+      updateSetStats,
+      updateSetRunCount,
+      batchGameUpdate,
+      batchPlayerUpdate,
+      batchTeamUpdate,
+      batchSetUpdate,
+    ],
+  );
+
   // Memoize player and set lookups to prevent unnecessary array creation on every render
   // These must be before the conditional return to satisfy React hooks rules
   const activePlayers = useMemo(
@@ -654,6 +704,7 @@ export default function GamePage() {
               onToggleExpand={() => setExpandPlayByPlay(!expandPlayByPlay)}
               currentPeriod={currentPeriod}
               onPeriodChange={setCurrentPeriod}
+              onBeforeDelete={handlePlayDelete}
             />
           </View>
           <View style={[styles.bottomSection, expandPlayByPlay && styles.bottomSectionMinimized]}>

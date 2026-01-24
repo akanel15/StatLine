@@ -4,9 +4,12 @@ import {
   isScoringPlay,
   shouldUpdatePeriods,
   handleStatUpdate,
+  handleStatReversal,
   createStatUpdateHandler,
+  createStatReversalHandler,
   StatUpdateStoreActions,
   StatUpdateParams,
+  StatReversalParams,
 } from "@/logic/statUpdates";
 import { Stat } from "@/types/stats";
 import { Team } from "@/types/game";
@@ -587,6 +590,399 @@ describe("Stat Updates Logic", () => {
       // Should still call set updates (they should handle empty IDs)
       expect(mockStores.updateSetStats).toHaveBeenCalledWith("", Stat.Points, 1);
       expect(mockStores.updateGameSetStats).toHaveBeenCalledWith("game-1", "", Stat.Points, 1);
+    });
+  });
+
+  describe("handleStatReversal", () => {
+    let mockStores: jest.Mocked<StatUpdateStoreActions>;
+    let baseParams: StatReversalParams;
+
+    beforeEach(() => {
+      mockStores = {
+        updateBoxScore: jest.fn(),
+        updateTotals: jest.fn(),
+        updatePeriods: jest.fn(),
+        updateGameSetStats: jest.fn(),
+        incrementSetRunCount: jest.fn(),
+        updateTeamStats: jest.fn(),
+        updatePlayerStats: jest.fn(),
+        updateSetStats: jest.fn(),
+        incrementGlobalSetRunCount: jest.fn(),
+      };
+
+      baseParams = {
+        play: {
+          playerId: "player-1",
+          action: Stat.TwoPointMakes,
+          activePlayers: ["player-1", "player-2", "player-3"],
+          setId: "set-1",
+        },
+        gameId: "game-1",
+        teamId: "team-1",
+        currentActivePlayers: ["player-1", "player-2"],
+        currentSetId: "set-2",
+      };
+    });
+
+    test("should reverse two-point make correctly", () => {
+      handleStatReversal(mockStores, baseParams);
+
+      // Should reverse makes and attempts (2pt make triggers both)
+      expect(mockStores.updateBoxScore).toHaveBeenCalledWith(
+        "game-1",
+        "player-1",
+        Stat.TwoPointMakes,
+        -1,
+      );
+      expect(mockStores.updateBoxScore).toHaveBeenCalledWith(
+        "game-1",
+        "player-1",
+        Stat.TwoPointAttempts,
+        -1,
+      );
+
+      // Should reverse points
+      expect(mockStores.updateBoxScore).toHaveBeenCalledWith("game-1", "player-1", Stat.Points, -2);
+      expect(mockStores.updateTotals).toHaveBeenCalledWith("game-1", Stat.Points, -2, Team.Us);
+
+      // Should reverse player stats
+      expect(mockStores.updatePlayerStats).toHaveBeenCalledWith("player-1", Stat.Points, -2);
+
+      // Should reverse plus/minus for all active players
+      expect(mockStores.updateBoxScore).toHaveBeenCalledWith(
+        "game-1",
+        "player-1",
+        Stat.PlusMinus,
+        -2,
+      );
+      expect(mockStores.updateBoxScore).toHaveBeenCalledWith(
+        "game-1",
+        "player-2",
+        Stat.PlusMinus,
+        -2,
+      );
+      expect(mockStores.updateBoxScore).toHaveBeenCalledWith(
+        "game-1",
+        "player-3",
+        Stat.PlusMinus,
+        -2,
+      );
+    });
+
+    test("should reverse three-point make correctly", () => {
+      const params = {
+        ...baseParams,
+        play: {
+          ...baseParams.play,
+          action: Stat.ThreePointMakes,
+        },
+      };
+
+      handleStatReversal(mockStores, params);
+
+      // Should reverse points (3 points)
+      expect(mockStores.updateBoxScore).toHaveBeenCalledWith("game-1", "player-1", Stat.Points, -3);
+      expect(mockStores.updateTotals).toHaveBeenCalledWith("game-1", Stat.Points, -3, Team.Us);
+
+      // Should reverse plus/minus with 3 points
+      expect(mockStores.updatePlayerStats).toHaveBeenCalledWith("player-1", Stat.PlusMinus, -3);
+    });
+
+    test("should reverse free throw make correctly", () => {
+      const params = {
+        ...baseParams,
+        play: {
+          ...baseParams.play,
+          action: Stat.FreeThrowsMade,
+        },
+      };
+
+      handleStatReversal(mockStores, params);
+
+      // Should reverse points (1 point)
+      expect(mockStores.updateBoxScore).toHaveBeenCalledWith("game-1", "player-1", Stat.Points, -1);
+      expect(mockStores.updateTotals).toHaveBeenCalledWith("game-1", Stat.Points, -1, Team.Us);
+
+      // Should reverse plus/minus with 1 point
+      expect(mockStores.updatePlayerStats).toHaveBeenCalledWith("player-1", Stat.PlusMinus, -1);
+    });
+
+    test("should reverse shot miss correctly (no points or plus/minus)", () => {
+      const params = {
+        ...baseParams,
+        play: {
+          ...baseParams.play,
+          action: Stat.TwoPointAttempts, // Miss
+        },
+      };
+
+      handleStatReversal(mockStores, params);
+
+      // Should reverse the attempt
+      expect(mockStores.updateBoxScore).toHaveBeenCalledWith(
+        "game-1",
+        "player-1",
+        Stat.TwoPointAttempts,
+        -1,
+      );
+
+      // Should NOT reverse points (misses don't score)
+      expect(mockStores.updateBoxScore).not.toHaveBeenCalledWith(
+        "game-1",
+        "player-1",
+        Stat.Points,
+        expect.anything(),
+      );
+
+      // Should NOT reverse plus/minus (misses don't affect plus/minus)
+      expect(mockStores.updatePlayerStats).not.toHaveBeenCalledWith(
+        "player-1",
+        Stat.PlusMinus,
+        expect.anything(),
+      );
+    });
+
+    test("should reverse opponent scoring correctly", () => {
+      const params = {
+        ...baseParams,
+        play: {
+          ...baseParams.play,
+          playerId: "Opponent",
+        },
+      };
+
+      handleStatReversal(mockStores, params);
+
+      // Should use Team.Opponent
+      expect(mockStores.updateTotals).toHaveBeenCalledWith(
+        "game-1",
+        Stat.TwoPointMakes,
+        -1,
+        Team.Opponent,
+      );
+      expect(mockStores.updateTotals).toHaveBeenCalledWith(
+        "game-1",
+        Stat.Points,
+        -2,
+        Team.Opponent,
+      );
+
+      // Should NOT update player stats for opponent
+      expect(mockStores.updatePlayerStats).not.toHaveBeenCalledWith(
+        "Opponent",
+        Stat.TwoPointMakes,
+        expect.anything(),
+      );
+
+      // Should reverse plus/minus with positive amount for our players (opponent scoring reversed)
+      expect(mockStores.updatePlayerStats).toHaveBeenCalledWith("player-1", Stat.PlusMinus, 2);
+      expect(mockStores.updatePlayerStats).toHaveBeenCalledWith("player-2", Stat.PlusMinus, 2);
+    });
+
+    test("should use stored activePlayers from play over current", () => {
+      const params = {
+        ...baseParams,
+        play: {
+          ...baseParams.play,
+          activePlayers: ["player-a", "player-b"], // Different from currentActivePlayers
+        },
+      };
+
+      handleStatReversal(mockStores, params);
+
+      // Should use the stored activePlayers from the play
+      expect(mockStores.updateBoxScore).toHaveBeenCalledWith(
+        "game-1",
+        "player-a",
+        Stat.PlusMinus,
+        -2,
+      );
+      expect(mockStores.updateBoxScore).toHaveBeenCalledWith(
+        "game-1",
+        "player-b",
+        Stat.PlusMinus,
+        -2,
+      );
+
+      // Should NOT use currentActivePlayers
+      expect(mockStores.updateBoxScore).not.toHaveBeenCalledWith(
+        "game-1",
+        "player-1",
+        Stat.PlusMinus,
+        expect.anything(),
+      );
+    });
+
+    test("should fall back to currentActivePlayers when play has no stored activePlayers", () => {
+      const params = {
+        ...baseParams,
+        play: {
+          playerId: "player-1",
+          action: Stat.TwoPointMakes,
+          // No activePlayers stored
+        },
+      };
+
+      handleStatReversal(mockStores, params);
+
+      // Should use currentActivePlayers as fallback
+      expect(mockStores.updateBoxScore).toHaveBeenCalledWith(
+        "game-1",
+        "player-1",
+        Stat.PlusMinus,
+        -2,
+      );
+      expect(mockStores.updateBoxScore).toHaveBeenCalledWith(
+        "game-1",
+        "player-2",
+        Stat.PlusMinus,
+        -2,
+      );
+    });
+
+    test("should use stored setId from play over current", () => {
+      const params = {
+        ...baseParams,
+        play: {
+          ...baseParams.play,
+          setId: "set-stored", // Different from currentSetId
+        },
+      };
+
+      handleStatReversal(mockStores, params);
+
+      // Should use the stored setId
+      expect(mockStores.updateSetStats).toHaveBeenCalledWith("set-stored", Stat.TwoPointMakes, -1);
+      expect(mockStores.updateGameSetStats).toHaveBeenCalledWith(
+        "game-1",
+        "set-stored",
+        Stat.TwoPointMakes,
+        -1,
+      );
+    });
+
+    test("should reverse non-scoring stats correctly", () => {
+      const params = {
+        ...baseParams,
+        play: {
+          ...baseParams.play,
+          action: Stat.DefensiveRebounds,
+        },
+      };
+
+      handleStatReversal(mockStores, params);
+
+      // Should reverse the stat
+      expect(mockStores.updateBoxScore).toHaveBeenCalledWith(
+        "game-1",
+        "player-1",
+        Stat.DefensiveRebounds,
+        -1,
+      );
+      expect(mockStores.updateTotals).toHaveBeenCalledWith(
+        "game-1",
+        Stat.DefensiveRebounds,
+        -1,
+        Team.Us,
+      );
+      expect(mockStores.updatePlayerStats).toHaveBeenCalledWith(
+        "player-1",
+        Stat.DefensiveRebounds,
+        -1,
+      );
+      expect(mockStores.updateSetStats).toHaveBeenCalledWith("set-1", Stat.DefensiveRebounds, -1);
+
+      // Should NOT update points or plus/minus
+      expect(mockStores.updateBoxScore).not.toHaveBeenCalledWith(
+        "game-1",
+        "player-1",
+        Stat.Points,
+        expect.anything(),
+      );
+    });
+
+    test("should reverse team plus/minus for both teams on scoring play", () => {
+      handleStatReversal(mockStores, baseParams);
+
+      // Should reverse plus/minus for both teams
+      expect(mockStores.updateTeamStats).toHaveBeenCalledWith(
+        "team-1",
+        Stat.PlusMinus,
+        -2,
+        Team.Us,
+      );
+      expect(mockStores.updateTeamStats).toHaveBeenCalledWith(
+        "team-1",
+        Stat.PlusMinus,
+        2,
+        Team.Opponent,
+      );
+
+      // Should also update game totals for plus/minus
+      expect(mockStores.updateTotals).toHaveBeenCalledWith("game-1", Stat.PlusMinus, -2, Team.Us);
+      expect(mockStores.updateTotals).toHaveBeenCalledWith(
+        "game-1",
+        Stat.PlusMinus,
+        2,
+        Team.Opponent,
+      );
+    });
+  });
+
+  describe("createStatReversalHandler", () => {
+    test("should create a handler function", () => {
+      const mockStores: jest.Mocked<StatUpdateStoreActions> = {
+        updateBoxScore: jest.fn(),
+        updateTotals: jest.fn(),
+        updatePeriods: jest.fn(),
+        updateGameSetStats: jest.fn(),
+        incrementSetRunCount: jest.fn(),
+        updateTeamStats: jest.fn(),
+        updatePlayerStats: jest.fn(),
+        updateSetStats: jest.fn(),
+        incrementGlobalSetRunCount: jest.fn(),
+      };
+
+      const handler = createStatReversalHandler(mockStores);
+
+      expect(typeof handler).toBe("function");
+    });
+
+    test("should create a handler that calls handleStatReversal", () => {
+      const mockStores: jest.Mocked<StatUpdateStoreActions> = {
+        updateBoxScore: jest.fn(),
+        updateTotals: jest.fn(),
+        updatePeriods: jest.fn(),
+        updateGameSetStats: jest.fn(),
+        incrementSetRunCount: jest.fn(),
+        updateTeamStats: jest.fn(),
+        updatePlayerStats: jest.fn(),
+        updateSetStats: jest.fn(),
+        incrementGlobalSetRunCount: jest.fn(),
+      };
+
+      const handler = createStatReversalHandler(mockStores);
+
+      const params: StatReversalParams = {
+        play: {
+          playerId: "player-1",
+          action: Stat.TwoPointMakes,
+        },
+        gameId: "game-1",
+        teamId: "team-1",
+        currentActivePlayers: ["player-1"],
+        currentSetId: "set-1",
+      };
+
+      handler(params);
+
+      // Should have called the store methods with negative amounts
+      expect(mockStores.updateBoxScore).toHaveBeenCalledWith(
+        "game-1",
+        "player-1",
+        Stat.TwoPointMakes,
+        -1,
+      );
     });
   });
 });

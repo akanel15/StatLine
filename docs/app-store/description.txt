@@ -1,0 +1,30 @@
+StatLine makes tracking basketball games simple and powerful. Whether you're a coach analyzing performance, a parent preserving memories, or a player tracking progress—StatLine captures every stat that matters.
+
+REAL-TIME GAME TRACKING
+• Tap to record points, rebounds, assists, steals, blocks, and more
+• Automatic box score generation as you track
+• Play-by-play timeline of every game moment
+• Support for quarters or halves
+
+TEAM & PLAYER MANAGEMENT
+• Create multiple teams with custom logos
+• Add players with jersey numbers and photos
+• Track individual and team statistics across games
+• View career averages and game history
+
+LINEUP SETS
+• Save your favorite lineups for quick access
+• Track stats by lineup to see what works
+• Easy substitution management during games
+
+SHARE YOUR STATS
+• Generate shareable box scores and stat summaries
+• Export game data to share with your team
+• Beautiful stat cards for social media
+
+WORKS OFFLINE
+• All data stored locally on your device
+• No account required
+• Your data stays private—nothing uploaded to servers
+
+Built for the love of the game. StatLine is the stat tracker you've been looking for.

@@ -1,4 +1,4 @@
-import { Stat } from "@/types/stats";
+import { Stat, getStatsForAction } from "@/types/stats";
 import { Team } from "@/types/game";
 import type {
   BoxScoreUpdate,
@@ -51,6 +51,22 @@ export interface StatUpdateParams {
   setId: string;
   selectedPeriod: number;
   activePlayers: string[];
+}
+
+/**
+ * Parameters for stat reversal (when deleting a play)
+ */
+export interface StatReversalParams {
+  play: {
+    playerId: string;
+    action: Stat;
+    activePlayers?: string[];
+    setId?: string;
+  };
+  gameId: string;
+  teamId: string;
+  currentActivePlayers: string[]; // Fallback if play.activePlayers not stored
+  currentSetId: string; // Fallback if play.setId not stored
 }
 
 /**
@@ -272,6 +288,8 @@ export function handleStatUpdate(stores: StatUpdateStoreActions, params: StatUpd
         stat: statToRecord,
         period: selectedPeriod,
         team,
+        activePlayers: params.activePlayers, // Store for stat reversal on delete
+        setId: params.setId, // Store for stat reversal on delete
       };
     }
 
@@ -393,6 +411,92 @@ function updatePointsForScoringPlayLegacy(
 
   // Update plus/minus for scoring plays
   updatePlusMinusStatsLegacy(stores, gameId, teamId, activePlayers, team, points);
+}
+
+/**
+ * Reverses all stat updates for a deleted play.
+ * This mirrors handleStatUpdate but uses negative amounts to reverse stats.
+ *
+ * CRITICAL: This must be called BEFORE removing the play from the play-by-play array
+ * to ensure stats are properly reversed across all stores.
+ *
+ * @param stores - Store action functions (dependency injection)
+ * @param params - Parameters for the stat reversal
+ */
+export function handleStatReversal(
+  stores: StatUpdateStoreActions,
+  params: StatReversalParams,
+): void {
+  const { play, gameId, teamId, currentActivePlayers, currentSetId } = params;
+  const { playerId, action } = play;
+
+  // Use stored activePlayers/setId if available, otherwise fall back to current
+  const activePlayers = play.activePlayers || currentActivePlayers;
+  const setId = play.setId || currentSetId;
+
+  // Determine which team this play was for
+  const team = playerId === "Opponent" ? Team.Opponent : Team.Us;
+  const isOurPlayer = playerId !== "Opponent";
+
+  // Get all stats that were originally recorded for this action
+  const stats = getStatsForAction(action);
+
+  // Reverse each stat (use -1 amount to subtract)
+  for (const stat of stats) {
+    // Reverse game-level tracking
+    stores.updateBoxScore(gameId, playerId, stat, -1);
+    stores.updateTotals(gameId, stat, -1, team);
+    stores.updateTeamStats(teamId, stat, -1, team);
+    stores.updateGameSetStats(gameId, setId, stat, -1);
+
+    // Only reverse player/set stores for our team's players
+    if (isOurPlayer) {
+      stores.updatePlayerStats(playerId, stat, -1);
+      stores.updateSetStats(setId, stat, -1);
+    }
+
+    // Reverse points for scoring plays
+    if (isScoringPlay(stat)) {
+      const points = getPointsForStat(stat);
+
+      // Reverse points in game-level tracking
+      stores.updateTotals(gameId, Stat.Points, -points, team);
+      stores.updateBoxScore(gameId, playerId, Stat.Points, -points);
+      stores.updateTeamStats(teamId, Stat.Points, -points, team);
+      stores.updateGameSetStats(gameId, setId, Stat.Points, -points);
+
+      // Only reverse player/set stores for our team's players
+      if (isOurPlayer) {
+        stores.updatePlayerStats(playerId, Stat.Points, -points);
+        stores.updateSetStats(setId, Stat.Points, -points);
+      }
+
+      // Reverse plus/minus for all players who were active when the play was recorded
+      const { usAmount, opponentAmount } = calculatePlusMinusForTeam(team, points);
+
+      // Reverse team plus/minus for both teams
+      stores.updateTeamStats(teamId, Stat.PlusMinus, -usAmount, Team.Us);
+      stores.updateTotals(gameId, Stat.PlusMinus, -usAmount, Team.Us);
+      stores.updateTeamStats(teamId, Stat.PlusMinus, -opponentAmount, Team.Opponent);
+      stores.updateTotals(gameId, Stat.PlusMinus, -opponentAmount, Team.Opponent);
+
+      // Reverse plus/minus for all active players
+      for (const activePlayerId of activePlayers) {
+        stores.updateBoxScore(gameId, activePlayerId, Stat.PlusMinus, -usAmount);
+        stores.updatePlayerStats(activePlayerId, Stat.PlusMinus, -usAmount);
+      }
+    }
+  }
+}
+
+/**
+ * Factory function to create a stat reversal handler with store dependencies
+ * This allows components to create a bound version of handleStatReversal
+ */
+export function createStatReversalHandler(
+  stores: StatUpdateStoreActions,
+): (params: StatReversalParams) => void {
+  return (params: StatReversalParams) => handleStatReversal(stores, params);
 }
 
 /**

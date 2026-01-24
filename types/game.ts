@@ -15,6 +15,8 @@ export type PlayByPlayType = {
   id: string; // Unique identifier for stable rendering during drag operations
   playerId: string;
   action: Stat;
+  activePlayers?: string[]; // Players on court when play was recorded (for stat reversal)
+  setId?: string; // Set/lineup in use when play was recorded (for stat reversal)
 };
 
 export type PeriodInfo = {

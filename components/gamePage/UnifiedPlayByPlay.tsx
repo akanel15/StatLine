@@ -28,6 +28,7 @@ type UnifiedPlayByPlayProps = {
   onToggleExpand?: () => void;
   currentPeriod: number; // Controlled from parent
   onPeriodChange: (period: number) => void; // Callback to parent when period changes
+  onBeforeDelete?: (play: PlayByPlayType, periodIndex: number) => void; // Callback before play is deleted for stat reversal
 };
 
 type PlayItem = {
@@ -52,6 +53,7 @@ export default function UnifiedPlayByPlay({
   onToggleExpand,
   currentPeriod,
   onPeriodChange,
+  onBeforeDelete,
 }: UnifiedPlayByPlayProps) {
   const game = useGameStore(state => state.games[gameId]);
   const removePlayFromPeriod = useGameStore(state => state.removePlayFromPeriod);
@@ -461,6 +463,12 @@ export default function UnifiedPlayByPlay({
   };
 
   const handleDelete = (periodIndex: number, indexInPeriod: number) => {
+    // Get the play before removing it so we can reverse stats
+    const play = game?.periods[periodIndex]?.playByPlay[indexInPeriod];
+    if (play && onBeforeDelete) {
+      // Reverse stats BEFORE removing the play from the array
+      onBeforeDelete(play, periodIndex);
+    }
     removePlayFromPeriod(gameId, periodIndex, indexInPeriod);
   };
 
