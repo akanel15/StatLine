@@ -3,6 +3,7 @@ import { theme } from "@/theme";
 import { PeriodType } from "@/types/game";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { RenderItemParams } from "react-native-draggable-flatlist";
+import { scale, moderateScale, DIVIDER_HEIGHT } from "@/utils/responsive";
 
 interface DraggablePeriodDividerProps {
   periodIndex: number;
@@ -58,9 +59,9 @@ export default function DraggablePeriodDivider({
 
 const styles = StyleSheet.create({
   container: {
-    height: 44, // Fixed height for getItemLayout in virtualized list
+    height: DIVIDER_HEIGHT, // Fixed height for getItemLayout in virtualized list
     backgroundColor: theme.colorLightGrey,
-    paddingHorizontal: 12,
+    paddingHorizontal: scale(12),
     borderBottomWidth: 1,
     borderBottomColor: theme.colorLightGrey,
     width: "100%",
@@ -78,24 +79,24 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
-    marginBottom: 4,
+    gap: scale(8),
+    marginBottom: scale(4),
   },
   dragHandle: {
-    padding: 2,
+    padding: scale(2),
     opacity: 1.0,
   },
   dragHandleInactive: {
     opacity: 0.4,
   },
   periodLabel: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: "700",
     color: theme.colorOnyx,
     textAlign: "center",
   },
   dividerLine: {
-    height: 2,
+    height: scale(2),
     backgroundColor: theme.colorOrangePeel,
   },
 });

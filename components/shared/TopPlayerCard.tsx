@@ -4,6 +4,7 @@ import { StyleSheet, TouchableOpacity } from "react-native";
 import { Text, View } from "react-native";
 import { PlayerImage } from "../PlayerImage";
 import { getStatLabel, Stat } from "@/types/stats";
+import { scale, moderateScale } from "@/utils/responsive";
 
 type TopPlayerCardProps = {
   player: PlayerType;
@@ -51,26 +52,26 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: 15,
+    padding: scale(15),
     borderBottomWidth: 1,
     borderBottomColor: theme.colorLightGrey,
   },
   playerInfo: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: scale(12),
   },
   playerAvatar: {
-    width: 40,
-    height: 40,
+    width: scale(40),
+    height: scale(40),
     backgroundColor: theme.colorOrangePeel,
-    borderRadius: 20,
+    borderRadius: scale(20),
     alignItems: "center",
     justifyContent: "center",
   },
   playerName: {
     fontWeight: "600",
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: theme.colorOnyx,
   },
   playerStats: {
@@ -78,11 +79,11 @@ const styles = StyleSheet.create({
   },
   primaryStat: {
     fontWeight: "700",
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: theme.colorOrangePeel,
   },
   secondaryStat: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: theme.colorGrey,
   },
 });

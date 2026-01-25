@@ -7,6 +7,7 @@ import { RenderItemParams } from "react-native-draggable-flatlist";
 import { Swipeable } from "react-native-gesture-handler";
 import * as Haptics from "expo-haptics";
 import { useEffect, useRef, memo } from "react";
+import { scale, moderateScale, PLAY_TILE_HEIGHT } from "@/utils/responsive";
 
 interface SwipeableDraggablePlayTileProps {
   play: PlayByPlayType;
@@ -153,25 +154,25 @@ function SwipeableDraggablePlayTile({
 
 const styles = StyleSheet.create({
   container: {
-    height: 48, // Fixed height for getItemLayout in virtualized list
+    height: PLAY_TILE_HEIGHT, // Fixed height for getItemLayout in virtualized list
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 12,
+    paddingHorizontal: scale(12),
     borderBottomWidth: 1,
     borderColor: theme.colorLightGrey,
     width: "100%",
   },
   dragHandle: {
-    marginRight: 8,
-    paddingRight: 4,
+    marginRight: scale(8),
+    paddingRight: scale(4),
     opacity: 1.0, // Full opacity when active
   },
   dragHandleInactive: {
     opacity: 0.4, // Subtle when not dragging
   },
   playerInfo: {
-    width: 140,
-    fontSize: 14,
+    width: scale(130),
+    fontSize: moderateScale(14),
     fontWeight: "600",
     color: theme.colorOnyx,
   },
@@ -180,15 +181,15 @@ const styles = StyleSheet.create({
   },
   action: {
     flex: 1,
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: theme.colorOnyx,
   },
   boldText: {
     fontWeight: "bold",
   },
   score: {
-    width: 72,
-    fontSize: 16,
+    width: scale(65),
+    fontSize: moderateScale(16),
     textAlign: "right",
     color: theme.colorBlack,
     flexDirection: "row",
@@ -211,18 +212,18 @@ const styles = StyleSheet.create({
     backgroundColor: "#E53935",
     justifyContent: "center",
     alignItems: "flex-end",
-    minHeight: 56,
+    minHeight: scale(56),
   },
   deleteButton: {
     justifyContent: "center",
     alignItems: "center",
-    width: 100,
+    width: scale(100),
     height: "100%",
   },
   deleteButtonText: {
     color: theme.colorWhite,
     fontWeight: "600",
-    fontSize: 16,
+    fontSize: moderateScale(16),
   },
 });
 

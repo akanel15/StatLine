@@ -4,6 +4,7 @@ import { Link } from "expo-router";
 import { Stat } from "@/types/stats";
 import { SetType } from "@/types/set";
 import { IconAvatar } from "./shared/IconAvatar";
+import { scale, moderateScale } from "@/utils/responsive";
 
 // Helper functions for calculating statistics
 const calculatePerRunStat = (statValue: number, runCount: number): number => {
@@ -52,9 +53,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     shadowColor: theme.colorOnyx,
     backgroundColor: theme.colorWhite,
-    borderRadius: 6,
-    padding: 8,
-    marginBottom: 8,
+    borderRadius: scale(6),
+    padding: scale(8),
+    marginBottom: scale(8),
     shadowOffset: {
       width: 0,
       height: 1,
@@ -69,27 +70,27 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   details: {
-    marginLeft: 16,
+    marginLeft: scale(16),
     flex: 1,
     justifyContent: "center",
   },
   setName: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: "600",
-    marginBottom: 4,
+    marginBottom: scale(4),
     color: theme.colorOnyx,
   },
   runCount: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: theme.colorOnyx,
-    marginBottom: 2,
+    marginBottom: scale(2),
   },
   stats: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: theme.colorGrey,
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: theme.colorGrey,
   },
 });

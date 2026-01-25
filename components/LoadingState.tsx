@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
 import { theme } from "@/theme";
+import { scale, moderateScale } from "@/utils/responsive";
 
 interface LoadingStateProps {
   message?: string;
@@ -25,11 +26,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: theme.colorWhite,
-    padding: 20,
+    padding: scale(20),
   },
   message: {
-    marginTop: 16,
-    fontSize: 16,
+    marginTop: scale(16),
+    fontSize: moderateScale(16),
     color: theme.colorGrey,
     textAlign: "center",
   },

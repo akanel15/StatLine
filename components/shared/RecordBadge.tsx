@@ -1,5 +1,6 @@
 import { theme } from "@/theme";
 import { StyleSheet, Text, View } from "react-native";
+import { scale, moderateScale } from "@/utils/responsive";
 
 type RecordBadgeProps = {
   wins: number;
@@ -21,14 +22,14 @@ export function RecordBadge({ wins, losses, draws, label = "Record" }: RecordBad
 const styles = StyleSheet.create({
   recordBadge: {
     backgroundColor: theme.colorGrey,
-    marginTop: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 20,
+    marginTop: scale(8),
+    paddingVertical: scale(8),
+    paddingHorizontal: scale(16),
+    borderRadius: scale(20),
   },
   recordText: {
     color: theme.colorWhite,
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: "600",
   },
 });

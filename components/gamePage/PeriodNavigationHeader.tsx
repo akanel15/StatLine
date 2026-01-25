@@ -2,6 +2,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { theme } from "@/theme";
 import { PeriodType } from "@/types/game";
 import Feather from "@expo/vector-icons/Feather";
+import { scale, moderateScale } from "@/utils/responsive";
 
 interface PeriodNavigationHeaderProps {
   currentPeriod: number; // 0-indexed
@@ -66,8 +67,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: scale(16),
+    paddingVertical: scale(8),
     backgroundColor: theme.colorWhite,
     borderBottomWidth: 1,
     borderBottomColor: theme.colorLightGrey,
@@ -75,17 +76,17 @@ const styles = StyleSheet.create({
   navButton: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
+    gap: scale(4),
   },
   heading: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: "700",
     color: theme.colorOnyx,
     textAlign: "center",
-    minWidth: 60,
+    minWidth: scale(60),
   },
   buttonText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontWeight: "600",
     color: theme.colorBlue,
   },

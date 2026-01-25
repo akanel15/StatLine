@@ -22,6 +22,7 @@ import { Stat } from "@/types/stats";
 import { Team } from "@/types/game";
 import { confirmGameDeletion } from "@/utils/playerDeletion";
 import { OpponentImage } from "@/components/OpponentImage";
+import { scale, moderateScale } from "@/utils/responsive";
 
 interface EditGameModalProps {
   gameId: string;
@@ -243,54 +244,54 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     backgroundColor: theme.colorWhite,
-    borderRadius: 16,
+    borderRadius: scale(16),
     maxHeight: "100%",
   },
   scrollContent: {
-    padding: 20,
+    padding: scale(20),
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 24,
+    marginBottom: scale(24),
   },
   title: {
-    fontSize: 20,
+    fontSize: moderateScale(20),
     fontWeight: "700",
     color: theme.colorOnyx,
   },
   centered: {
     alignItems: "center",
-    marginBottom: 24,
+    marginBottom: scale(24),
   },
   inputLabel: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: "600",
     color: theme.colorOnyx,
-    marginBottom: 8,
+    marginBottom: scale(8),
   },
   textInput: {
     borderWidth: 2,
     borderColor: theme.colorLightGrey,
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
+    borderRadius: scale(8),
+    padding: scale(12),
+    fontSize: moderateScale(16),
     backgroundColor: theme.colorWhite,
     color: theme.colorOnyx,
-    marginBottom: 24,
+    marginBottom: scale(24),
   },
   actionsSection: {
-    gap: 12,
-    marginBottom: 20,
+    gap: scale(12),
+    marginBottom: scale(20),
   },
   optionButton: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: 16,
+    padding: scale(16),
     backgroundColor: theme.colorWhite,
-    borderRadius: 12,
+    borderRadius: scale(12),
     borderWidth: 1.5,
     borderColor: theme.colorOrangePeel,
   },
@@ -300,23 +301,23 @@ const styles = StyleSheet.create({
   optionContent: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: scale(12),
     flex: 1,
   },
   optionTextContainer: {
     flex: 1,
   },
   optionText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: "600",
     color: theme.colorOnyx,
-    marginBottom: 2,
+    marginBottom: scale(2),
   },
   deleteText: {
     color: theme.colorDestructive,
   },
   optionSubtext: {
-    fontSize: 13,
+    fontSize: moderateScale(13),
     color: theme.colorGrey,
   },
   deleteSubtext: {
@@ -324,13 +325,13 @@ const styles = StyleSheet.create({
     opacity: 0.8,
   },
   cancelButton: {
-    padding: 16,
+    padding: scale(16),
     backgroundColor: theme.colorLightGrey,
-    borderRadius: 12,
+    borderRadius: scale(12),
     alignItems: "center",
   },
   cancelButtonText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: "600",
     color: theme.colorOnyx,
   },

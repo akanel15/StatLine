@@ -8,6 +8,7 @@ import { PlayerType } from "@/types/player";
 import { PlayerImage } from "../PlayerImage";
 import { useHelpStore } from "@/store/helpStore";
 import { ContextualTooltip } from "@/components/shared/ContextualTooltip";
+import { scale, moderateScale } from "@/utils/responsive";
 
 type SubstitutionOverlayProps = {
   gameId: string;
@@ -166,18 +167,18 @@ const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: theme.colorWhite,
-    padding: 10,
+    padding: scale(10),
     justifyContent: "space-between",
   },
   title: {
-    fontSize: 20,
+    fontSize: moderateScale(20),
     fontWeight: "bold",
     textAlign: "center",
   },
   container: {
     flexDirection: "row",
     flex: 1,
-    marginVertical: 20,
+    marginVertical: scale(20),
   },
   column: {
     flex: 1,
@@ -186,36 +187,38 @@ const styles = StyleSheet.create({
   rowCard: {
     flexDirection: "row",
     alignItems: "center",
-    minHeight: 50,
-    paddingHorizontal: 10,
-    width: 160,
+    minHeight: scale(50),
+    paddingHorizontal: scale(10),
+    flex: 1,
+    minWidth: scale(140),
   },
   playerText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     flexShrink: 1,
     flexWrap: "wrap",
-    marginLeft: 8,
+    marginLeft: scale(8),
     textAlign: "left",
   },
   subHeading: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: "bold",
-    marginBottom: 4,
+    marginBottom: scale(4),
   },
   divider: {
     width: 2,
     backgroundColor: theme.colorLightGrey,
   },
   playerBox: {
-    padding: 8,
-    marginVertical: 4,
-    borderRadius: 8,
+    padding: scale(8),
+    marginVertical: scale(4),
+    borderRadius: scale(8),
     backgroundColor: theme.colorLightGrey,
     alignItems: "center",
     justifyContent: "center",
-    minHeight: 50,
-    minWidth: 160,
-    maxWidth: 160,
+    minHeight: scale(50),
+    flex: 1,
+    minWidth: scale(140),
+    maxWidth: scale(180),
   },
   activePlayer: {
     borderColor: theme.colorOrangePeel,
@@ -223,9 +226,9 @@ const styles = StyleSheet.create({
   },
   rowContainer: {
     flexDirection: "row",
-    justifyContent: "flex-start",
-    gap: 6,
-    marginBottom: 6,
+    justifyContent: "center",
+    gap: scale(6),
+    marginBottom: scale(6),
     flexWrap: "wrap",
   },
   split: {
@@ -233,13 +236,13 @@ const styles = StyleSheet.create({
     maxWidth: "50%",
   },
   section: {
-    marginBottom: 10,
+    marginBottom: scale(10),
   },
   absoluteTooltipContainer: {
     position: "absolute",
-    top: -30,
-    left: 10,
-    right: 10,
+    top: scale(-30),
+    left: scale(10),
+    right: scale(10),
     zIndex: 1000,
   },
 });

@@ -17,6 +17,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { theme } from "@/theme";
+import { scale, moderateScale } from "@/utils/responsive";
 import { SetRadioButton } from "@/components/SetRadioButton";
 import { useSetStore } from "@/store/setStore";
 import StatOverlay from "@/components/gamePage/StatOverlay";
@@ -43,6 +44,7 @@ import { sanitizeFileName } from "@/utils/filename";
 import { StandardBackButton } from "@/components/StandardBackButton";
 import { EditGameModal } from "@/components/EditGameModal";
 import { handleStatUpdate as handleStatUpdateLogic, handleStatReversal } from "@/logic/statUpdates";
+import { shouldResetSet } from "@/logic/setResetLogic";
 import type { StatUpdateStoreActions } from "@/logic/statUpdates";
 import type { PlayByPlayType } from "@/types/game";
 import { useHelpStore } from "@/store/helpStore";
@@ -77,7 +79,6 @@ export default function GamePage() {
   const [showBoxScore, setShowBoxScore] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState<string>("");
 
-  const [freeThrowToggle, setFreeThrowToggle] = useState<boolean>(false);
   const [isSharing, setIsSharing] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const shareableRef = useRef<ViewShot>(null);
@@ -530,6 +531,9 @@ export default function GamePage() {
       return;
     }
 
+    const isOpponent = selectedPlayer === "Opponent";
+
+    // Record the stat
     handleStatUpdate({
       stats,
       gameId,
@@ -539,28 +543,11 @@ export default function GamePage() {
     });
     handleCloseOverlay();
 
-    if (stats.includes(Stat.FreeThrowsMade) || stats.includes(Stat.FreeThrowsAttempted)) {
-      setFreeThrowToggle(true);
-    }
-
-    const newActionPostFreeThrow =
-      freeThrowToggle === true &&
-      (!stats.includes(Stat.FreeThrowsMade) || !stats.includes(Stat.FreeThrowsAttempted));
-
-    //if play has concluded reset the selected play
-    if (
-      selectedPlayer !== "Opponent" &&
-      (stats.includes(Stat.TwoPointMakes) ||
-        stats.includes(Stat.TwoPointAttempts) ||
-        stats.includes(Stat.ThreePointMakes) ||
-        stats.includes(Stat.ThreePointAttempts) ||
-        stats.includes(Stat.Turnovers) ||
-        newActionPostFreeThrow)
-    ) {
+    // Reset set if opponent gained possession (possession-based set tracking)
+    if (shouldResetSet(stats, isOpponent) && selectedPlay) {
       updateSetRunCount(selectedPlay);
       updateGameSetCounts(gameId, selectedPlay);
       setSelectedPlay("");
-      setFreeThrowToggle(false);
     }
   };
 
@@ -668,7 +655,7 @@ export default function GamePage() {
       {!showOverlay && !showSets && !showSubstitutions && !showBoxScore && showSetResetHint && (
         <View style={styles.absoluteTooltipContainer} pointerEvents="box-none">
           <ContextualTooltip
-            message="Sets auto-reset after field goal attempts and turnovers."
+            message="Sets stay active for the entire possession. They reset on turnovers or when the opponent gains the ball."
             onDismiss={handleDismissSetResetHint}
             autoDismiss={true}
             autoDismissDelay={10000}
@@ -800,22 +787,22 @@ export default function GamePage() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: 10,
+    paddingHorizontal: scale(10),
     backgroundColor: theme.colorWhite,
   },
   teamsContainer: {
-    padding: 4,
+    padding: scale(4),
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 10,
+    marginTop: scale(10),
   },
   playByPlayContainer: {
     flex: 2,
-    marginTop: 4,
-    marginBottom: 6,
+    marginTop: scale(4),
+    marginBottom: scale(6),
     borderWidth: 1,
     borderColor: theme.colorLightGrey,
-    borderRadius: 12,
+    borderRadius: scale(12),
     overflow: "hidden",
   },
   playByPlayContainerExpanded: {
@@ -829,13 +816,13 @@ const styles = StyleSheet.create({
     display: "none",
   },
   section: {
-    marginBottom: 4,
+    marginBottom: scale(4),
   },
   heading: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontWeight: "bold",
     textAlign: "center",
-    marginBottom: 2,
+    marginBottom: scale(2),
   },
   headingRowWithToggle: {
     alignItems: "center",
@@ -844,13 +831,13 @@ const styles = StyleSheet.create({
   centeredHeadingWrapper: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
+    gap: scale(4),
   },
   rowContainer: {
     flexDirection: "row",
-    justifyContent: "flex-start",
-    gap: 6,
-    marginBottom: 6,
+    justifyContent: "center",
+    gap: scale(6),
+    marginBottom: scale(6),
     flexWrap: "wrap",
   },
   split: {
@@ -859,7 +846,7 @@ const styles = StyleSheet.create({
   },
   headerButtonText: {
     color: theme.colorOrangePeel,
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: "600",
   },
   hiddenModalContainer: {
@@ -871,18 +858,18 @@ const styles = StyleSheet.create({
   tabSwitcher: {
     flexDirection: "row",
     backgroundColor: theme.colorLightGrey,
-    borderRadius: 8,
-    marginHorizontal: 20,
-    marginTop: 12,
-    marginBottom: 8,
+    borderRadius: scale(8),
+    marginHorizontal: scale(20),
+    marginTop: scale(12),
+    marginBottom: scale(8),
     overflow: "hidden",
     borderWidth: 1,
     borderColor: theme.colorLightGrey,
   },
   tab: {
     flex: 1,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
+    paddingVertical: scale(10),
+    paddingHorizontal: scale(16),
     alignItems: "center",
     justifyContent: "center",
   },
@@ -890,7 +877,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colorOrangePeel,
   },
   tabText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontWeight: "600",
     color: theme.colorGrey,
   },
@@ -903,12 +890,12 @@ const styles = StyleSheet.create({
   bottomActionsContainer: {
     flexDirection: "row",
     justifyContent: "space-around",
-    paddingVertical: 16,
-    paddingHorizontal: 20,
+    paddingVertical: scale(16),
+    paddingHorizontal: scale(20),
     backgroundColor: theme.colorWhite,
     borderTopWidth: 1,
     borderTopColor: theme.colorLightGrey,
-    gap: 12,
+    gap: scale(12),
   },
   actionButton: {
     flexDirection: "row",
@@ -917,22 +904,22 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colorWhite,
     borderWidth: 1,
     borderColor: theme.colorOrangePeel,
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
+    borderRadius: scale(8),
+    paddingVertical: scale(12),
+    paddingHorizontal: scale(20),
     flex: 1,
-    gap: 8,
+    gap: scale(8),
   },
   actionButtonText: {
     color: theme.colorOrangePeel,
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: "600",
   },
   absoluteTooltipContainer: {
     position: "absolute",
-    top: 160,
-    left: 14,
-    right: 14,
+    top: scale(160),
+    left: scale(14),
+    right: scale(14),
     zIndex: 900,
   },
 });

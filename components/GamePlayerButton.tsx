@@ -4,6 +4,7 @@ import { StyleSheet, Text, Pressable, Platform } from "react-native";
 import * as Haptics from "expo-haptics";
 import { PlayerType } from "@/types/player";
 import { getPlayerDisplayName } from "@/utils/displayHelpers";
+import { scale, moderateScale, scaleForLargeScreens, getButtonWidth } from "@/utils/responsive";
 
 type Props = {
   player?: PlayerType;
@@ -84,32 +85,32 @@ export const GamePlayerButton = memo(function GamePlayerButton({
 
 const styles = StyleSheet.create({
   text: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     textAlign: "center",
-    lineHeight: 18,
+    lineHeight: moderateScale(18),
   },
   button: {
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    borderRadius: 6,
+    paddingVertical: scale(8),
+    paddingHorizontal: scale(10),
+    borderRadius: scale(6),
     borderWidth: 1,
     borderColor: theme.colorOrangePeel,
     justifyContent: "center",
-    height: 80,
-    width: 120,
-    marginVertical: 2,
+    width: getButtonWidth(),
+    height: scaleForLargeScreens(80),
+    marginVertical: scale(2),
     backgroundColor: theme.colorLightGrey,
   },
   buttonLarge: {
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    borderRadius: 6,
+    paddingVertical: scale(12),
+    paddingHorizontal: scale(12),
+    borderRadius: scale(6),
     borderWidth: 1,
     borderColor: theme.colorOrangePeel,
     justifyContent: "center",
-    height: 100,
-    width: 120,
-    marginVertical: 2,
+    width: getButtonWidth(),
+    height: scaleForLargeScreens(100),
+    marginVertical: scale(2),
     backgroundColor: theme.colorLightGrey,
   },
   buttonPressed: {

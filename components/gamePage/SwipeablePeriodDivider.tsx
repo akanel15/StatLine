@@ -6,6 +6,7 @@ import { PeriodType } from "@/types/game";
 import { RenderItemParams } from "react-native-draggable-flatlist";
 import { theme } from "@/theme";
 import * as Haptics from "expo-haptics";
+import { scale, moderateScale } from "@/utils/responsive";
 
 interface SwipeablePeriodDividerProps {
   periodIndex: number;
@@ -111,19 +112,19 @@ const styles = StyleSheet.create({
     backgroundColor: "#E53935",
     justifyContent: "center",
     alignItems: "flex-end",
-    minHeight: 56,
+    minHeight: scale(56),
   },
   deleteButton: {
     justifyContent: "center",
     alignItems: "center",
-    width: 120,
+    width: scale(120),
     height: "100%",
-    paddingHorizontal: 16,
+    paddingHorizontal: scale(16),
   },
   deleteButtonText: {
     color: theme.colorWhite,
     fontWeight: "600",
-    fontSize: 14,
+    fontSize: moderateScale(14),
   },
 });
 

@@ -3,6 +3,7 @@ import { SetType } from "@/types/set";
 import { StyleSheet, TouchableOpacity } from "react-native";
 import { Text, View } from "react-native";
 import { IconAvatar } from "./IconAvatar";
+import { scale, moderateScale } from "@/utils/responsive";
 
 type TopSetCardProps = {
   set: SetType;
@@ -44,25 +45,25 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: 15,
+    padding: scale(15),
     borderBottomWidth: 1,
     borderBottomColor: theme.colorLightGrey,
   },
   setInfo: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: scale(12),
     flex: 1,
   },
   setAvatar: {
-    width: 40,
-    height: 40,
+    width: scale(40),
+    height: scale(40),
     alignItems: "center",
     justifyContent: "center",
   },
   setName: {
     fontWeight: "600",
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: theme.colorOnyx,
     flexShrink: 1,
   },
@@ -71,11 +72,11 @@ const styles = StyleSheet.create({
   },
   primaryStat: {
     fontWeight: "700",
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: theme.colorOrangePeel,
   },
   secondaryStat: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: theme.colorGrey,
   },
 });

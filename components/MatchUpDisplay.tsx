@@ -4,6 +4,7 @@ import { useTeamStore } from "@/store/teamStore";
 import { StatLineImage } from "./StatLineImage";
 import { OpponentImage } from "./OpponentImage";
 import { theme } from "@/theme";
+import { scale, moderateScale } from "@/utils/responsive";
 
 type MatchUpDisplayProps = {
   game: GameType;
@@ -61,21 +62,23 @@ const styles = StyleSheet.create({
   teamContainer: {
     alignItems: "center",
     justifyContent: "flex-start",
-    width: 100,
+    flex: 1,
+    maxWidth: scale(120),
   },
   scoreContainer: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center", // Centers scores
+    justifyContent: "center",
     flex: 1,
   },
   totalScore: {
-    fontSize: 24,
+    fontSize: moderateScale(24),
     textAlign: "center",
-    width: 50,
+    minWidth: scale(45),
   },
   subtitle: {
     color: theme.colorGrey,
     textAlign: "center",
+    fontSize: moderateScale(14),
   },
 });

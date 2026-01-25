@@ -1,6 +1,7 @@
 import { memo } from "react";
 import { theme } from "@/theme";
 import { Text, TouchableOpacity, StyleSheet } from "react-native";
+import { scale, moderateScale, scaleForLargeScreens, getButtonWidth } from "@/utils/responsive";
 
 type RadioButtonProps = {
   title: string;
@@ -41,20 +42,18 @@ export const SetRadioButton = memo(function SetRadioButton({
 
 const styles = StyleSheet.create({
   radioButton: {
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 6,
+    paddingVertical: scale(4),
+    paddingHorizontal: scale(8),
+    borderRadius: scale(6),
     borderWidth: 1,
     borderColor: theme.colorBlue,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    minWidth: 120,
-    maxWidth: 120,
-    minHeight: 50,
-    maxHeight: 50,
+    width: getButtonWidth(),
+    height: scaleForLargeScreens(50),
   },
   radioButtonText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
   },
 });

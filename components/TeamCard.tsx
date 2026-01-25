@@ -5,6 +5,7 @@ import { StatLineImage } from "./StatLineImage";
 import { Link } from "expo-router";
 import { TeamType } from "@/types/team";
 import { calculateTeamPPG, formatRecord, formatStatForCard } from "@/logic/cardStats";
+import { scale, moderateScale } from "@/utils/responsive";
 
 export function TeamCard({ team }: { team: TeamType }) {
   const updateTeamId = useTeamStore(state => state.setCurrentTeamId);
@@ -57,9 +58,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     shadowColor: theme.colorBlack,
     backgroundColor: theme.colorWhite,
-    borderRadius: 6,
-    padding: 12,
-    marginBottom: 12,
+    borderRadius: scale(6),
+    padding: scale(12),
+    marginBottom: scale(12),
     shadowOffset: {
       width: 0,
       height: 1,
@@ -70,23 +71,24 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   details: {
-    padding: 14,
+    padding: scale(14),
     justifyContent: "center",
   },
   teamName: {
-    fontSize: 18,
-    marginBottom: 4,
+    fontSize: moderateScale(18),
+    marginBottom: scale(4),
   },
   subtitle: {
     color: theme.colorGrey,
+    fontSize: moderateScale(14),
   },
   record: {
     color: theme.colorOnyx,
-    fontSize: 14,
-    marginBottom: 2,
+    fontSize: moderateScale(14),
+    marginBottom: scale(2),
   },
   ppg: {
     color: theme.colorGrey,
-    fontSize: 12,
+    fontSize: moderateScale(12),
   },
 });

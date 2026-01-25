@@ -2,6 +2,7 @@ import { memo } from "react";
 import { theme } from "@/theme";
 import { StyleSheet, Text, Pressable, Platform } from "react-native";
 import * as Haptics from "expo-haptics";
+import { scale, moderateScale } from "@/utils/responsive";
 
 type Props = {
   title: string;
@@ -50,14 +51,14 @@ export const StatLineButton = memo(function StatLineButton({
 const styles = StyleSheet.create({
   text: {
     color: theme.colorWhite,
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: "bold",
     textAlign: "center",
   },
   button: {
-    paddingHorizontal: 2,
-    paddingVertical: 12,
-    borderRadius: 6,
+    paddingHorizontal: scale(2),
+    paddingVertical: scale(12),
+    borderRadius: scale(6),
     backgroundColor: theme.colorOrangePeel,
   },
   buttonPressed: {

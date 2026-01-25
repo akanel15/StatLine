@@ -14,13 +14,10 @@ import DraggableFlatList, {
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import PeriodNavigationHeader from "./PeriodNavigationHeader";
 import SwipeablePeriodDivider from "./SwipeablePeriodDivider";
+import { PLAY_TILE_HEIGHT, DIVIDER_HEIGHT } from "@/utils/responsive";
 
 // Time in ms to lock gestures after a drag completes
 const DRAG_COOLDOWN_MS = 300;
-
-// Item heights for getItemLayout (must match styled heights in components)
-const PLAY_TILE_HEIGHT = 48;
-const DIVIDER_HEIGHT = 44;
 
 type UnifiedPlayByPlayProps = {
   gameId: string;

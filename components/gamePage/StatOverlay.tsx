@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from "react-native";
 import { StatLineButton } from "@/components/StatLineButton";
 import { GameStatButton } from "@/components/GameStatButton";
 import { theme } from "@/theme";
+import { scale, moderateScale } from "@/utils/responsive";
 import {
   ActionType,
   DefensiveStat,
@@ -77,7 +78,9 @@ const StatOverlay = memo(function StatOverlay({ onClose, onStatPress }: StatOver
         ))}
       </View>
 
-      <StatLineButton onPress={onClose} title="Close" />
+      <View style={styles.closeButtonContainer}>
+        <StatLineButton onPress={onClose} title="Close" />
+      </View>
     </View>
   );
 });
@@ -86,19 +89,22 @@ export default StatOverlay;
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: 10,
+    marginTop: scale(6),
   },
   heading: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontWeight: "bold",
     textAlign: "center",
-    marginBottom: 6,
+    marginBottom: scale(4),
   },
   rowContainer: {
     flexDirection: "row",
-    justifyContent: "flex-start",
-    gap: 6,
-    marginBottom: 6,
+    justifyContent: "center",
+    gap: scale(6),
+    marginBottom: scale(4),
     flexWrap: "wrap",
+  },
+  closeButtonContainer: {
+    marginTop: scale(8),
   },
 });

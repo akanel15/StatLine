@@ -4,6 +4,7 @@ import { Link } from "expo-router";
 import { PlayerImage } from "./PlayerImage";
 import { PlayerType } from "@/types/player";
 import { calculatePlayerCardStats, formatStatForCard } from "@/logic/cardStats";
+import { scale, moderateScale } from "@/utils/responsive";
 
 export function PlayerCard({ player }: { player: PlayerType }) {
   const { ppg, rpg, apg, gamesPlayed } = calculatePlayerCardStats(player);
@@ -49,9 +50,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     shadowColor: theme.colorOnyx,
     backgroundColor: theme.colorWhite,
-    borderRadius: 6,
-    padding: 8,
-    marginBottom: 8,
+    borderRadius: scale(6),
+    padding: scale(8),
+    marginBottom: scale(8),
     shadowOffset: {
       width: 0,
       height: 1,
@@ -61,27 +62,28 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   details: {
-    padding: 4,
+    padding: scale(4),
     justifyContent: "center",
   },
   playerName: {
-    fontSize: 18,
-    marginBottom: 4,
-    marginLeft: 16,
+    fontSize: moderateScale(18),
+    marginBottom: scale(4),
+    marginLeft: scale(16),
   },
   subtitle: {
     color: theme.colorGrey,
-    marginLeft: 16,
+    marginLeft: scale(16),
+    fontSize: moderateScale(14),
   },
   stats: {
     color: theme.colorOnyx,
-    fontSize: 14,
-    marginLeft: 16,
-    marginBottom: 2,
+    fontSize: moderateScale(14),
+    marginLeft: scale(16),
+    marginBottom: scale(2),
   },
   gamesPlayed: {
     color: theme.colorGrey,
-    fontSize: 12,
-    marginLeft: 16,
+    fontSize: moderateScale(12),
+    marginLeft: scale(16),
   },
 });

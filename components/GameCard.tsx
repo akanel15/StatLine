@@ -3,6 +3,7 @@ import { theme } from "@/theme";
 import { Link } from "expo-router";
 import { GameType } from "@/types/game";
 import MatchUpDisplay from "./MatchUpDisplay";
+import { scale } from "@/utils/responsive";
 //<PlayerImage game={game} size={80}></PlayerImage>
 
 export function GameCard({ game }: { game: GameType }) {
@@ -24,9 +25,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     shadowColor: theme.colorOnyx,
     backgroundColor: theme.colorWhite,
-    borderRadius: 6,
-    padding: 12,
-    marginBottom: 12,
+    borderRadius: scale(6),
+    padding: scale(12),
+    marginBottom: scale(12),
     shadowOffset: {
       width: 0,
       height: 1,
@@ -41,7 +42,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   details: {
-    padding: 8,
+    padding: scale(8),
     justifyContent: "space-between",
     flex: 1,
   },

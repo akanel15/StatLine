@@ -17,6 +17,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.akanel.StatLine",
+      "buildNumber": "1",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -33,7 +34,6 @@
     },
     "plugins": [
       "expo-router",
-      "expo-dev-client",
       "./plugins/fix-hermes-warning.js"
     ],
     "extra": {
