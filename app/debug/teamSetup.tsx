@@ -11,13 +11,79 @@ import {
 import { theme } from "@/theme";
 import { StatLineButton } from "@/components/StatLineButton";
 import { router } from "expo-router";
-import { setupTeam, VIKES_DIV1_MEN_CONFIG, type TeamSetupConfig, type PlayerData } from "@/utils/debug/teamSetup";
+import {
+  setupTeam,
+  setupDemoTeams,
+  simulateDemoGames,
+  VIKES_DIV1_MEN_CONFIG,
+  DEMO_TEAMS_CONFIG,
+  DEMO_GAME_COUNTS,
+  type TeamSetupConfig,
+  type PlayerData,
+  type SimulationProgress,
+} from "@/utils/debug/teamSetup";
 
 export default function TeamSetupScreen() {
   const [isCreating, setIsCreating] = useState(false);
+  const [isGeneratingDemo, setIsGeneratingDemo] = useState(false);
+  const [isSimulating, setIsSimulating] = useState(false);
+  const [simulationProgress, setSimulationProgress] = useState<SimulationProgress | null>(null);
   const [customTeamName, setCustomTeamName] = useState("");
   const [customPlayers, setCustomPlayers] = useState("");
   const [customSets, setCustomSets] = useState("");
+
+  const handleDemoTeamsSetup = async () => {
+    // Safety check - only allow in development
+    if (!__DEV__) {
+      return;
+    }
+
+    try {
+      setIsGeneratingDemo(true);
+
+      const teamIds = await setupDemoTeams();
+      const totalPlayers = DEMO_TEAMS_CONFIG.reduce((sum, t) => sum + t.players.length, 0);
+
+      Alert.alert(
+        "Success!",
+        `Created ${teamIds.length} demo teams with ${totalPlayers} total players for App Store screenshots!`,
+        [{ text: "OK" }],
+      );
+    } catch (error) {
+      console.error("Demo teams setup error:", error);
+      Alert.alert("Error", `Failed to create demo teams: ${error}`);
+    } finally {
+      setIsGeneratingDemo(false);
+    }
+  };
+
+  const handleSimulateGames = async () => {
+    // Safety check - only allow in development
+    if (!__DEV__) {
+      return;
+    }
+
+    try {
+      setIsSimulating(true);
+      setSimulationProgress(null);
+
+      await simulateDemoGames((progress) => {
+        setSimulationProgress(progress);
+      });
+
+      const totalGames = Object.values(DEMO_GAME_COUNTS).reduce((sum, count) => sum + count, 0);
+
+      Alert.alert("Success!", `Simulated ${totalGames} games across all demo teams!`, [
+        { text: "OK" },
+      ]);
+    } catch (error) {
+      console.error("Game simulation error:", error);
+      Alert.alert("Error", `Failed to simulate games: ${error}`);
+    } finally {
+      setIsSimulating(false);
+      setSimulationProgress(null);
+    }
+  };
 
   const handleQuickSetup = async () => {
     try {
@@ -61,14 +127,14 @@ export default function TeamSetupScreen() {
         return;
       }
 
-      const number = parseInt(parts[parts.length - 1]);
-      if (isNaN(number)) {
+      const numberParsed = parseInt(parts[parts.length - 1]);
+      if (isNaN(numberParsed)) {
         Alert.alert("Error", `Invalid number in: "${line}"`);
         return;
       }
 
       const name = parts.slice(0, -1).join(" ");
-      players.push({ name, number });
+      players.push({ name, number: String(numberParsed) });
     }
 
     if (players.length === 0) {
@@ -159,6 +225,76 @@ export default function TeamSetupScreen() {
             disabled={isCreating}
           />
         </View>
+
+        {/* Demo Teams for Screenshots */}
+        {__DEV__ && (
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>📸 Demo Teams for Screenshots</Text>
+            <Text style={styles.cardDescription}>
+              Create {DEMO_TEAMS_CONFIG.length} pre-configured teams with{" "}
+              {DEMO_TEAMS_CONFIG.reduce((sum, t) => sum + t.players.length, 0)} total players for
+              App Store screenshots
+            </Text>
+
+            <View style={styles.previewSection}>
+              <Text style={styles.previewLabel}>Teams:</Text>
+              {DEMO_TEAMS_CONFIG.map((team, index) => (
+                <Text key={index} style={styles.previewItem}>
+                  • {team.teamName} ({team.players.length} players)
+                </Text>
+              ))}
+            </View>
+
+            <StatLineButton
+              title={isGeneratingDemo ? "Creating..." : "Generate Demo Teams"}
+              onPress={handleDemoTeamsSetup}
+              color={theme.colorGreen}
+              disabled={isGeneratingDemo || isCreating || isSimulating}
+            />
+          </View>
+        )}
+
+        {/* Game Simulation */}
+        {__DEV__ && (
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>🎮 Simulate Demo Games</Text>
+            <Text style={styles.cardDescription}>
+              Simulate games for demo teams with realistic stats. Creates games in batches to
+              prevent app crashes.
+            </Text>
+
+            <View style={styles.previewSection}>
+              <Text style={styles.previewLabel}>Games per Team:</Text>
+              {Object.entries(DEMO_GAME_COUNTS).map(([team, count]) => (
+                <Text key={team} style={styles.previewItem}>
+                  • {team}: {count} games
+                </Text>
+              ))}
+              <Text style={[styles.previewItem, { fontWeight: "600", marginTop: 8 }]}>
+                Total: {Object.values(DEMO_GAME_COUNTS).reduce((sum, c) => sum + c, 0)} games
+              </Text>
+            </View>
+
+            {isSimulating && simulationProgress && (
+              <View style={styles.progressSection}>
+                <Text style={styles.progressText}>
+                  {simulationProgress.currentTeam}: Game {simulationProgress.currentGame}/
+                  {simulationProgress.totalGamesForTeam}
+                </Text>
+                <Text style={styles.progressSubtext}>
+                  Overall: {simulationProgress.completedGames}/{simulationProgress.totalGames} games
+                </Text>
+              </View>
+            )}
+
+            <StatLineButton
+              title={isSimulating ? "Simulating..." : "Simulate Demo Games"}
+              onPress={handleSimulateGames}
+              color={theme.colorBlue}
+              disabled={isSimulating || isGeneratingDemo || isCreating}
+            />
+          </View>
+        )}
 
         {/* Custom Setup */}
         <View style={styles.card}>
@@ -306,6 +442,22 @@ const styles = StyleSheet.create({
     color: theme.colorOnyx,
     marginBottom: 4,
     paddingLeft: 8,
+  },
+  progressSection: {
+    backgroundColor: theme.colorBlue + "20",
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+  },
+  progressText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: theme.colorOnyx,
+    marginBottom: 4,
+  },
+  progressSubtext: {
+    fontSize: 12,
+    color: theme.colorGrey,
   },
   inputSection: {
     marginBottom: 16,

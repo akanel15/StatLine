@@ -1,10 +1,9 @@
 import { TeamCard } from "@/components/TeamCard";
 import { theme } from "@/theme";
 import { router } from "expo-router";
-import { FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { FlatList, StyleSheet, View } from "react-native";
 import { StatLineButton } from "@/components/StatLineButton";
 import { useTeamStore } from "@/store/teamStore";
-import { Link } from "expo-router";
 import { useEffect } from "react";
 import { runAppLoadHealthCheck } from "@/utils/appHealthCheck";
 
@@ -32,26 +31,6 @@ export default function App() {
           <StatLineButton title="Add your first team" onPress={() => router.navigate("/newTeam")} />
         }
       />
-
-      {/* Footer with Privacy Policy link */}
-      <View style={styles.footer}>
-        <TouchableOpacity onPress={() => router.navigate("/privacy")} hitSlop={10}>
-          <Text style={styles.privacyLink}>Privacy Policy</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Debug Section - Development only */}
-      {__DEV__ && (
-        <View style={styles.debugSection}>
-          <Link href="/debug/home" asChild>
-            <StatLineButton
-              title="🔧 Debug & Development Tools"
-              color={theme.colorGrey}
-              onPress={() => {}}
-            />
-          </Link>
-        </View>
-      )}
     </View>
   );
 }
@@ -74,23 +53,5 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
-  },
-  debugSection: {
-    padding: 12,
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: theme.colorLightGrey,
-    backgroundColor: theme.colorWhite,
-  },
-  footer: {
-    paddingVertical: 12,
-    alignItems: "center",
-    borderTopWidth: 1,
-    borderTopColor: theme.colorLightGrey,
-    backgroundColor: theme.colorWhite,
-  },
-  privacyLink: {
-    color: theme.colorGrey,
-    fontSize: 14,
   },
 });

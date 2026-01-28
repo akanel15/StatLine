@@ -12,7 +12,13 @@ export default function Layout() {
           name="index"
           options={{
             title: "Select Team",
-            headerLeft: () => null,
+            headerLeft: () => (
+              <Link href="/settings" asChild>
+                <Pressable hitSlop={20}>
+                  <AntDesign name="setting" size={24} color={theme.colorOrangePeel} />
+                </Pressable>
+              </Link>
+            ),
             headerRight: () => (
               <Link href="/newTeam" asChild>
                 <Pressable hitSlop={20}>
@@ -23,7 +29,9 @@ export default function Layout() {
           }}
         ></Stack.Screen>
         <Stack.Screen name="newTeam" options={{ title: "New team" }}></Stack.Screen>
+        <Stack.Screen name="settings" options={{ title: "Settings" }}></Stack.Screen>
         <Stack.Screen name="privacy" options={{ title: "Privacy Policy" }}></Stack.Screen>
+        <Stack.Screen name="faq" options={{ title: "FAQs" }}></Stack.Screen>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }}></Stack.Screen>
         {/* Debug route - only in development */}
         {__DEV__ && (
