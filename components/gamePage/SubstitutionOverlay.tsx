@@ -1,5 +1,6 @@
 import { useState, useEffect, memo } from "react";
-import { View, Text, StyleSheet, FlatList, Pressable, Alert } from "react-native";
+import { View, Text, StyleSheet, FlatList, Pressable, Alert, Platform } from "react-native";
+import * as Haptics from "expo-haptics";
 import { StatLineButton } from "@/components/StatLineButton";
 import { useGameStore } from "@/store/gameStore";
 import { usePlayerStore } from "@/store/playerStore";
@@ -61,12 +62,18 @@ const SubstitutionOverlay = memo(function SubstitutionOverlay({
 
   // Toggle active player selection (remove from active)
   const toggleActivePlayer = (player: PlayerType) => {
+    if (Platform.OS !== "web") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
     setSelectedActive(prev => prev.filter(p => p.id !== player.id));
     setSelectedBench(prev => [...prev, player]);
   };
 
   // Toggle bench player selection (add to active)
   const toggleBenchPlayer = (player: PlayerType) => {
+    if (Platform.OS !== "web") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
     setSelectedActive(prev => [...prev, player]);
     setSelectedBench(prev => prev.filter(p => p.id !== player.id));
   };

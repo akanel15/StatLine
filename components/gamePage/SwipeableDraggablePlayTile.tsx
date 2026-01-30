@@ -49,7 +49,7 @@ function SwipeableDraggablePlayTile({
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     } catch (error) {
       // Graceful fallback if haptics not supported
-      console.log("Haptics not available:", error);
+      if (__DEV__) console.log("Haptics not available:", error);
     }
     drag();
   };
@@ -63,7 +63,10 @@ function SwipeableDraggablePlayTile({
       }
       // Set timeout to detect stuck state
       activeTimeoutRef.current = setTimeout(() => {
-        console.warn("Active state stuck - this should auto-resolve with performance optimization");
+        if (__DEV__)
+          console.warn(
+            "Active state stuck - this should auto-resolve with performance optimization",
+          );
       }, 500);
     } else {
       // Clear timeout when isActive becomes false

@@ -1,8 +1,9 @@
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Platform } from "react-native";
 import { theme } from "@/theme";
 import { PeriodType } from "@/types/game";
 import Feather from "@expo/vector-icons/Feather";
 import { scale, moderateScale } from "@/utils/responsive";
+import * as Haptics from "expo-haptics";
 
 interface PeriodNavigationHeaderProps {
   currentPeriod: number; // 0-indexed
@@ -37,7 +38,12 @@ export default function PeriodNavigationHeader({
   return (
     <View style={styles.container}>
       <TouchableOpacity
-        onPress={onPrevious}
+        onPress={() => {
+          if (Platform.OS !== "web") {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          }
+          onPrevious();
+        }}
         disabled={!canGoPrevious}
         hitSlop={20}
         style={styles.navButton}
@@ -54,7 +60,16 @@ export default function PeriodNavigationHeader({
 
       <Text style={styles.heading}>{getPeriodLabel()}</Text>
 
-      <TouchableOpacity onPress={onNext} hitSlop={20} style={styles.navButton}>
+      <TouchableOpacity
+        onPress={() => {
+          if (Platform.OS !== "web") {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          }
+          onNext();
+        }}
+        hitSlop={20}
+        style={styles.navButton}
+      >
         <Text style={styles.buttonText}>Next</Text>
         <Feather name="chevron-right" size={20} color={theme.colorBlue} />
       </TouchableOpacity>

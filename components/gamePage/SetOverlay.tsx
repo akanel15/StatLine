@@ -1,5 +1,6 @@
 import { useState, memo } from "react";
-import { View, Text, StyleSheet, FlatList, Pressable } from "react-native";
+import { View, Text, StyleSheet, FlatList, Pressable, Platform } from "react-native";
+import * as Haptics from "expo-haptics";
 import { StatLineButton } from "@/components/StatLineButton";
 import { useGameStore } from "@/store/gameStore";
 import { theme } from "@/theme";
@@ -34,6 +35,9 @@ const SetOverlay = memo(function SetOverlay({ gameId, onClose }: SetOverlayProps
 
   // Toggle active player selection (remove from active)
   const toggleActiveSet = (set: SetType) => {
+    if (Platform.OS !== "web") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
     setSelectedActive(prev => prev.filter(s => s.id !== set.id));
     setSelectedBench(prev => [...prev, set]);
   };
@@ -41,6 +45,9 @@ const SetOverlay = memo(function SetOverlay({ gameId, onClose }: SetOverlayProps
   // Toggle bench player selection (add to active)
   const toggleOtherSet = (set: SetType) => {
     if (selectedActive.length < 5) {
+      if (Platform.OS !== "web") {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }
       setSelectedActive(prev => [...prev, set]);
       setSelectedBench(prev => prev.filter(s => s.id !== set.id));
     }

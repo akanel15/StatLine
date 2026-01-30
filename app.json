@@ -19,7 +19,8 @@
       "bundleIdentifier": "com.akanel.StatLine",
       "buildNumber": "1",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSPhotoLibraryUsageDescription": "Allow StatLine to access your photos to select team and player images"
       }
     },
     "android": {
@@ -34,7 +35,15 @@
     },
     "plugins": [
       "expo-router",
-      "./plugins/fix-hermes-warning.js"
+      "./plugins/fix-hermes-warning.js",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow StatLine to access your photos to select team and player images",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
+      ]
     ],
     "extra": {
       "router": {},
