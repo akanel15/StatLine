@@ -5,6 +5,7 @@ import { GameType, PeriodType, Team, createGame, PlayByPlayType } from "@/types/
 import { initialBaseStats, Stat, StatsType } from "@/types/stats";
 import { useSetStore } from "./setStore";
 import { debouncedAsyncStorage } from "@/utils/debounceAsyncStorage";
+import { storeHydration } from "@/utils/storeHydration";
 
 export type UnifiedPlayEntry = {
   play: PlayByPlayType;
@@ -1054,6 +1055,11 @@ export const useGameStore = create(
       // Use debounced AsyncStorage to prevent blocking UI during rapid drag operations
       // Writes are batched and delayed by 300ms, improving drag responsiveness
       storage: createJSONStorage(() => debouncedAsyncStorage),
+      onRehydrateStorage: () => state => {
+        // Mark this store as hydrated when rehydration completes
+        // This allows health checks to wait for all stores to load from AsyncStorage
+        storeHydration.markHydrated("statline-game-store");
+      },
     },
   ),
 );

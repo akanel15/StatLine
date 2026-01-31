@@ -5,6 +5,7 @@ import * as FileSystem from "expo-file-system/legacy";
 import uuid from "react-native-uuid";
 import { createPlayer, PlayerType, Result } from "@/types/player";
 import { Stat } from "@/types/stats";
+import { storeHydration } from "@/utils/storeHydration";
 
 // Type for batched player stat updates
 export type PlayerStatUpdate = { playerId: string; stat: Stat; amount: number };
@@ -196,6 +197,9 @@ export const usePlayerStore = create(
     {
       name: "statline-player-store",
       storage: createJSONStorage(() => AsyncStorage),
+      onRehydrateStorage: () => () => {
+        storeHydration.markHydrated("statline-player-store");
+      },
     },
   ),
 );

@@ -11,6 +11,17 @@ import { PeriodType } from "@/types/game";
 // Mock dependencies
 jest.mock("@/utils/gameCountAudit");
 
+// Mock storeHydration to resolve immediately in tests
+jest.mock("@/utils/storeHydration", () => ({
+  storeHydration: {
+    waitForHydration: jest.fn(() => Promise.resolve()),
+    markHydrated: jest.fn(),
+    isHydrated: jest.fn(() => true),
+    registerStore: jest.fn(),
+    reset: jest.fn(),
+  },
+}));
+
 describe("appHealthCheck", () => {
   beforeEach(() => {
     // Reset stores
@@ -105,7 +116,7 @@ describe("appHealthCheck", () => {
       expect(report.duration).toBeGreaterThanOrEqual(0);
       expect(report.errors).toEqual([]);
 
-      // Verify single log at end
+      // Verify health check log at end
       expect(consoleSpy).toHaveBeenCalledWith(
         expect.stringContaining("Health check complete: marked 1 games complete"),
       );
@@ -143,11 +154,10 @@ describe("appHealthCheck", () => {
 
       await runAppLoadHealthCheck();
 
-      // Should only have ONE log call
-      expect(consoleSpy).toHaveBeenCalledTimes(1);
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining("Health check complete"),
-      );
+      // Should have logs for: hydration waiting, hydration complete, health check complete
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("Waiting for store hydration"));
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("Store hydration complete"));
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("Health check complete"));
 
       consoleSpy.mockRestore();
     });

@@ -12,6 +12,13 @@ jest.mock("react-native", () => ({
   Alert: {
     alert: jest.fn(),
   },
+  AppState: {
+    addEventListener: jest.fn(() => ({
+      remove: jest.fn(),
+    })),
+    removeEventListener: jest.fn(),
+    currentState: "active",
+  },
 }));
 
 jest.mock("../../utils/cascadeDelete");

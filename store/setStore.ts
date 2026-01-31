@@ -4,6 +4,7 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import uuid from "react-native-uuid";
 import { createSet, SetType } from "@/types/set";
 import { Stat } from "@/types/stats";
+import { storeHydration } from "@/utils/storeHydration";
 
 // Type for batched set stat updates
 export type SetStatUpdate = { setId: string; stat: Stat; amount: number };
@@ -155,6 +156,9 @@ export const useSetStore = create(
     {
       name: "statline-set-store",
       storage: createJSONStorage(() => AsyncStorage),
+      onRehydrateStorage: () => () => {
+        storeHydration.markHydrated("statline-set-store");
+      },
     },
   ),
 );

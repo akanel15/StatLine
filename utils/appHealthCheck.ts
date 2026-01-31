@@ -1,5 +1,6 @@
 import { useGameStore } from "@/store/gameStore";
 import { correctGameCounts } from "@/utils/gameCountAudit";
+import { storeHydration } from "@/utils/storeHydration";
 
 export type HealthCheckReport = {
   gamesMarkedComplete: number;
@@ -43,10 +44,33 @@ export function syncGameCounts(): boolean {
 
 /**
  * Main health check orchestrator - runs all checks on app load
+ *
+ * IMPORTANT: This function waits for all Zustand stores to hydrate from AsyncStorage
+ * before running any checks. This prevents the race condition where we would
+ * "correct" game counts to 0 before the actual data loads.
  */
 export async function runAppLoadHealthCheck(): Promise<HealthCheckReport> {
   const startTime = Date.now();
   const errors: string[] = [];
+
+  // CRITICAL: Wait for all stores to hydrate from AsyncStorage before running checks
+  // Without this, we would read empty state and "correct" all game counts to 0
+  try {
+    if (__DEV__) {
+      console.log("⏳ Waiting for store hydration before health check...");
+    }
+    await storeHydration.waitForHydration();
+    if (__DEV__) {
+      console.log("✅ Store hydration complete, running health check...");
+    }
+  } catch (error) {
+    const errorMsg = `Store hydration failed: ${error}`;
+    if (__DEV__) {
+      console.error(`❌ ${errorMsg}`);
+    }
+    errors.push(errorMsg);
+    // Continue anyway - better to try the health check than skip it entirely
+  }
 
   // Check 1: Mark all games as complete
   let gamesMarkedComplete = 0;

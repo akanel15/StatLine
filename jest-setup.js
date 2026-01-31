@@ -32,6 +32,13 @@ jest.mock("react-native", () => ({
   Dimensions: {
     get: jest.fn(() => ({ width: 375, height: 667 })),
   },
+  AppState: {
+    addEventListener: jest.fn(() => ({
+      remove: jest.fn(),
+    })),
+    removeEventListener: jest.fn(),
+    currentState: "active",
+  },
 }));
 
 // Global test utilities

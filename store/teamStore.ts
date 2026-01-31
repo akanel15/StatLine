@@ -7,6 +7,7 @@ import { createTeam, TeamType } from "@/types/team";
 import { Result } from "@/types/player";
 import { Stat } from "@/types/stats";
 import { Team } from "@/types/game";
+import { storeHydration } from "@/utils/storeHydration";
 
 // Type for batched team stat updates
 export type TeamStatUpdate = { teamId: string; stat: Stat; amount: number; team: Team };
@@ -259,6 +260,9 @@ export const useTeamStore = create(
     {
       name: "statline-team-store",
       storage: createJSONStorage(() => AsyncStorage),
+      onRehydrateStorage: () => () => {
+        storeHydration.markHydrated("statline-team-store");
+      },
     },
   ),
 );
