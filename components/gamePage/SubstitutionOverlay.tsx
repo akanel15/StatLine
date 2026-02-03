@@ -123,7 +123,9 @@ const SubstitutionOverlay = memo(function SubstitutionOverlay({
               >
                 <View style={styles.rowCard}>
                   <PlayerImage player={item} size={50}></PlayerImage>
-                  <Text style={styles.playerText}>{item.name}</Text>
+                  <Text style={styles.playerText} numberOfLines={2}>
+                    {item.name}
+                  </Text>
                 </View>
               </Pressable>
             )}
@@ -147,7 +149,9 @@ const SubstitutionOverlay = memo(function SubstitutionOverlay({
               <Pressable style={styles.playerBox} onPress={() => toggleBenchPlayer(item)}>
                 <View style={styles.rowCard}>
                   <PlayerImage player={item} size={50}></PlayerImage>
-                  <Text style={styles.playerText}>{item.name}</Text>
+                  <Text style={styles.playerText} numberOfLines={2}>
+                    {item.name}
+                  </Text>
                 </View>
               </Pressable>
             )}
@@ -190,6 +194,7 @@ const styles = StyleSheet.create({
   column: {
     flex: 1,
     alignItems: "center",
+    overflow: "hidden",
   },
   rowCard: {
     flexDirection: "row",
@@ -197,7 +202,6 @@ const styles = StyleSheet.create({
     minHeight: scale(50),
     paddingHorizontal: scale(10),
     flex: 1,
-    minWidth: scale(140),
   },
   playerText: {
     fontSize: moderateScale(16),
@@ -223,9 +227,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     minHeight: scale(50),
-    flex: 1,
-    minWidth: scale(140),
-    maxWidth: scale(180),
+    width: "90%",
+    maxWidth: scale(170),
   },
   activePlayer: {
     borderColor: theme.colorOrangePeel,

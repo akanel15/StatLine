@@ -87,8 +87,8 @@ export default function GamePage() {
   const [activeTab, setActiveTab] = useState<"boxscore" | "playbyplay">("boxscore");
   const [expandPlayByPlay, setExpandPlayByPlay] = useState(false);
 
-  // Current period for stat assignment - lifted from UnifiedPlayByPlay
-  // This ensures stats go to the period the user navigated to, not the last period with plays
+  // Current period for UI display (which period is visible in play-by-play)
+  // Note: Stats are always recorded to the latest period, not this viewing period
   const [currentPeriod, setCurrentPeriod] = useState(() => {
     if (game && !game.isFinished && game.periods && game.periods.length > 0) {
       return game.periods.length - 1;
@@ -502,15 +502,9 @@ export default function GamePage() {
   };
 
   function handleStatUpdate({ stats, gameId, teamId, playerId, setId }: StatUpdateType) {
-    // Use the currentPeriod state (what the user navigated to)
-    // This ensures stats go to the correct period after creating a new one
     const currentGame = getGameSafely(gameId);
-    let selectedPeriod = currentPeriod;
-
-    // Safety: ensure period exists (fall back to last period or 0 if out of bounds)
-    if (currentGame?.periods && selectedPeriod >= currentGame.periods.length) {
-      selectedPeriod = Math.max(0, currentGame.periods.length - 1);
-    }
+    // Always record stats to the current (last) period, not the viewed period
+    const selectedPeriod = currentGame?.periods ? Math.max(0, currentGame.periods.length - 1) : 0;
 
     handleStatUpdateLogic(storeActions, {
       stats,
