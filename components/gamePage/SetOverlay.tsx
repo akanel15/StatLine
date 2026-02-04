@@ -75,7 +75,9 @@ const SetOverlay = memo(function SetOverlay({ gameId, onClose }: SetOverlayProps
                 onPress={() => toggleActiveSet(item)}
               >
                 <View style={styles.rowCard}>
-                  <Text style={styles.playerText}>{item ? item.name : "Unknown Set"}</Text>
+                  <Text style={styles.playerText} numberOfLines={2}>
+                    {item ? item.name : "Unknown Set"}
+                  </Text>
                 </View>
               </Pressable>
             )}
@@ -94,7 +96,9 @@ const SetOverlay = memo(function SetOverlay({ gameId, onClose }: SetOverlayProps
             renderItem={({ item }) => (
               <Pressable style={styles.playerBox} onPress={() => toggleOtherSet(item)}>
                 <View style={styles.rowCard}>
-                  <Text style={styles.playerText}>{item ? item.name : "Unknown Set"}</Text>
+                  <Text style={styles.playerText} numberOfLines={2}>
+                    {item ? item.name : "Unknown Set"}
+                  </Text>
                 </View>
               </Pressable>
             )}
@@ -137,13 +141,14 @@ const styles = StyleSheet.create({
   column: {
     flex: 1,
     alignItems: "center",
+    overflow: "hidden",
   },
   rowCard: {
     flexDirection: "row",
     alignItems: "center",
     minHeight: scale(50),
     paddingHorizontal: scale(10),
-    width: scale(160),
+    flex: 1,
   },
   playerText: {
     fontSize: moderateScale(16),
@@ -169,8 +174,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     minHeight: scale(50),
-    minWidth: scale(160),
-    maxWidth: scale(160),
+    width: "90%",
+    maxWidth: scale(170),
   },
   activeSets: {
     borderColor: theme.colorBlue,

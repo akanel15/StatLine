@@ -20,6 +20,7 @@ type BoxScoreEntry = {
   name: string;
   stats: string[];
   isTotal: boolean;
+  isTeam?: boolean; // Team stats row (distinct styling)
   rawStats: number[]; // Store numeric values for sorting
 };
 
@@ -135,6 +136,21 @@ export function SortableBoxScoreTable({
     };
   });
 
+  // Build team stats row if team stats exist
+  const teamStats = game.boxScore["Team"];
+  const hasTeamStats =
+    teamStats && Object.values(teamStats).some(val => typeof val === "number" && val !== 0);
+  const teamEntry: BoxScoreEntry | null = hasTeamStats
+    ? {
+        id: "Team",
+        name: "Team",
+        stats: formatStats(teamStats).formatted,
+        rawStats: formatStats(teamStats).raw,
+        isTotal: false,
+        isTeam: true,
+      }
+    : null;
+
   const usStats = formatStats(game.statTotals[Team.Us]);
   const opponentStats = formatStats(game.statTotals[Team.Opponent]);
 
@@ -170,7 +186,8 @@ export function SortableBoxScoreTable({
     });
   }
 
-  const boxScoreData = [...sortedPlayers, ...totalEntries];
+  // Include team stats row between players and totals (if team stats exist)
+  const boxScoreData = [...sortedPlayers, ...(teamEntry ? [teamEntry] : []), ...totalEntries];
 
   const handleHeaderPress = (index: number) => {
     if (sortColumnIndex === index) {
@@ -219,10 +236,13 @@ export function SortableBoxScoreTable({
       </View>
 
       {/* All Stats Data Rows */}
-      {boxScoreData.map(({ id, stats, isTotal }) => (
+      {boxScoreData.map(({ id, stats, isTotal, isTeam }) => (
         <View key={id} style={styles.statsDataRow}>
           {stats.map((stat, index) => (
-            <Text key={index} style={[styles.statCell, isTotal && styles.totalText]}>
+            <Text
+              key={index}
+              style={[styles.statCell, isTotal && styles.totalText, isTeam && styles.teamText]}
+            >
               {stat}
             </Text>
           ))}
@@ -241,9 +261,16 @@ export function SortableBoxScoreTable({
         </View>
 
         {/* All Player Name Rows */}
-        {boxScoreData.map(({ id, name, isTotal }) => (
+        {boxScoreData.map(({ id, name, isTotal, isTeam }) => (
           <View key={id} style={styles.playerNameCell}>
-            <Text style={[styles.playerNameText, isTotal && styles.totalText]} numberOfLines={1}>
+            <Text
+              style={[
+                styles.playerNameText,
+                isTotal && styles.totalText,
+                isTeam && styles.teamText,
+              ]}
+              numberOfLines={1}
+            >
               {name}
             </Text>
           </View>
@@ -352,5 +379,8 @@ const styles = StyleSheet.create({
   },
   totalText: {
     fontWeight: "700",
+  },
+  teamText: {
+    color: theme.colorGrey,
   },
 });

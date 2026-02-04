@@ -359,6 +359,12 @@ export default function GamePage() {
     setShowOverlay(true);
   }, []);
 
+  // Handler for long-press on player buttons to trigger team stat recording
+  const handleTeamStatPress = useCallback(() => {
+    setSelectedPlayer("Team");
+    setShowOverlay(true);
+  }, []);
+
   const handleSetSelection = useCallback(
     (setId: string) => {
       setSelectedPlay(setId);
@@ -737,6 +743,7 @@ export default function GamePage() {
                     key={player.id}
                     player={player}
                     onPress={handlePlayerPress}
+                    onLongPress={handleTeamStatPress}
                     size={showSetsSection ? "normal" : "large"}
                     allowMultilineText={!showSetsSection}
                   />

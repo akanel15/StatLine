@@ -29,6 +29,7 @@ function SwipeableDraggablePlayTile({
   disabled = false,
 }: SwipeableDraggablePlayTileProps) {
   const isOpponent = play.playerId === "Opponent";
+  const isTeam = play.playerId === "Team";
   const activeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const swipeableRef = useRef<Swipeable>(null);
 
@@ -131,8 +132,14 @@ function SwipeableDraggablePlayTile({
           <Ionicons name="reorder-three-outline" size={20} color={theme.colorGrey} />
         </View>
 
-        <Text style={[styles.playerInfo, isOpponent && styles.opponentText]}>
-          {isOpponent ? "Opponent" : getPlayerDisplayNameWithNumber(play.playerId)}
+        <Text
+          style={[styles.playerInfo, isOpponent && styles.opponentText, isTeam && styles.teamText]}
+        >
+          {isOpponent
+            ? "Opponent"
+            : isTeam
+              ? "Team"
+              : getPlayerDisplayNameWithNumber(play.playerId)}
         </Text>
 
         <Text style={[styles.action, teamScore || opponentScore ? styles.boldText : null]}>
@@ -181,6 +188,10 @@ const styles = StyleSheet.create({
   },
   opponentText: {
     color: theme.colorRedCrayola,
+  },
+  teamText: {
+    color: theme.colorOrangePeel,
+    fontStyle: "italic",
   },
   action: {
     flex: 1,

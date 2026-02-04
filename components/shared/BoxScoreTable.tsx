@@ -109,22 +109,40 @@ export function BoxScoreTable({
       name: displayName,
       stats: formatStats(game.boxScore[playerId] ?? { ...initialBaseStats }),
       isTotal: false,
+      isTeam: false,
     };
   });
 
+  // Build team stats row if team stats exist
+  const teamStats = game.boxScore["Team"];
+  const hasTeamStats =
+    teamStats && Object.values(teamStats).some(val => typeof val === "number" && val !== 0);
+  const teamEntry = hasTeamStats
+    ? {
+        id: "Team",
+        name: "Team",
+        stats: formatStats(teamStats),
+        isTotal: false,
+        isTeam: true,
+      }
+    : null;
+
   const boxScoreData = [
     ...playerBoxScoreEntries,
+    ...(teamEntry ? [teamEntry] : []),
     {
       id: "Us",
       name: "Total",
       stats: formatStats(game.statTotals[Team.Us]),
       isTotal: true,
+      isTeam: false,
     },
     {
       id: "Opponent",
       name: game.opposingTeamName,
       stats: formatStats(game.statTotals[Team.Opponent]),
       isTotal: true,
+      isTeam: false,
     },
   ];
 
@@ -140,10 +158,13 @@ export function BoxScoreTable({
       </View>
 
       {/* All Stats Data Rows */}
-      {boxScoreData.map(({ id, stats, isTotal }) => (
+      {boxScoreData.map(({ id, stats, isTotal, isTeam }) => (
         <View key={id} style={styles.statsDataRow}>
           {stats.map((stat, index) => (
-            <Text key={index} style={[styles.statCell, isTotal && styles.totalText]}>
+            <Text
+              key={index}
+              style={[styles.statCell, isTotal && styles.totalText, isTeam && styles.teamText]}
+            >
               {stat}
             </Text>
           ))}
@@ -162,9 +183,16 @@ export function BoxScoreTable({
         </View>
 
         {/* All Player Name Rows */}
-        {boxScoreData.map(({ id, name, isTotal }) => (
+        {boxScoreData.map(({ id, name, isTotal, isTeam }) => (
           <View key={id} style={styles.playerNameCell}>
-            <Text style={[styles.playerNameText, isTotal && styles.totalText]} numberOfLines={1}>
+            <Text
+              style={[
+                styles.playerNameText,
+                isTotal && styles.totalText,
+                isTeam && styles.teamText,
+              ]}
+              numberOfLines={1}
+            >
               {name}
             </Text>
           </View>
@@ -269,5 +297,8 @@ const styles = StyleSheet.create({
   },
   totalText: {
     fontWeight: "700",
+  },
+  teamText: {
+    color: theme.colorGrey,
   },
 });

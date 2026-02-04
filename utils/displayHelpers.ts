@@ -27,6 +27,10 @@ export const getPlayerDisplayName = (playerId: string): string => {
     return "Opponent";
   }
 
+  if (playerId === "Team") {
+    return "Team";
+  }
+
   const player = getPlayerOrUnknown(playerId);
   return player ? player.name : "Unknown Player";
 };
@@ -37,6 +41,10 @@ export const getPlayerDisplayName = (playerId: string): string => {
 export const getPlayerDisplayNameWithNumber = (playerId: string): string => {
   if (playerId === "Opponent") {
     return "Opponent";
+  }
+
+  if (playerId === "Team") {
+    return "Team";
   }
 
   const player = getPlayerOrUnknown(playerId);
@@ -56,6 +64,7 @@ export const getSetDisplayName = (setId: string): string => {
  */
 export const playerExists = (playerId: string): boolean => {
   if (playerId === "Opponent") return true;
+  if (playerId === "Team") return true;
   return getPlayerOrUnknown(playerId) !== null;
 };
 

@@ -199,7 +199,8 @@ function collectSingleStatUpdates(
   team: Team,
 ): void {
   const { teamId, playerId, setId } = params;
-  const isOurPlayer = playerId !== "Opponent";
+  const isOurTeam = playerId !== "Opponent";
+  const isTeamStat = playerId === "Team";
 
   // Collect game-level tracking (for both teams)
   collector.gameUpdates.boxScoreUpdates.push({ playerId, stat, amount: 1 });
@@ -207,9 +208,12 @@ function collectSingleStatUpdates(
   collector.teamUpdates.push({ teamId, stat, amount: 1, team });
   collector.gameUpdates.setStatUpdates.push({ setId, stat, amount: 1 });
 
-  // Only update player/set stores for our team's players
-  if (isOurPlayer) {
-    collector.playerUpdates.push({ playerId, stat, amount: 1 });
+  // Only update player/set stores for our team's stats
+  // Team stats update setStore but NOT playerStore (no player to update)
+  if (isOurTeam) {
+    if (!isTeamStat) {
+      collector.playerUpdates.push({ playerId, stat, amount: 1 });
+    }
     collector.setUpdates.push({ setId, stat, amount: 1 });
   }
 }
@@ -227,7 +231,8 @@ function collectPointsForScoringPlay(
   if (points === 0) return;
 
   const { teamId, playerId, setId, activePlayers } = params;
-  const isOurPlayer = playerId !== "Opponent";
+  const isOurTeam = playerId !== "Opponent";
+  const isTeamStat = playerId === "Team";
 
   // Collect points in game-level tracking (for both teams)
   collector.gameUpdates.totalUpdates.push({ stat: Stat.Points, amount: points, team });
@@ -235,9 +240,12 @@ function collectPointsForScoringPlay(
   collector.teamUpdates.push({ teamId, stat: Stat.Points, amount: points, team });
   collector.gameUpdates.setStatUpdates.push({ setId, stat: Stat.Points, amount: points });
 
-  // Only update player/set stores for our team's players
-  if (isOurPlayer) {
-    collector.playerUpdates.push({ playerId, stat: Stat.Points, amount: points });
+  // Only update player/set stores for our team's stats
+  // Team stats update setStore but NOT playerStore (no player to update)
+  if (isOurTeam) {
+    if (!isTeamStat) {
+      collector.playerUpdates.push({ playerId, stat: Stat.Points, amount: points });
+    }
     collector.setUpdates.push({ setId, stat: Stat.Points, amount: points });
   }
 
@@ -340,7 +348,8 @@ function updateSingleStatLegacy(
   team: Team,
 ): void {
   const { gameId, teamId, playerId, setId } = params;
-  const isOurPlayer = playerId !== "Opponent";
+  const isOurTeam = playerId !== "Opponent";
+  const isTeamStat = playerId === "Team";
 
   // Update game-level tracking (for both teams)
   stores.updateBoxScore(gameId, playerId, stat, 1);
@@ -348,9 +357,12 @@ function updateSingleStatLegacy(
   stores.updateTeamStats(teamId, stat, 1, team);
   stores.updateGameSetStats(gameId, setId, stat, 1);
 
-  // Only update player/set stores for our team's players
-  if (isOurPlayer) {
-    stores.updatePlayerStats(playerId, stat, 1);
+  // Only update player/set stores for our team's stats
+  // Team stats update setStore but NOT playerStore (no player to update)
+  if (isOurTeam) {
+    if (!isTeamStat) {
+      stores.updatePlayerStats(playerId, stat, 1);
+    }
     stores.updateSetStats(setId, stat, 1);
   }
 }
@@ -395,7 +407,8 @@ function updatePointsForScoringPlayLegacy(
   if (points === 0) return;
 
   const { gameId, teamId, playerId, setId, activePlayers } = params;
-  const isOurPlayer = playerId !== "Opponent";
+  const isOurTeam = playerId !== "Opponent";
+  const isTeamStat = playerId === "Team";
 
   // Update points in game-level tracking (for both teams)
   stores.updateTotals(gameId, Stat.Points, points, team);
@@ -403,9 +416,12 @@ function updatePointsForScoringPlayLegacy(
   stores.updateTeamStats(teamId, Stat.Points, points, team);
   stores.updateGameSetStats(gameId, setId, Stat.Points, points);
 
-  // Only update player/set stores for our team's players
-  if (isOurPlayer) {
-    stores.updatePlayerStats(playerId, Stat.Points, points);
+  // Only update player/set stores for our team's stats
+  // Team stats update setStore but NOT playerStore (no player to update)
+  if (isOurTeam) {
+    if (!isTeamStat) {
+      stores.updatePlayerStats(playerId, Stat.Points, points);
+    }
     stores.updateSetStats(setId, Stat.Points, points);
   }
 
@@ -436,7 +452,8 @@ export function handleStatReversal(
 
   // Determine which team this play was for
   const team = playerId === "Opponent" ? Team.Opponent : Team.Us;
-  const isOurPlayer = playerId !== "Opponent";
+  const isOurTeam = playerId !== "Opponent";
+  const isTeamStat = playerId === "Team";
 
   // Get all stats that were originally recorded for this action
   const stats = getStatsForAction(action);
@@ -449,9 +466,12 @@ export function handleStatReversal(
     stores.updateTeamStats(teamId, stat, -1, team);
     stores.updateGameSetStats(gameId, setId, stat, -1);
 
-    // Only reverse player/set stores for our team's players
-    if (isOurPlayer) {
-      stores.updatePlayerStats(playerId, stat, -1);
+    // Only reverse player/set stores for our team's stats
+    // Team stats update setStore but NOT playerStore (no player to update)
+    if (isOurTeam) {
+      if (!isTeamStat) {
+        stores.updatePlayerStats(playerId, stat, -1);
+      }
       stores.updateSetStats(setId, stat, -1);
     }
 
@@ -465,9 +485,12 @@ export function handleStatReversal(
       stores.updateTeamStats(teamId, Stat.Points, -points, team);
       stores.updateGameSetStats(gameId, setId, Stat.Points, -points);
 
-      // Only reverse player/set stores for our team's players
-      if (isOurPlayer) {
-        stores.updatePlayerStats(playerId, Stat.Points, -points);
+      // Only reverse player/set stores for our team's stats
+      // Team stats update setStore but NOT playerStore (no player to update)
+      if (isOurTeam) {
+        if (!isTeamStat) {
+          stores.updatePlayerStats(playerId, Stat.Points, -points);
+        }
         stores.updateSetStats(setId, Stat.Points, -points);
       }
 

@@ -10,6 +10,7 @@ type Props = {
   player?: PlayerType;
   playerId?: string; // Add playerId as optional prop for fallback lookup
   onPress: (playerId: string) => void;
+  onLongPress?: () => void; // Long-press handler for team stats
   opponentName?: string;
   size?: "normal" | "large";
   allowMultilineText?: boolean;
@@ -19,6 +20,7 @@ export const GamePlayerButton = memo(function GamePlayerButton({
   player,
   playerId,
   onPress,
+  onLongPress,
   opponentName,
   size = "normal",
   allowMultilineText = true,
@@ -28,6 +30,16 @@ export const GamePlayerButton = memo(function GamePlayerButton({
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     onPress(player?.id ?? playerId ?? "Opponent");
+  };
+
+  const handleLongPress = () => {
+    if (onLongPress && !opponentName) {
+      // Only trigger long-press for player buttons (not opponent)
+      if (Platform.OS !== "web") {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      }
+      onLongPress();
+    }
   };
 
   const playerNumber = player?.number;
@@ -61,6 +73,8 @@ export const GamePlayerButton = memo(function GamePlayerButton({
   return (
     <Pressable
       onPress={handlePress}
+      onLongPress={handleLongPress}
+      delayLongPress={400}
       accessibilityRole="button"
       accessibilityLabel={getAccessibilityLabel()}
       accessibilityHint="Double tap to select this player"

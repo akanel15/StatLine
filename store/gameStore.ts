@@ -482,8 +482,13 @@ export const useGameStore = create(
             return state;
           }
 
+          // Filter out special identifiers like "Opponent" and "Team" - they are not actual players
+          const validPlayerIds = playerIds.filter(id => id !== "Opponent" && id !== "Team");
+
           // Create a new set to prevent duplicates, then convert back to an array
-          const updatedGamePlayedList = Array.from(new Set([...game.gamePlayedList, ...playerIds]));
+          const updatedGamePlayedList = Array.from(
+            new Set([...game.gamePlayedList, ...validPlayerIds]),
+          );
 
           return {
             games: {
