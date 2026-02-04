@@ -97,6 +97,7 @@ export default function GamePage() {
   });
 
   // Help hints
+  const hasHydrated = useHelpStore(state => state._hasHydrated);
   const hasSeenGameFlowHint = useHelpStore(state => state.hasSeenGameFlowHint);
   const hasSeenSetResetHint = useHelpStore(state => state.hasSeenSetResetHint);
   const markHintAsSeen = useHelpStore(state => state.markHintAsSeen);
@@ -188,18 +189,19 @@ export default function GamePage() {
     }
   }, [game]);
 
-  // Show game flow hint on first game visit (only for active games)
+  // Show game flow hint on first game visit (only for active games) - wait for hydration
   useEffect(() => {
     // Only show game flow hint if:
-    // 1. Game exists and is not finished
-    // 2. User hasn't seen the hint
-    // 3. Substitution overlay is NOT showing (priority to substitution hint)
-    if (game && !game.isFinished && !hasSeenGameFlowHint && !showSubstitutions) {
+    // 1. Store has hydrated from AsyncStorage
+    // 2. Game exists and is not finished
+    // 3. User hasn't seen the hint
+    // 4. Substitution overlay is NOT showing (priority to substitution hint)
+    if (hasHydrated && game && !game.isFinished && !hasSeenGameFlowHint && !showSubstitutions) {
       setShowGameFlowHint(true);
       // Mark as seen immediately when shown (not on dismiss)
       markHintAsSeen("gameFlow");
     }
-  }, [game, hasSeenGameFlowHint, markHintAsSeen, showSubstitutions]);
+  }, [hasHydrated, game, hasSeenGameFlowHint, markHintAsSeen, showSubstitutions]);
 
   // Reset overlay states when game finishes to ensure clean render
   useLayoutEffect(() => {
@@ -368,14 +370,14 @@ export default function GamePage() {
   const handleSetSelection = useCallback(
     (setId: string) => {
       setSelectedPlay(setId);
-      // Show set reset hint on first set selection
-      if (!hasSeenSetResetHint && setId !== "") {
+      // Show set reset hint on first set selection - check hydration
+      if (hasHydrated && !hasSeenSetResetHint && setId !== "") {
         setShowSetResetHint(true);
         // Mark as seen immediately when shown (not on dismiss)
         markHintAsSeen("setReset");
       }
     },
-    [hasSeenSetResetHint, markHintAsSeen],
+    [hasHydrated, hasSeenSetResetHint, markHintAsSeen],
   );
 
   const handleResetSet = useCallback(() => {

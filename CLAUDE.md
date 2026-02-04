@@ -252,7 +252,6 @@ Points, rebounds, assists, steals, blocks, turnovers, fouls, plus various shooti
 pkill -f expo; pkill -f metro; pkill -f xcodebuild; pkill -f yarn
 
 # Clean all caches and artifacts
-rm -rf ~/Library/Developer/Xcode/DerivedData/*
 yarn cache clean
 rm -rf ios/build
 rm -rf ios
@@ -280,7 +279,6 @@ npx expo prebuild --platform ios
 - **New Architecture**: Enabled by default for SDK 54+ compatibility with react-native-screens 4.x and react-native-reanimated 4.x
 - **Hermes PhaseScriptExecution Error**: Run `node scripts/fix-hermes-build-phase.js` after pod install
 - **Internal Inconsistency Errors**: Usually resolved by `cd ios && pod install` after cleaning
-- **Build Database Lock**: Clean derived data: `rm -rf ~/Library/Developer/Xcode/DerivedData/*`
 - **CocoaPods Issues**: Regenerate iOS folder instead of manual pod fixes
 - **expo-dev-menu Warnings**: Configuration conflicts - non-breaking, can be ignored
 

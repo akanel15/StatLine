@@ -43,18 +43,20 @@ const SubstitutionOverlay = memo(function SubstitutionOverlay({
   const [selectedBench, setSelectedBench] = useState<PlayerType[]>(defaultBenchPlayers);
 
   // Help hints
+  const hasHydrated = useHelpStore(state => state._hasHydrated);
   const hasSeenSubstitutionHint = useHelpStore(state => state.hasSeenSubstitutionHint);
   const markHintAsSeen = useHelpStore(state => state.markHintAsSeen);
   const [showSubstitutionHint, setShowSubstitutionHint] = useState(false);
 
-  // Show substitution hint on first overlay open
+  // Show substitution hint on first overlay open - wait for hydration
   useEffect(() => {
-    if (!hasSeenSubstitutionHint) {
+    // Only check after store has hydrated from AsyncStorage
+    if (hasHydrated && !hasSeenSubstitutionHint) {
       setShowSubstitutionHint(true);
       // Mark as seen immediately when shown (not on dismiss)
       markHintAsSeen("substitution");
     }
-  }, [hasSeenSubstitutionHint, markHintAsSeen]);
+  }, [hasHydrated, hasSeenSubstitutionHint, markHintAsSeen]);
 
   const handleDismissSubstitutionHint = () => {
     setShowSubstitutionHint(false);

@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { storeHydration } from "@/utils/storeHydration";
 
 export type HintId = "gameFlow" | "setReset" | "substitution";
 
@@ -8,6 +9,7 @@ type HelpState = {
   hasSeenGameFlowHint: boolean;
   hasSeenSetResetHint: boolean;
   hasSeenSubstitutionHint: boolean;
+  _hasHydrated: boolean;
 
   // Actions
   markHintAsSeen: (hintId: HintId) => void;
@@ -21,6 +23,7 @@ export const useHelpStore = create<HelpState>()(
       hasSeenGameFlowHint: false,
       hasSeenSetResetHint: false,
       hasSeenSubstitutionHint: false,
+      _hasHydrated: false,
 
       // Mark a hint as seen
       markHintAsSeen: (hintId: HintId) => {
@@ -49,6 +52,10 @@ export const useHelpStore = create<HelpState>()(
     {
       name: "help-storage",
       storage: createJSONStorage(() => AsyncStorage),
+      onRehydrateStorage: () => () => {
+        useHelpStore.setState({ _hasHydrated: true });
+        storeHydration.markHydrated("help-storage");
+      },
     },
   ),
 );

@@ -36,22 +36,36 @@ const FAQ_DATA: FAQSection[] = [
       {
         question: "How do I start a new game?",
         answer:
-          "Open your team and go to the Games tab. Tap New Game, enter the opponent name (and optionally add their logo), and select the period format (halves or quarters). Tap Start Game, then select 1-5 players to be active for tracking.",
+          "Open your team and go to the Games tab. Tap New Game, enter the opponent name (and optionally add their logo), and select the period format. Tap Start Game, then select your active players.",
       },
       {
-        question: "How do I record stats during a game?",
+        question: "How do I record stats?",
         answer:
-          "During a game, tap any player to open their stat buttons. Tap the stat you want to record (points, rebounds, assists, etc.). The stat is immediately saved and appears in the play-by-play.",
+          'Tap the player you want to record a stat for - this will show the stat options available. Select the stat and it will appear in the play-by-play. To record an opponent stat, tap the "Opponent" button first. To record a team stat (not credited to any individual), press and hold any player on your team and then tap a stat. Once complete, you will see your stat appear in the play-by-play section.',
       },
       {
-        question: "How do I track opponent stats?",
+        question: "How do I start the next half or quarter?",
         answer:
-          'Tap the "Opponent" button (black background) in the players section during a game. Then tap the stat you want to record. Opponent stats are tracked separately and appear in the box score.',
+          "Use the arrows in the period navigation header to move between periods. If you're viewing an earlier period, tapping next takes you to the following one. If you're in the latest period (the furthest the game has progressed), tapping next creates a new period. This also works for overtime - tap next after the final regular period to create OT1, OT2, etc.",
       },
       {
         question: "How do I end a game?",
+        answer: 'Tap "Done" in the top right corner of the game screen.',
+      },
+      {
+        question: "When does a game count for a player?",
         answer:
-          'Tap "Done" in the top right corner of the game screen. Games also automatically complete when you navigate away or the app goes to the background.',
+          "A player is only counted as having played in a game if they appear in the active players list at any point. Players who are never checked in via the substitution screen won't have that game added to their stats.",
+      },
+      {
+        question: "What if I make a mistake recording stats?",
+        answer:
+          "You can always fix mistakes. Press and hold any play or period divider to drag and reorder it. Swipe left on a play to delete it. Swipe left on a period divider to delete that period (plays merge into the previous period). The first period cannot be deleted.",
+      },
+      {
+        question: "What does the expand button do?",
+        answer:
+          "The expand button (top right of play-by-play) makes the play-by-play section fill most of the screen, hiding the player and set buttons temporarily. This gives you more room to review the game history. Tap again to collapse.",
       },
     ],
   },
@@ -61,22 +75,12 @@ const FAQ_DATA: FAQSection[] = [
       {
         question: "What are sets?",
         answer:
-          'Sets are play calls that coaches use during games (like "Motion", "Horns", or "Pick and Roll"). When you select a set before recording stats, StatLine tracks how effective that play was. Each time possession changes, the set\'s "run count" increases, allowing you to see points, assists, and other stats per play call.',
-      },
-      {
-        question: "How do I create a set?",
-        answer:
-          'Open your team and go to the Sets tab. Tap the + button and give your set a name (e.g., "Motion Offense", "1-4 High"). Tap Save to create the set.',
+          'Sets are play calls that are run during a game. In StatLine, sets can be used to track their effectiveness - helping answer questions like "how effective is my baseline out-of-bounds play?" by measuring stats like points, shooting percentage and assists per possession.',
       },
       {
         question: "How do I use sets during a game?",
         answer:
-          "During a live game, tap a set from the collapsible Sets section before recording stats. The set stays active for the entire possession. When possession changes (turnover, opponent scores, etc.), the set automatically resets and its run count increases.",
-      },
-      {
-        question: "When do set stats reset?",
-        answer:
-          'Sets reset automatically when possession changes—after turnovers, when the opponent scores, or when they gain the ball. Each reset counts as one "run." This lets you measure stats per possession for each play call.',
+          "First create sets in your team's Sets tab. During a live game, tap a set from the Sets section before recording stats. The set stays active for the possession. When possession changes, the set resets and its run count increases.",
       },
     ],
   },
@@ -88,31 +92,6 @@ const FAQ_DATA: FAQSection[] = [
         answer:
           'Tap the "Sub Players" button at the bottom of the game screen. Select players to bring in from the bench and players to take out. Tap Confirm to update the active lineup.',
       },
-      {
-        question: "Is there a limit to how many players can be active?",
-        answer:
-          "You can have 1-5 active players at any time. This flexibility allows you to track games with fewer players on the court if needed.",
-      },
-    ],
-  },
-  {
-    title: "Periods and Timing",
-    items: [
-      {
-        question: "What's the difference between halves and quarters?",
-        answer:
-          "Halves divide the game into 2 periods (common in college and high school basketball). Quarters divide the game into 4 periods (common in NBA and youth leagues). Choose the format that matches your league.",
-      },
-      {
-        question: "Can I add extra periods for overtime?",
-        answer:
-          "Yes! Navigate to the last period and tap the Next arrow to create an overtime period. You can add as many as needed.",
-      },
-      {
-        question: "Can I delete a period?",
-        answer:
-          "Yes, swipe left on any period divider in the play-by-play view to delete it. The first period cannot be deleted. Deleting a period also removes all plays recorded in that period.",
-      },
     ],
   },
   {
@@ -121,57 +100,17 @@ const FAQ_DATA: FAQSection[] = [
       {
         question: "How do I view the box score?",
         answer:
-          "During or after a game, tap the Box Score button to see complete statistics for all players. The box score shows points, rebounds, assists, and other stats.",
+          "During or after a game, tap the Box Score button to see complete statistics for all players including points, rebounds, assists, and more.",
       },
       {
         question: "Can I share game stats?",
         answer:
-          "Yes! From the box score view, tap the Share button to generate an image of the stats. You can save it to your photos or share directly to social media and messaging apps.",
-      },
-      {
-        question: "How do I see player averages?",
-        answer:
-          "Open your team and look at the main team page. Player averages across all games are displayed in a sortable table showing per-game stats like points, rebounds, and assists.",
+          "Yes! Once a game is complete, open the box score and tap the Share button to generate an image. You can save it to your photos or share directly to social media and messaging apps. (Sharing is only available for completed games, not games in progress.)",
       },
       {
         question: "Can I edit stats after a game?",
         answer:
-          'Yes! Tap Edit in the top right corner of the completed game, then tap "Continue Game." This reopens the game for editing. You can delete plays by swiping left, reorder plays by dragging, and add new stats. Tap Done when finished.',
-      },
-    ],
-  },
-  {
-    title: "Play-by-Play",
-    items: [
-      {
-        question: "How do I undo a stat?",
-        answer:
-          "In the play-by-play section at the bottom of the game screen, find the play you want to remove and swipe left to reveal the delete option. Tap delete to remove that stat.",
-      },
-      {
-        question: "Can I reorder plays?",
-        answer:
-          "Yes! Long-press any play to drag it. You can reorder plays within a period or drag them across period dividers to move between quarters/halves.",
-      },
-      {
-        question: "What does the expand button do?",
-        answer:
-          "The expand button (top right of play-by-play) makes the play-by-play section fill most of the screen, hiding the player and set buttons temporarily. This gives you more room to review the game history. Tap again to collapse.",
-      },
-    ],
-  },
-  {
-    title: "Your Data",
-    items: [
-      {
-        question: "Where is my data stored?",
-        answer:
-          "All your data is stored locally on your device. StatLine does not upload or sync your data to any external servers. Your teams, players, and game stats are completely private.",
-      },
-      {
-        question: "What happens if I delete the app?",
-        answer:
-          "Deleting the app will remove all your data, including teams, players, and game history. There is no backup or recovery option, so be careful when uninstalling.",
+          'Yes! Tap Edit in the top right corner of a completed game, then tap "Continue Game." You can delete plays, reorder them, and add new stats. Tap Done when finished.',
       },
     ],
   },
