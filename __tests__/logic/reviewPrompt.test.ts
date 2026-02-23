@@ -23,12 +23,12 @@ describe("Review Prompt Logic", () => {
         [3, 0],
         [3, 1],
         [3, 2],
+        [5, 0],
+        [5, 1],
+        [5, 2],
         [10, 0],
         [10, 1],
         [10, 2],
-        [15, 0],
-        [15, 1],
-        [15, 2],
       ])("returns true for (%i, %i)", (finishedCount, promptsShown) => {
         expect(shouldRequestReview(finishedCount, promptsShown)).toBe(true);
       });
@@ -37,8 +37,8 @@ describe("Review Prompt Logic", () => {
     describe("returns false when prompt cap reached", () => {
       test.each([
         [3, 3],
+        [5, 3],
         [10, 3],
-        [15, 3],
       ])("returns false for (%i, %i)", (finishedCount, promptsShown) => {
         expect(shouldRequestReview(finishedCount, promptsShown)).toBe(false);
       });
@@ -49,11 +49,11 @@ describe("Review Prompt Logic", () => {
         [1, 0],
         [2, 0],
         [4, 0],
-        [5, 0],
         [7, 0],
         [9, 0],
         [11, 0],
         [14, 0],
+        [15, 0],
         [16, 0],
         [100, 0],
       ])("returns false for (%i, %i)", (finishedCount, promptsShown) => {

@@ -1,20 +1,20 @@
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { GameType, Team } from "@/types/game";
 import { initialBaseStats, Stat, StatsType } from "@/types/stats";
 import { theme } from "@/theme";
 import { Result } from "@/types/player";
 import { router } from "expo-router";
 import { scale, moderateScale } from "@/utils/responsive";
+import { BaseStatsTable, BaseTableHeader, BaseTableRow } from "./BaseStatsTable";
 
 type RecentGamesTableProps = {
   games: GameType[];
   context: "team" | "player" | "set";
-  playerId?: string; // Required for player context
-  setId?: string; // Required for set context
+  playerId?: string;
+  setId?: string;
 };
 
 export function RecentGamesTable({ games, context, playerId, setId }: RecentGamesTableProps) {
-  // Build headings based on context
   const baseHeadings = [
     "PTS",
     "REB",
@@ -43,7 +43,6 @@ export function RecentGamesTable({ games, context, playerId, setId }: RecentGame
     "+/-",
   ];
 
-  // Add RUNS as first column for set context
   const headings = context === "set" ? ["RUNS", ...baseHeadings] : baseHeadings;
 
   const formatStats = (stats: StatsType, runCount?: number): string[] => {
@@ -90,18 +89,21 @@ export function RecentGamesTable({ games, context, playerId, setId }: RecentGame
       stats[Stat.PlusMinus].toString(),
     ];
 
-    // Prepend run count if provided (for set context)
     return runCount !== undefined ? [runCount.toString(), ...baseStats] : baseStats;
   };
 
-  // Process all games
-  const gameData = games.map(game => {
+  const handleGamePress = (gameId: string) => {
+    router.push(`/(tabs)/games/${gameId}`);
+  };
+
+  const headers: BaseTableHeader[] = headings.map(h => ({ label: h }));
+
+  const tableRows: BaseTableRow[] = games.map(game => {
     const ourScore = game.statTotals[Team.Us][Stat.Points] || 0;
     const theirScore = game.statTotals[Team.Opponent][Stat.Points] || 0;
     const result: Result =
       ourScore > theirScore ? Result.Win : ourScore < theirScore ? Result.Loss : Result.Draw;
 
-    // Get stats based on context
     let statsToShow: string[];
     if (context === "team") {
       statsToShow = formatStats(game.statTotals[Team.Us]);
@@ -117,7 +119,6 @@ export function RecentGamesTable({ games, context, playerId, setId }: RecentGame
       statsToShow = formatStats({ ...initialBaseStats });
     }
 
-    // Get result styles
     const getResultStyles = () => {
       switch (result) {
         case Result.Win:
@@ -132,124 +133,53 @@ export function RecentGamesTable({ games, context, playerId, setId }: RecentGame
     const { bgColor, textColor } = getResultStyles();
 
     return {
-      game,
-      result,
-      ourScore,
-      theirScore,
-      statsToShow,
-      bgColor,
-      textColor,
+      key: game.id,
+      leftColumnContent: (
+        <TouchableOpacity
+          onPress={() => handleGamePress(game.id)}
+          activeOpacity={0.7}
+          style={styles.gameInfoContent}
+        >
+          <View style={[styles.resultBadge, { backgroundColor: bgColor }]}>
+            <Text
+              style={[styles.resultText, { color: textColor }]}
+              allowFontScaling={true}
+              maxFontSizeMultiplier={1.5}
+            >
+              {result === Result.Win ? "W" : result === Result.Loss ? "L" : "D"}
+            </Text>
+          </View>
+          <View style={styles.gameDetails}>
+            <Text
+              style={styles.opponent}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+              allowFontScaling={true}
+              maxFontSizeMultiplier={1.5}
+            >
+              vs {game.opposingTeamName}
+            </Text>
+            <Text style={styles.score} allowFontScaling={true} maxFontSizeMultiplier={1.5}>
+              {ourScore}-{theirScore}
+            </Text>
+          </View>
+        </TouchableOpacity>
+      ),
+      statValues: statsToShow,
     };
   });
 
-  const handleGamePress = (gameId: string) => {
-    router.push(`/(tabs)/games/${gameId}`);
-  };
-
   return (
-    <View style={styles.container}>
-      {/* Sticky Left Column - All Game Info */}
-      <View style={styles.stickyColumn}>
-        {/* Header */}
-        <View style={styles.stickyHeader}>
-          <Text style={styles.stickyHeaderText}>GAME</Text>
-        </View>
-
-        {/* All Game Info Rows */}
-        {gameData.map(({ game, result, ourScore, theirScore, bgColor, textColor }) => (
-          <TouchableOpacity
-            key={game.id}
-            style={styles.gameInfoCell}
-            onPress={() => handleGamePress(game.id)}
-            activeOpacity={0.7}
-          >
-            <View style={styles.gameInfoContent}>
-              {/* Result Badge */}
-              <View style={[styles.resultBadge, { backgroundColor: bgColor }]}>
-                <Text style={[styles.resultText, { color: textColor }]}>
-                  {result === Result.Win ? "W" : result === Result.Loss ? "L" : "D"}
-                </Text>
-              </View>
-
-              {/* Opponent and Score */}
-              <View style={styles.gameDetails}>
-                <Text style={styles.opponent} numberOfLines={1} ellipsizeMode="tail">
-                  vs {game.opposingTeamName}
-                </Text>
-                <Text style={styles.score}>
-                  {ourScore}-{theirScore}
-                </Text>
-              </View>
-            </View>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      {/* Single ScrollView for All Stats */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.scrollView}>
-        <View>
-          {/* Stats Header Row */}
-          <View style={styles.statsHeaderRow}>
-            {headings.map((heading, index) => (
-              <Text key={index} style={styles.statHeaderCell}>
-                {heading}
-              </Text>
-            ))}
-          </View>
-
-          {/* All Stats Data Rows */}
-          {gameData.map(({ game, statsToShow }) => (
-            <View key={game.id} style={styles.statsDataRow}>
-              {statsToShow.map((stat, index) => (
-                <Text key={index} style={styles.statCell}>
-                  {stat}
-                </Text>
-              ))}
-            </View>
-          ))}
-        </View>
-      </ScrollView>
-    </View>
+    <BaseStatsTable
+      stickyColumnHeader="GAME"
+      headers={headers}
+      rows={tableRows}
+      containerBorder={false}
+    />
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flexDirection: "row",
-  },
-  // Sticky left column
-  stickyColumn: {
-    backgroundColor: theme.colorWhite,
-  },
-  stickyHeader: {
-    paddingVertical: scale(8),
-    paddingHorizontal: scale(8),
-    backgroundColor: theme.colorLightGrey,
-    borderBottomWidth: 2,
-    borderBottomColor: theme.colorOnyx,
-    width: scale(130),
-    height: scale(30),
-    justifyContent: "center",
-  },
-  stickyHeaderText: {
-    fontSize: moderateScale(10),
-    fontWeight: "700",
-    textTransform: "uppercase",
-    color: theme.colorOnyx,
-    textAlign: "center",
-  },
-  gameInfoCell: {
-    width: scale(130),
-    borderRightWidth: 1,
-    borderRightColor: theme.colorLightGrey,
-    borderTopWidth: 1,
-    borderTopColor: theme.colorLightGrey,
-    backgroundColor: theme.colorWhite,
-    justifyContent: "center",
-    paddingVertical: scale(8),
-    paddingHorizontal: scale(8),
-    minHeight: scale(50),
-  },
   gameInfoContent: {
     flexDirection: "row",
     alignItems: "center",
@@ -279,43 +209,5 @@ const styles = StyleSheet.create({
     fontSize: moderateScale(11),
     fontWeight: "500",
     color: theme.colorGrey,
-  },
-  // Scrollable stats section
-  scrollView: {
-    flex: 1,
-  },
-  statsHeaderRow: {
-    flexDirection: "row",
-    paddingVertical: scale(8),
-    backgroundColor: theme.colorLightGrey,
-    borderBottomWidth: 2,
-    borderBottomColor: theme.colorOnyx,
-    height: scale(30),
-    alignItems: "center",
-  },
-  statsDataRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: scale(8),
-    borderTopWidth: 1,
-    borderTopColor: theme.colorLightGrey,
-    minHeight: scale(50),
-  },
-  statHeaderCell: {
-    width: scale(45),
-    textAlign: "center",
-    fontSize: moderateScale(10),
-    fontWeight: "700",
-    textTransform: "uppercase",
-    color: theme.colorOnyx,
-    padding: scale(2),
-  },
-  statCell: {
-    width: scale(45),
-    textAlign: "center",
-    fontSize: moderateScale(13),
-    fontWeight: "500",
-    color: theme.colorOnyx,
-    padding: scale(2),
   },
 });

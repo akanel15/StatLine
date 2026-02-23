@@ -1,7 +1,8 @@
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { Text, StyleSheet } from "react-native";
 import { Stat, StatsType } from "@/types/stats";
 import { theme } from "@/theme";
 import { scale, moderateScale } from "@/utils/responsive";
+import { BaseStatsTable, BaseTableHeader, BaseTableRow } from "./BaseStatsTable";
 
 export type StatsRow = {
   label: string;
@@ -91,137 +92,33 @@ const formatStats = (stats: StatsType, divisor: number): string[] => {
 };
 
 export function StatsTable({ rows }: StatsTableProps) {
+  const headers: BaseTableHeader[] = HEADINGS.map(h => ({ label: h }));
+
+  const tableRows: BaseTableRow[] = rows.map((row, index) => ({
+    key: index.toString(),
+    leftColumnContent: (
+      <Text style={styles.labelText} allowFontScaling={true} maxFontSizeMultiplier={1.5}>
+        {row.label}
+      </Text>
+    ),
+    statValues: formatStats(row.stats, row.divisor),
+  }));
+
   return (
-    <View style={styles.container}>
-      {/* Sticky Left Column */}
-      <View style={styles.stickyColumn}>
-        {/* Header */}
-        <View style={styles.stickyHeader}>
-          <Text style={styles.stickyHeaderText}>TYPE</Text>
-        </View>
-
-        {/* Data Row Labels */}
-        {rows.map((row, index) => (
-          <View key={index} style={styles.labelCell}>
-            <Text style={styles.labelText}>{row.label}</Text>
-          </View>
-        ))}
-      </View>
-
-      {/* Stats Section - Horizontally Scrollable */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.scrollView}>
-        <View>
-          {/* Stats Header Row */}
-          <View style={styles.statsHeaderRow}>
-            {HEADINGS.map((heading, index) => (
-              <Text key={index} style={styles.statHeaderCell}>
-                {heading}
-              </Text>
-            ))}
-          </View>
-
-          {/* Data Rows */}
-          {rows.map((row, rowIndex) => {
-            const formattedStats = formatStats(row.stats, row.divisor);
-            return (
-              <View key={rowIndex} style={styles.statsDataRow}>
-                {formattedStats.map((stat, statIndex) => (
-                  <Text key={statIndex} style={styles.statCell}>
-                    {stat}
-                  </Text>
-                ))}
-              </View>
-            );
-          })}
-        </View>
-      </ScrollView>
-    </View>
+    <BaseStatsTable
+      stickyColumnHeader="TYPE"
+      stickyColumnWidth={scale(90)}
+      headers={headers}
+      rows={tableRows}
+    />
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flexDirection: "row",
-    borderWidth: 1,
-    borderColor: theme.colorLightGrey,
-    borderRadius: scale(12),
-    overflow: "hidden",
-  },
-  // Sticky left column
-  stickyColumn: {
-    backgroundColor: theme.colorWhite,
-  },
-  stickyHeader: {
-    paddingVertical: scale(8),
-    paddingHorizontal: scale(8),
-    backgroundColor: theme.colorLightGrey,
-    borderBottomWidth: 2,
-    borderBottomColor: theme.colorOnyx,
-    width: scale(90),
-    height: scale(30),
-    justifyContent: "center",
-  },
-  stickyHeaderText: {
-    fontSize: moderateScale(10),
-    fontWeight: "700",
-    textTransform: "uppercase",
-    color: theme.colorOnyx,
-    textAlign: "center",
-  },
-  labelCell: {
-    width: scale(90),
-    borderRightWidth: 1,
-    borderRightColor: theme.colorLightGrey,
-    borderTopWidth: 1,
-    borderTopColor: theme.colorLightGrey,
-    backgroundColor: theme.colorWhite,
-    justifyContent: "center",
-    paddingVertical: scale(8),
-    paddingHorizontal: scale(8),
-    minHeight: scale(50),
-  },
   labelText: {
     fontSize: moderateScale(13),
     fontWeight: "600",
     color: theme.colorOnyx,
     textAlign: "center",
-  },
-  // Scrollable stats section
-  scrollView: {
-    flex: 1,
-  },
-  statsHeaderRow: {
-    flexDirection: "row",
-    paddingVertical: scale(8),
-    backgroundColor: theme.colorLightGrey,
-    borderBottomWidth: 2,
-    borderBottomColor: theme.colorOnyx,
-    height: scale(30),
-    alignItems: "center",
-  },
-  statsDataRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: scale(8),
-    borderTopWidth: 1,
-    borderTopColor: theme.colorLightGrey,
-    minHeight: scale(50),
-  },
-  statHeaderCell: {
-    width: scale(45),
-    textAlign: "center",
-    fontSize: moderateScale(10),
-    fontWeight: "700",
-    textTransform: "uppercase",
-    color: theme.colorOnyx,
-    padding: scale(2),
-  },
-  statCell: {
-    width: scale(45),
-    textAlign: "center",
-    fontSize: moderateScale(13),
-    fontWeight: "500",
-    color: theme.colorOnyx,
-    padding: scale(2),
   },
 });
