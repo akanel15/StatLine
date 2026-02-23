@@ -18,6 +18,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.akanel.StatLine",
       "buildNumber": "1",
+      "appStoreUrl": "https://apps.apple.com/app/statline/id6758228140",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSPhotoLibraryUsageDescription": "Allow StatLine to access your photos to select team and player images"

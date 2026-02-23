@@ -108,3 +108,4 @@ storeHydration.registerStore("statline-team-store");
 storeHydration.registerStore("statline-player-store");
 storeHydration.registerStore("statline-set-store");
 storeHydration.registerStore("help-storage");
+storeHydration.registerStore("review-storage");

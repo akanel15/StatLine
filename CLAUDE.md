@@ -286,3 +286,20 @@ npx expo prebuild --platform ios
 - `yarn ios` - Run on iOS simulator (for development only)
 - `npx expo run:ios` - Run with fresh build (preferred)
 - **For Production**: Use Xcode directly with .xcworkspace file
+
+### App Store Assets
+- **Content**: `docs/app-store/` (description.txt, keywords.txt, subtitle.txt, promotional-text.txt)
+- **Privacy Policy**: https://akanel15.github.io/statline-privacy/
+- **Screenshots**: `~/Desktop/assets/iPhone_final/` (6.9" iPhone), `~/Desktop/assets/iPad_final/` (13" iPad)
+
+### EAS Build & Submit
+```bash
+# Preview build (local testing)
+eas build --platform ios --profile preview --local
+
+# Production build (cloud)
+eas build --platform ios --profile production
+
+# Submit to App Store Connect
+eas submit --platform ios
+```

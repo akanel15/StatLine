@@ -67,7 +67,7 @@ export default function UnifiedPlayByPlay({
 
   // Drag lock to prevent gesture conflicts after drag ends
   const [isDragLocked, setIsDragLocked] = useState(false);
-  const dragLockTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const dragLockTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Use refs to track current values for the viewable items callback
   // This avoids stale closure issues when scrolling back to Q1

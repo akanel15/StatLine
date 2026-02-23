@@ -48,6 +48,8 @@ import { shouldResetSet } from "@/logic/setResetLogic";
 import type { StatUpdateStoreActions } from "@/logic/statUpdates";
 import type { PlayByPlayType } from "@/types/game";
 import { useHelpStore } from "@/store/helpStore";
+import { useReviewStore } from "@/store/reviewStore";
+import { triggerReviewIfEligible } from "@/logic/reviewPrompt";
 import { ContextualTooltip } from "@/components/shared/ContextualTooltip";
 
 export default function GamePage() {
@@ -314,6 +316,13 @@ export default function GamePage() {
               });
               const actions = createGameCompletionActions();
               completeGameManually(game, gameId, teamId, actions);
+
+              // Request App Store review at milestones (fire-and-forget)
+              const finishedCount = Object.values(useGameStore.getState().games).filter(
+                g => g.isFinished,
+              ).length;
+              const { reviewPromptsShown, incrementPromptsShown } = useReviewStore.getState();
+              triggerReviewIfEligible(finishedCount, reviewPromptsShown, incrementPromptsShown);
             },
           },
         ],
