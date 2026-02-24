@@ -1,16 +1,7 @@
 import { useLayoutEffect, useState, useEffect, useRef } from "react";
 import { useRoute } from "@react-navigation/native";
 import { useNavigation } from "@react-navigation/native";
-import {
-  Alert,
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-  Modal,
-} from "react-native";
+import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal } from "react-native";
 import { usePlayerStore } from "@/store/playerStore";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import { theme } from "@/theme";
@@ -34,6 +25,7 @@ import { shareBoxScoreImage } from "@/utils/shareBoxScore";
 import { sanitizeFileName } from "@/utils/filename";
 import Feather from "@expo/vector-icons/Feather";
 import { GameCountSelectorModal } from "@/components/shared/GameCountSelectorModal";
+import { HeaderTextButton } from "@/components/HeaderTextButton";
 
 export default function PlayerPage() {
   const { playerId } = useRoute().params as { playerId: string };
@@ -129,9 +121,10 @@ export default function PlayerPage() {
       title: isEditMode ? "Edit Player" : playerName,
       headerLeft: () => <StandardBackButton onPress={() => navigation.goBack()} />,
       headerRight: () => (
-        <Pressable hitSlop={20} onPress={isEditMode ? handleSave : handleEdit}>
-          <Text style={styles.headerButtonText}>{isEditMode ? "Done" : "Edit"}</Text>
-        </Pressable>
+        <HeaderTextButton
+          label={isEditMode ? "Done" : "Edit"}
+          onPress={isEditMode ? handleSave : handleEdit}
+        />
       ),
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -538,11 +531,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "500",
     color: theme.colorGrey,
-  },
-  headerButtonText: {
-    color: theme.colorOrangePeel,
-    fontSize: 16,
-    fontWeight: "600",
   },
   editImageContainer: {
     alignItems: "center",

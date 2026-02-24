@@ -1,16 +1,7 @@
 import { useLayoutEffect, useState, useEffect, useRef } from "react";
 import { useRoute } from "@react-navigation/native";
 import { useNavigation } from "@react-navigation/native";
-import {
-  Alert,
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-  Modal,
-} from "react-native";
+import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal } from "react-native";
 import { useTeamStore } from "@/store/teamStore";
 import { theme } from "@/theme";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
@@ -40,6 +31,7 @@ import { GameCountSelectorModal } from "@/components/shared/GameCountSelectorMod
 import { Image } from "react-native";
 import { PlayerAveragesShareModal } from "@/components/shared/PlayerAveragesShareModal";
 import { ShareablePlayerAveragesTable } from "@/components/shared/ShareablePlayerAveragesTable";
+import { HeaderTextButton } from "@/components/HeaderTextButton";
 
 // Default team logo options (same as in newTeam.tsx)
 const DEFAULT_TEAM_LOGOS = [
@@ -188,9 +180,10 @@ export default function TeamPage() {
     navigation.setOptions({
       title: isEditMode ? "Edit Team" : teamName,
       headerRight: () => (
-        <Pressable hitSlop={20} onPress={isEditMode ? handleSave : handleEdit}>
-          <Text style={styles.headerButtonText}>{isEditMode ? "Done" : "Edit"}</Text>
-        </Pressable>
+        <HeaderTextButton
+          label={isEditMode ? "Done" : "Edit"}
+          onPress={isEditMode ? handleSave : handleEdit}
+        />
       ),
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -740,11 +733,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
-  },
-  headerButtonText: {
-    color: theme.colorOrangePeel,
-    fontSize: 16,
-    fontWeight: "600",
   },
   editImageContainer: {
     alignItems: "center",

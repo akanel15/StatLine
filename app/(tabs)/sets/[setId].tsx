@@ -1,16 +1,7 @@
 import { useLayoutEffect, useState, useEffect, useRef } from "react";
 import { useRoute } from "@react-navigation/native";
 import { useNavigation } from "@react-navigation/native";
-import {
-  Alert,
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-  Modal,
-} from "react-native";
+import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal } from "react-native";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import Feather from "@expo/vector-icons/Feather";
 import { theme } from "@/theme";
@@ -31,6 +22,7 @@ import { ShareableSetRecentGamesTable } from "@/components/shared/ShareableSetRe
 import { shareBoxScoreImage } from "@/utils/shareBoxScore";
 import { sanitizeFileName } from "@/utils/filename";
 import { GameCountSelectorModal } from "@/components/shared/GameCountSelectorModal";
+import { HeaderTextButton } from "@/components/HeaderTextButton";
 
 export default function SetPage() {
   const { setId } = useRoute().params as { setId: string };
@@ -97,9 +89,10 @@ export default function SetPage() {
       title: isEditMode ? "Edit Set" : setName,
       headerLeft: () => <StandardBackButton onPress={() => navigation.goBack()} />,
       headerRight: () => (
-        <Pressable hitSlop={20} onPress={isEditMode ? handleSave : handleEdit}>
-          <Text style={styles.headerButtonText}>{isEditMode ? "Done" : "Edit"}</Text>
-        </Pressable>
+        <HeaderTextButton
+          label={isEditMode ? "Done" : "Edit"}
+          onPress={isEditMode ? handleSave : handleEdit}
+        />
       ),
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -500,11 +493,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: theme.colorGrey,
     fontWeight: "500",
-  },
-  headerButtonText: {
-    color: theme.colorOrangePeel,
-    fontSize: 16,
-    fontWeight: "600",
   },
   editNameContainer: {
     width: "80%",

@@ -1,8 +1,6 @@
-import { Link, Stack } from "expo-router";
-import { Pressable } from "react-native";
-import { theme } from "@/theme";
-import AntDesign from "@expo/vector-icons/AntDesign";
+import { Stack } from "expo-router";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { HeaderIconButton } from "@/components/HeaderIconButton";
 
 export default function Layout() {
   return (
@@ -12,20 +10,8 @@ export default function Layout() {
           name="index"
           options={{
             title: "Select Team",
-            headerLeft: () => (
-              <Link href="/settings" asChild>
-                <Pressable hitSlop={20}>
-                  <AntDesign name="setting" size={24} color={theme.colorOrangePeel} />
-                </Pressable>
-              </Link>
-            ),
-            headerRight: () => (
-              <Link href="/newTeam" asChild>
-                <Pressable hitSlop={20}>
-                  <AntDesign name="plus-circle" size={24} color={theme.colorOrangePeel} />
-                </Pressable>
-              </Link>
-            ),
+            headerLeft: () => <HeaderIconButton href="/settings" iconName="setting" />,
+            headerRight: () => <HeaderIconButton href="/newTeam" iconName="plus-circle" />,
           }}
         ></Stack.Screen>
         <Stack.Screen name="newTeam" options={{ title: "New team" }}></Stack.Screen>

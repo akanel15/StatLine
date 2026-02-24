@@ -16,6 +16,7 @@ import {
   Modal,
   TouchableOpacity,
 } from "react-native";
+import { HeaderTextButton } from "@/components/HeaderTextButton";
 import { theme } from "@/theme";
 import { scale, moderateScale } from "@/utils/responsive";
 import { SetRadioButton } from "@/components/SetRadioButton";
@@ -333,11 +334,7 @@ export default function GamePage() {
       navigation.setOptions({
         title: `vs ${game.opposingTeamName}`,
         headerLeft: () => <StandardBackButton onPress={() => navigation.goBack()} />,
-        headerRight: () => (
-          <Pressable hitSlop={20} onPress={() => setShowEditModal(true)}>
-            <Text style={styles.headerButtonText}>Edit</Text>
-          </Pressable>
-        ),
+        headerRight: () => <HeaderTextButton label="Edit" onPress={() => setShowEditModal(true)} />,
       });
     } else {
       navigation.setOptions({
@@ -345,11 +342,7 @@ export default function GamePage() {
         headerBackVisible: false,
         gestureEnabled: false,
         headerRight: () =>
-          showSubstitutions ? null : (
-            <Pressable hitSlop={20} onPress={completeGame}>
-              <Text style={styles.headerButtonText}>Done</Text>
-            </Pressable>
-          ),
+          showSubstitutions ? null : <HeaderTextButton label="Done" onPress={completeGame} />,
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -855,11 +848,6 @@ const styles = StyleSheet.create({
   split: {
     flex: 1,
     maxWidth: "50%",
-  },
-  headerButtonText: {
-    color: theme.colorOrangePeel,
-    fontSize: moderateScale(16),
-    fontWeight: "600",
   },
   hiddenModalContainer: {
     position: "absolute",
