@@ -206,11 +206,11 @@ function collectSingleStatUpdates(
   collector.gameUpdates.boxScoreUpdates.push({ playerId, stat, amount: 1 });
   collector.gameUpdates.totalUpdates.push({ stat, amount: 1, team });
   collector.teamUpdates.push({ teamId, stat, amount: 1, team });
-  collector.gameUpdates.setStatUpdates.push({ setId, stat, amount: 1 });
 
   // Only update player/set stores for our team's stats
   // Team stats update setStore but NOT playerStore (no player to update)
   if (isOurTeam) {
+    collector.gameUpdates.setStatUpdates.push({ setId, stat, amount: 1 });
     if (!isTeamStat) {
       collector.playerUpdates.push({ playerId, stat, amount: 1 });
     }
@@ -238,11 +238,11 @@ function collectPointsForScoringPlay(
   collector.gameUpdates.totalUpdates.push({ stat: Stat.Points, amount: points, team });
   collector.gameUpdates.boxScoreUpdates.push({ playerId, stat: Stat.Points, amount: points });
   collector.teamUpdates.push({ teamId, stat: Stat.Points, amount: points, team });
-  collector.gameUpdates.setStatUpdates.push({ setId, stat: Stat.Points, amount: points });
 
   // Only update player/set stores for our team's stats
   // Team stats update setStore but NOT playerStore (no player to update)
   if (isOurTeam) {
+    collector.gameUpdates.setStatUpdates.push({ setId, stat: Stat.Points, amount: points });
     if (!isTeamStat) {
       collector.playerUpdates.push({ playerId, stat: Stat.Points, amount: points });
     }
@@ -355,11 +355,11 @@ function updateSingleStatLegacy(
   stores.updateBoxScore(gameId, playerId, stat, 1);
   stores.updateTotals(gameId, stat, 1, team);
   stores.updateTeamStats(teamId, stat, 1, team);
-  stores.updateGameSetStats(gameId, setId, stat, 1);
 
   // Only update player/set stores for our team's stats
   // Team stats update setStore but NOT playerStore (no player to update)
   if (isOurTeam) {
+    stores.updateGameSetStats(gameId, setId, stat, 1);
     if (!isTeamStat) {
       stores.updatePlayerStats(playerId, stat, 1);
     }
@@ -414,11 +414,11 @@ function updatePointsForScoringPlayLegacy(
   stores.updateTotals(gameId, Stat.Points, points, team);
   stores.updateBoxScore(gameId, playerId, Stat.Points, points);
   stores.updateTeamStats(teamId, Stat.Points, points, team);
-  stores.updateGameSetStats(gameId, setId, Stat.Points, points);
 
   // Only update player/set stores for our team's stats
   // Team stats update setStore but NOT playerStore (no player to update)
   if (isOurTeam) {
+    stores.updateGameSetStats(gameId, setId, Stat.Points, points);
     if (!isTeamStat) {
       stores.updatePlayerStats(playerId, Stat.Points, points);
     }
@@ -464,11 +464,11 @@ export function handleStatReversal(
     stores.updateBoxScore(gameId, playerId, stat, -1);
     stores.updateTotals(gameId, stat, -1, team);
     stores.updateTeamStats(teamId, stat, -1, team);
-    stores.updateGameSetStats(gameId, setId, stat, -1);
 
     // Only reverse player/set stores for our team's stats
     // Team stats update setStore but NOT playerStore (no player to update)
     if (isOurTeam) {
+      stores.updateGameSetStats(gameId, setId, stat, -1);
       if (!isTeamStat) {
         stores.updatePlayerStats(playerId, stat, -1);
       }
@@ -483,11 +483,11 @@ export function handleStatReversal(
       stores.updateTotals(gameId, Stat.Points, -points, team);
       stores.updateBoxScore(gameId, playerId, Stat.Points, -points);
       stores.updateTeamStats(teamId, Stat.Points, -points, team);
-      stores.updateGameSetStats(gameId, setId, Stat.Points, -points);
 
       // Only reverse player/set stores for our team's stats
       // Team stats update setStore but NOT playerStore (no player to update)
       if (isOurTeam) {
+        stores.updateGameSetStats(gameId, setId, Stat.Points, -points);
         if (!isTeamStat) {
           stores.updatePlayerStats(playerId, Stat.Points, -points);
         }

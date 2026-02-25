@@ -1,10 +1,12 @@
 import { StatLineButton } from "@/components/StatLineButton";
 import { useGameStore } from "@/store/gameStore";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { usePlayerStore } from "@/store/playerStore";
 import PeriodScoreTile from "./PeriodScoreTile";
 import { getPlayerDisplayName } from "@/utils/displayHelpers";
 import { SortableBoxScoreTable } from "@/components/shared/SortableBoxScoreTable";
+import { GameSetStatsTable } from "@/components/shared/GameSetStatsTable";
+import { theme } from "@/theme";
 
 type BoxScoreProps = {
   gameId: string;
@@ -21,6 +23,8 @@ export default function BoxScoreOverlay({
   const players = usePlayerStore.getState().players;
 
   if (!game) return null;
+
+  const hasSets = Object.values(game.sets).some(s => s.runCount > 0);
 
   return (
     <View style={styles.container}>
@@ -40,6 +44,14 @@ export default function BoxScoreOverlay({
             getPlayerDisplayName={getPlayerDisplayName}
           />
         </View>
+
+        {/* Set Performance */}
+        {hasSets && (
+          <View style={styles.tableWrapper}>
+            <Text style={styles.sectionHeader}>Set Performance</Text>
+            <GameSetStatsTable sets={game.sets} scrollable={true} />
+          </View>
+        )}
       </ScrollView>
 
       {/* Close Button */}
@@ -68,5 +80,13 @@ const styles = StyleSheet.create({
   },
   tableWrapper: {
     marginHorizontal: 4,
+  },
+  sectionHeader: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: theme.colorOnyx,
+    marginTop: 16,
+    marginBottom: 8,
+    marginLeft: 4,
   },
 });

@@ -333,8 +333,9 @@ describe("Possession Simulation Logic", () => {
         isOurTeam: false,
       };
 
-      // Mock: setId, 2pt shot type, variance adjust, make it
-      const mockValues = [0.3, 0.3, 0.5, 0.4, 0.9];
+      // Mock: 2pt shot type, variance adjust, make it
+      // Note: no setId random call since isOurTeam=false skips set selection
+      const mockValues = [0.3, 0.5, 0.4, 0.9];
       let callCount = 0;
       jest.spyOn(Math, "random").mockImplementation(() => {
         const value = mockValues[callCount % mockValues.length];

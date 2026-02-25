@@ -23,6 +23,8 @@ describe("importData", () => {
       periods: [],
       gamePlayedList: [],
       activePlayers: [],
+      sets: {},
+      activeSets: [],
       ...overrides,
     });
 
@@ -230,6 +232,7 @@ describe("importData", () => {
         { originalId: "p1", name: "Player One", number: "1" },
         { originalId: "p2", name: "Player Two", number: "2" },
       ],
+      sets: [],
       games: [
         {
           originalId: "g1",
@@ -247,6 +250,8 @@ describe("importData", () => {
           periods: [],
           gamePlayedList: ["p1", "p2"],
           activePlayers: ["p1", "p2"],
+          sets: {},
+          activeSets: [],
         },
       ],
       ...overrides,
@@ -257,23 +262,30 @@ describe("importData", () => {
         importGame: any[];
         addTeamSync: any[];
         addPlayerSync: any[];
+        addSetSync: any[];
         updateTeamGamesPlayed: any[];
         updatePlayerGamesPlayed: any[];
         teamBatchUpdateStats: any[];
         playerBatchUpdateStats: any[];
+        setBatchUpdateStats: any[];
+        setIncrementRunCount: any[];
       };
     } => {
       const calls = {
         importGame: [] as any[],
         addTeamSync: [] as any[],
         addPlayerSync: [] as any[],
+        addSetSync: [] as any[],
         updateTeamGamesPlayed: [] as any[],
         updatePlayerGamesPlayed: [] as any[],
         teamBatchUpdateStats: [] as any[],
         playerBatchUpdateStats: [] as any[],
+        setBatchUpdateStats: [] as any[],
+        setIncrementRunCount: [] as any[],
       };
 
       let playerCounter = 0;
+      let setCounter = 0;
 
       return {
         calls,
@@ -308,6 +320,19 @@ describe("importData", () => {
             calls.playerBatchUpdateStats.push(updates);
           },
         },
+        setStore: {
+          addSetSync: (name: string, teamId: string) => {
+            setCounter++;
+            calls.addSetSync.push({ name, teamId });
+            return `new-set-${setCounter}`;
+          },
+          batchUpdateStats: (updates: any[]) => {
+            calls.setBatchUpdateStats.push(updates);
+          },
+          incrementRunCount: (setId: string) => {
+            calls.setIncrementRunCount.push(setId);
+          },
+        },
       };
     };
 
@@ -320,6 +345,7 @@ describe("importData", () => {
           { type: "create", originalId: "p2", name: "Player Two", number: "2" },
         ],
         games: [{ originalId: "g1", include: true }],
+        sets: [],
       };
 
       const teamId = executeImport(makeExportData(), decisions, stores);
@@ -336,6 +362,7 @@ describe("importData", () => {
           { type: "create", originalId: "p2", name: "Player Two", number: "2" },
         ],
         games: [{ originalId: "g1", include: true }],
+        sets: [],
       };
 
       const teamId = executeImport(makeExportData(), decisions, stores);
@@ -352,6 +379,7 @@ describe("importData", () => {
           { type: "create", originalId: "p2", name: "Player Two", number: "2" },
         ],
         games: [{ originalId: "g1", include: true }],
+        sets: [],
       };
 
       executeImport(makeExportData(), decisions, stores);
@@ -372,6 +400,7 @@ describe("importData", () => {
           { type: "match", originalId: "p2", existingPlayerId: "existing-p2" },
         ],
         games: [{ originalId: "g1", include: true }],
+        sets: [],
       };
 
       executeImport(makeExportData(), decisions, stores);
@@ -387,6 +416,7 @@ describe("importData", () => {
           { type: "create", originalId: "p2", name: "Player Two", number: "2" },
         ],
         games: [{ originalId: "g1", include: true }],
+        sets: [],
       };
 
       executeImport(makeExportData(), decisions, stores);
@@ -417,6 +447,8 @@ describe("importData", () => {
             periods: [],
             gamePlayedList: [],
             activePlayers: [],
+            sets: {},
+            activeSets: [],
           },
           {
             originalId: "g2",
@@ -431,6 +463,8 @@ describe("importData", () => {
             periods: [],
             gamePlayedList: [],
             activePlayers: [],
+            sets: {},
+            activeSets: [],
           },
         ],
       });
@@ -442,6 +476,7 @@ describe("importData", () => {
           { originalId: "g1", include: true },
           { originalId: "g2", include: false },
         ],
+        sets: [],
       };
 
       executeImport(exportData, decisions, stores);
@@ -458,6 +493,7 @@ describe("importData", () => {
           { type: "create", originalId: "p2", name: "P2", number: "2" },
         ],
         games: [{ originalId: "g1", include: true }],
+        sets: [],
       };
 
       executeImport(makeExportData(), decisions, stores);
@@ -477,6 +513,7 @@ describe("importData", () => {
           { type: "create", originalId: "p2", name: "P2", number: "2" },
         ],
         games: [{ originalId: "g1", include: true }],
+        sets: [],
       };
 
       executeImport(exportData, decisions, stores);
@@ -493,6 +530,7 @@ describe("importData", () => {
           { type: "create", originalId: "p2", name: "P2", number: "2" },
         ],
         games: [{ originalId: "g1", include: true }],
+        sets: [],
       };
 
       executeImport(makeExportData(), decisions, stores);
@@ -508,6 +546,7 @@ describe("importData", () => {
           { type: "create", originalId: "p2", name: "P2", number: "2" },
         ],
         games: [{ originalId: "g1", include: true }],
+        sets: [],
       };
 
       executeImport(makeExportData(), decisions, stores);
@@ -528,6 +567,7 @@ describe("importData", () => {
           { type: "create", originalId: "p2", name: "P2", number: "2" },
         ],
         games: [{ originalId: "g1", include: true }],
+        sets: [],
       };
 
       executeImport(makeExportData(), decisions, stores);
@@ -550,6 +590,7 @@ describe("importData", () => {
           { type: "create", originalId: "p2", name: "P2", number: "2" },
         ],
         games: [{ originalId: "g1", include: true }],
+        sets: [],
       };
 
       executeImport(exportData, decisions, stores);
@@ -569,6 +610,7 @@ describe("importData", () => {
           { type: "create", originalId: "p2", name: "P2", number: "2" },
         ],
         games: [{ originalId: "g1", include: true }],
+        sets: [],
       };
 
       executeImport(exportData, decisions, stores);
@@ -581,6 +623,7 @@ describe("importData", () => {
         team: { type: "create", name: "Team" },
         players: [],
         games: [{ originalId: "g1", include: false }],
+        sets: [],
       };
 
       executeImport(makeExportData(), decisions, stores);
@@ -600,6 +643,7 @@ describe("importData", () => {
           { type: "create", originalId: "p1", name: "P1", number: "1" },
         ],
         games: [{ originalId: "g1", include: true }],
+        sets: [],
       };
 
       executeImport(exportData, decisions, stores);

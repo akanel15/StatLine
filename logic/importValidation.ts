@@ -2,7 +2,13 @@ import { PeriodType, Team } from "@/types/game";
 import { Stat, StatsType } from "@/types/stats";
 import { PlayerType } from "@/types/player";
 import { GameType } from "@/types/game";
-import { StatLineExport, StatLineExportGame, StatLineExportPlayer } from "@/types/statlineExport";
+import { SetType } from "@/types/set";
+import {
+  StatLineExport,
+  StatLineExportGame,
+  StatLineExportPlayer,
+  StatLineExportSet,
+} from "@/types/statlineExport";
 
 export type ValidationResult =
   | { isValid: true; export: StatLineExport; errors: [] }
@@ -35,6 +41,22 @@ function validatePlayer(player: unknown, index: number): string[] {
   }
   if (typeof p.number !== "string") {
     errors.push(`players[${index}].number: must be a string`);
+  }
+  return errors;
+}
+
+function validateSet(setItem: unknown, index: number): string[] {
+  const errors: string[] = [];
+  if (!setItem || typeof setItem !== "object") {
+    errors.push(`sets[${index}]: must be an object`);
+    return errors;
+  }
+  const s = setItem as Record<string, unknown>;
+  if (typeof s.originalId !== "string" || !s.originalId) {
+    errors.push(`sets[${index}].originalId: must be a non-empty string`);
+  }
+  if (typeof s.name !== "string") {
+    errors.push(`sets[${index}].name: must be a string`);
   }
   return errors;
 }
@@ -95,6 +117,15 @@ function validateGame(game: unknown, index: number): string[] {
     errors.push(`games[${index}].activePlayers: must be an array`);
   }
 
+  // sets and activeSets are optional for backward compatibility
+  // If present, validate types
+  if (g.sets !== undefined && (typeof g.sets !== "object" || g.sets === null)) {
+    errors.push(`games[${index}].sets: must be an object if present`);
+  }
+  if (g.activeSets !== undefined && !Array.isArray(g.activeSets)) {
+    errors.push(`games[${index}].activeSets: must be an array if present`);
+  }
+
   return errors;
 }
 
@@ -151,11 +182,35 @@ export function validateStatLineFile(data: unknown): ValidationResult {
     });
   }
 
+  // Sets (optional for backward compatibility)
+  if (d.sets !== undefined) {
+    if (!Array.isArray(d.sets)) {
+      errors.push("sets: must be an array if present");
+    } else {
+      d.sets.forEach((s: unknown, i: number) => {
+        errors.push(...validateSet(s, i));
+      });
+    }
+  }
+
   if (errors.length > 0) {
     return { isValid: false, export: null, errors };
   }
 
-  return { isValid: true, export: data as StatLineExport, errors: [] };
+  // Normalize optional fields for backward compatibility
+  const normalized = data as Record<string, unknown>;
+  if (!normalized.sets) {
+    (normalized as Record<string, unknown>).sets = [];
+  }
+  // Normalize game-level sets/activeSets
+  if (Array.isArray(normalized.games)) {
+    for (const game of normalized.games as Record<string, unknown>[]) {
+      if (!game.sets) game.sets = {};
+      if (!game.activeSets) game.activeSets = [];
+    }
+  }
+
+  return { isValid: true, export: normalized as unknown as StatLineExport, errors: [] };
 }
 
 /**
@@ -240,6 +295,35 @@ export function autoMatchPlayers(
       // Ambiguous - take first match but could be improved
       result.set(incomingPlayer.originalId, candidates[0].id);
     }
+  }
+
+  return result;
+}
+
+/**
+ * Auto-matches incoming sets to existing sets by name (case-insensitive).
+ * Returns a Map from incoming set originalId to existing set ID (or null if no match).
+ */
+export function autoMatchSets(
+  incoming: StatLineExportSet[],
+  existing: SetType[],
+): Map<string, string | null> {
+  const result = new Map<string, string | null>();
+
+  // Build lookup by lowercase name
+  const existingByName = new Map<string, SetType>();
+  for (const set of existing) {
+    const key = set.name.toLowerCase();
+    // First match wins (sets are deterministic — a "Motion" offense is a "Motion" offense)
+    if (!existingByName.has(key)) {
+      existingByName.set(key, set);
+    }
+  }
+
+  for (const incomingSet of incoming) {
+    const nameKey = incomingSet.name.toLowerCase();
+    const match = existingByName.get(nameKey);
+    result.set(incomingSet.originalId, match?.id ?? null);
   }
 
   return result;

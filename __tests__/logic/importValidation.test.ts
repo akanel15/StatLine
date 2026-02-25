@@ -16,6 +16,7 @@ describe("importValidation", () => {
     players: [
       { originalId: "p1", name: "Player One", number: "1" },
     ],
+    sets: [],
     games: [
       {
         originalId: "g1",
@@ -32,6 +33,8 @@ describe("importValidation", () => {
         periods: [],
         gamePlayedList: ["p1"],
         activePlayers: ["p1"],
+        sets: {},
+        activeSets: [],
       },
     ],
     ...overrides,
@@ -278,6 +281,8 @@ describe("importValidation", () => {
       periods: [],
       gamePlayedList: [],
       activePlayers: [],
+      sets: {},
+      activeSets: [],
     });
 
     const makeExistingGame = (

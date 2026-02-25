@@ -190,7 +190,8 @@ export default function GamePage() {
     try {
       const ourTeam = getTeamSafely(teamId);
       const teamName = ourTeam?.name || "My Team";
-      const exportData = buildExportPackage(teamName, [game], players);
+      const setsRecord = useSetStore.getState().sets;
+      const exportData = buildExportPackage(teamName, [game], players, setsRecord);
       await shareStatLineFile(exportData, teamName);
     } finally {
       setIsSharing(false);

@@ -1,6 +1,7 @@
 import { Team } from "@/types/game";
 import { Stat, StatsType } from "@/types/stats";
 import { Result } from "@/types/player";
+import { SetType } from "@/types/set";
 import { StatLineExport, StatLineExportGame, ImportDecisions } from "@/types/statlineExport";
 
 const SPECIAL_IDS = ["Opponent", "Team"];
@@ -50,6 +51,46 @@ export function remapGamePlayerIds(
 }
 
 /**
+ * Remaps all set IDs in a game from original IDs to new IDs.
+ * Remaps keys in game.sets, values in game.activeSets, and setId in play-by-play entries.
+ */
+export function remapGameSetIds(
+  game: StatLineExportGame,
+  setIdMapping: Map<string, string>,
+): StatLineExportGame {
+  const remapSetId = (id: string): string => setIdMapping.get(id) ?? id;
+
+  // Remap sets Record keys
+  const newSets: Record<string, SetType> = {};
+  for (const [oldId, setData] of Object.entries(game.sets)) {
+    const newId = remapSetId(oldId);
+    newSets[newId] = { ...setData, id: newId };
+  }
+
+  // Remap activeSets array
+  const newActiveSets = game.activeSets.map(remapSetId);
+
+  // Remap setId in play-by-play entries
+  const newPeriods = game.periods.map(period => {
+    if (!period?.playByPlay) return period;
+    return {
+      ...period,
+      playByPlay: period.playByPlay.map(play => ({
+        ...play,
+        setId: play.setId ? remapSetId(play.setId) : undefined,
+      })),
+    };
+  });
+
+  return {
+    ...game,
+    sets: newSets,
+    activeSets: newActiveSets,
+    periods: newPeriods,
+  };
+}
+
+/**
  * Determines the game result from stat totals.
  */
 function calculateResult(statTotals: { [Team.Us]: StatsType; [Team.Opponent]: StatsType }): Result {
@@ -72,6 +113,8 @@ export interface ImportGameStore {
     periods: StatLineExportGame["periods"];
     gamePlayedList: string[];
     activePlayers: string[];
+    sets: Record<string, SetType>;
+    activeSets: string[];
   }) => string;
 }
 
@@ -87,10 +130,17 @@ export interface ImportPlayerStore {
   batchUpdateStats: (updates: { playerId: string; stat: Stat; amount: number }[]) => void;
 }
 
+export interface ImportSetStore {
+  addSetSync: (name: string, teamId: string) => string;
+  batchUpdateStats: (updates: { setId: string; stat: Stat; amount: number }[]) => void;
+  incrementRunCount: (setId: string) => void;
+}
+
 export interface ImportStores {
   gameStore: ImportGameStore;
   teamStore: ImportTeamStore;
   playerStore: ImportPlayerStore;
+  setStore: ImportSetStore;
 }
 
 /**
@@ -126,7 +176,19 @@ export function executeImport(
     }
   }
 
-  // Step 3: Import selected games
+  // Step 3: Create new sets and build full ID mapping
+  const setIdMapping = new Map<string, string>();
+
+  for (const setDecision of decisions.sets) {
+    if (setDecision.type === "create") {
+      const newId = stores.setStore.addSetSync(setDecision.name, teamId);
+      setIdMapping.set(setDecision.originalId, newId);
+    } else {
+      setIdMapping.set(setDecision.originalId, setDecision.existingSetId);
+    }
+  }
+
+  // Step 4: Import selected games
   const gamesToImport = exportData.games.filter(game => {
     const decision = decisions.games.find(d => d.originalId === game.originalId);
     return decision?.include === true;
@@ -143,10 +205,19 @@ export function executeImport(
     stat: Stat;
     amount: number;
   }[] = [];
+  const setStatUpdates: {
+    setId: string;
+    stat: Stat;
+    amount: number;
+  }[] = [];
+  const setRunCounts = new Map<string, number>();
 
   for (const game of gamesToImport) {
     // Remap player IDs
-    const remappedGame = remapGamePlayerIds(game, playerIdMapping);
+    let remappedGame = remapGamePlayerIds(game, playerIdMapping);
+
+    // Remap set IDs
+    remappedGame = remapGameSetIds(remappedGame, setIdMapping);
 
     // Insert the game
     stores.gameStore.importGame({
@@ -159,6 +230,8 @@ export function executeImport(
       periods: remappedGame.periods,
       gamePlayedList: remappedGame.gamePlayedList,
       activePlayers: remappedGame.activePlayers,
+      sets: remappedGame.sets,
+      activeSets: remappedGame.activeSets,
     });
 
     // Only update cumulative stats for finished games
@@ -211,14 +284,44 @@ export function executeImport(
         }
       }
     }
+
+    // Accumulate set stats and run counts
+    for (const [setId, setData] of Object.entries(remappedGame.sets)) {
+      // Accumulate run counts
+      if (setData.runCount > 0) {
+        setRunCounts.set(setId, (setRunCounts.get(setId) || 0) + setData.runCount);
+      }
+
+      // Accumulate set stats
+      for (const statKey of Object.values(Stat)) {
+        const amount = setData.stats[statKey] || 0;
+        if (amount !== 0) {
+          setStatUpdates.push({
+            setId,
+            stat: statKey,
+            amount,
+          });
+        }
+      }
+    }
   }
 
-  // Step 4: Batch update cumulative stats
+  // Step 5: Batch update cumulative stats
   if (teamStatUpdates.length > 0) {
     stores.teamStore.batchUpdateStats(teamStatUpdates);
   }
   if (playerStatUpdates.length > 0) {
     stores.playerStore.batchUpdateStats(playerStatUpdates);
+  }
+  if (setStatUpdates.length > 0) {
+    stores.setStore.batchUpdateStats(setStatUpdates);
+  }
+
+  // Update global set run counts
+  for (const [setId, count] of setRunCounts) {
+    for (let i = 0; i < count; i++) {
+      stores.setStore.incrementRunCount(setId);
+    }
   }
 
   return teamId;

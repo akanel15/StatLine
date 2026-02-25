@@ -82,7 +82,8 @@ export default function Games() {
       const selectedGames = teamGames.filter(g => selectedGameIds.has(g.id));
       const team = getTeamSafely(currentTeamId);
       const teamName = team?.name || "My Team";
-      const exportData = buildExportPackage(teamName, selectedGames, players);
+      const setsRecord = (await import("@/store/setStore")).useSetStore.getState().sets;
+      const exportData = buildExportPackage(teamName, selectedGames, players, setsRecord);
       await shareStatLineFile(exportData, teamName);
     } finally {
       setIsSharing(false);

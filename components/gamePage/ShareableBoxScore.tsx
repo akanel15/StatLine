@@ -5,6 +5,7 @@ import { theme } from "@/theme";
 import { getPlayerDisplayName } from "@/utils/displayHelpers";
 import { useTeamStore } from "@/store/teamStore";
 import { BoxScoreTable } from "@/components/shared/BoxScoreTable";
+import { GameSetStatsTable } from "@/components/shared/GameSetStatsTable";
 
 type ShareableBoxScoreProps = {
   game: GameType;
@@ -15,6 +16,8 @@ export default function ShareableBoxScore({ game, players }: ShareableBoxScorePr
   const getTeamSafely = useTeamStore(state => state.getTeamSafely);
   const ourTeam = getTeamSafely(game.teamId);
   const ourTeamName = ourTeam?.name || "Our Team";
+
+  const hasSets = Object.values(game.sets).some(s => s.runCount > 0);
 
   return (
     <View style={styles.container}>
@@ -40,6 +43,14 @@ export default function ShareableBoxScore({ game, players }: ShareableBoxScorePr
         scrollable={false}
         getPlayerDisplayName={getPlayerDisplayName}
       />
+
+      {/* Set Performance */}
+      {hasSets && (
+        <View style={styles.setSection}>
+          <Text style={styles.setSectionTitle}>Set Performance</Text>
+          <GameSetStatsTable sets={game.sets} scrollable={false} />
+        </View>
+      )}
 
       {/* Footer */}
       <View style={styles.footer}>
@@ -74,6 +85,15 @@ const styles = StyleSheet.create({
     borderColor: theme.colorLightGrey,
     borderRadius: 8,
     overflow: "visible",
+  },
+  setSection: {
+    marginTop: 24,
+  },
+  setSectionTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: theme.colorOnyx,
+    marginBottom: 8,
   },
   footer: {
     marginTop: 16,

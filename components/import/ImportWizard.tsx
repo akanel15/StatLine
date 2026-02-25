@@ -8,11 +8,14 @@ import {
   PlayerDecision,
   GameDecision,
   ImportDecisions,
+  SetDecision,
 } from "@/types/statlineExport";
 import { executeImport } from "@/logic/importData";
+import { autoMatchSets } from "@/logic/importValidation";
 import { useGameStore } from "@/store/gameStore";
 import { useTeamStore } from "@/store/teamStore";
 import { usePlayerStore } from "@/store/playerStore";
+import { useSetStore } from "@/store/setStore";
 import { ImportSummaryStep } from "./ImportSummaryStep";
 import { TeamMatchStep } from "./TeamMatchStep";
 import { PlayerMergeStep } from "./PlayerMergeStep";
@@ -63,10 +66,25 @@ export function ImportWizard({ exportData }: ImportWizardProps) {
   const handleConfirm = async () => {
     if (!teamDecision) return;
 
+    // Auto-match sets by name (deterministic — no manual wizard step needed)
+    const targetTeamId = teamDecision.type === "match" ? teamDecision.existingTeamId : null;
+    const existingSets = targetTeamId
+      ? Object.values(useSetStore.getState().sets).filter(s => s.teamId === targetTeamId)
+      : [];
+    const setMatches = autoMatchSets(exportData.sets || [], existingSets);
+    const setDecisions: SetDecision[] = (exportData.sets || []).map(s => {
+      const matchId = setMatches.get(s.originalId);
+      if (matchId) {
+        return { type: "match", originalId: s.originalId, existingSetId: matchId };
+      }
+      return { type: "create", originalId: s.originalId, name: s.name };
+    });
+
     const decisions: ImportDecisions = {
       team: teamDecision,
       players: playerDecisions,
       games: gameDecisions,
+      sets: setDecisions,
     };
 
     try {
@@ -81,6 +99,11 @@ export function ImportWizard({ exportData }: ImportWizardProps) {
         updateGamesPlayed: updatePlayerGamesPlayed,
         batchUpdateStats: playerBatchUpdate,
       } = usePlayerStore.getState();
+      const {
+        addSetSync,
+        batchUpdateStats: setBatchUpdate,
+        incrementRunCount: setIncrementRunCount,
+      } = useSetStore.getState();
 
       const teamId = executeImport(exportData, decisions, {
         gameStore: { importGame },
@@ -93,6 +116,11 @@ export function ImportWizard({ exportData }: ImportWizardProps) {
           addPlayerSync,
           updateGamesPlayed: updatePlayerGamesPlayed,
           batchUpdateStats: playerBatchUpdate,
+        },
+        setStore: {
+          addSetSync,
+          batchUpdateStats: setBatchUpdate,
+          incrementRunCount: setIncrementRunCount,
         },
       });
 

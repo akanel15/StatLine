@@ -377,7 +377,9 @@ export function simulatePossession(
   // Select player and set
   const playerId = isOurTeam ? selectWeightedPlayer(starterIds, benchIds) : "Opponent";
   const setId =
-    activeSetIds.length > 0 ? activeSetIds[Math.floor(Math.random() * activeSetIds.length)] : "";
+    isOurTeam && activeSetIds.length > 0
+      ? activeSetIds[Math.floor(Math.random() * activeSetIds.length)]
+      : "";
 
   // Determine shot type
   const shotType = determineShotType();

@@ -1,6 +1,7 @@
 import { GameType } from "@/types/game";
 import { PlayerType } from "@/types/player";
-import { StatLineExport, StatLineExportPlayer } from "@/types/statlineExport";
+import { SetType } from "@/types/set";
+import { StatLineExport, StatLineExportPlayer, StatLineExportSet } from "@/types/statlineExport";
 
 const SPECIAL_IDS = ["Opponent", "Team"];
 
@@ -54,6 +55,33 @@ function collectPlayerIdsFromGame(game: GameType): Set<string> {
 }
 
 /**
+ * Collects all unique set IDs referenced in a game's data.
+ * Checks game.sets keys, game.activeSets, and play-by-play setId entries.
+ */
+function collectSetIdsFromGame(game: GameType): Set<string> {
+  const ids = new Set<string>();
+
+  for (const id of Object.keys(game.sets)) {
+    ids.add(id);
+  }
+
+  for (const id of game.activeSets) {
+    ids.add(id);
+  }
+
+  for (const period of game.periods) {
+    if (!period?.playByPlay) continue;
+    for (const play of period.playByPlay) {
+      if (play.setId) {
+        ids.add(play.setId);
+      }
+    }
+  }
+
+  return ids;
+}
+
+/**
  * Builds a StatLineExport package from the given team name, games, and player lookup.
  * Players not found in the lookup are exported as "Unknown Player".
  */
@@ -61,6 +89,7 @@ export function buildExportPackage(
   teamName: string,
   games: GameType[],
   playersRecord: Record<string, PlayerType>,
+  setsRecord: Record<string, SetType> = {},
 ): StatLineExport {
   // Collect all unique player IDs across all games
   const allPlayerIds = new Set<string>();
@@ -81,6 +110,30 @@ export function buildExportPackage(
     };
   });
 
+  // Collect all unique set IDs across all games
+  const allSetIds = new Set<string>();
+  for (const game of games) {
+    const gameSetIds = collectSetIdsFromGame(game);
+    for (const id of gameSetIds) {
+      allSetIds.add(id);
+    }
+  }
+
+  // Build set list - use global set store name, fallback to game.sets name
+  const sets: StatLineExportSet[] = Array.from(allSetIds).map(id => {
+    const globalSet = setsRecord[id];
+    if (globalSet) {
+      return { originalId: id, name: globalSet.name };
+    }
+    // Fallback: find name from any game's sets
+    for (const game of games) {
+      if (game.sets[id]) {
+        return { originalId: id, name: game.sets[id].name };
+      }
+    }
+    return { originalId: id, name: "Unknown Set" };
+  });
+
   // Build game list
   const exportGames = games.map(game => ({
     originalId: game.id,
@@ -92,6 +145,8 @@ export function buildExportPackage(
     periods: game.periods,
     gamePlayedList: game.gamePlayedList,
     activePlayers: game.activePlayers,
+    sets: game.sets,
+    activeSets: game.activeSets,
   }));
 
   return {
@@ -100,5 +155,6 @@ export function buildExportPackage(
     team: { name: teamName },
     players,
     games: exportGames,
+    sets,
   };
 }

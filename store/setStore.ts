@@ -12,6 +12,7 @@ export type SetStatUpdate = { setId: string; stat: Stat; amount: number };
 type SetState = {
   sets: Record<string, SetType>;
   addSet: (name: string, teamId: string) => void;
+  addSetSync: (name: string, teamId: string) => string;
   removeSet: (setId: string) => void;
   updateSet: (setId: string, updates: Partial<Pick<SetType, "name">>) => void;
   updateStats: (setId: string, stat: Stat, amount: number) => void;
@@ -34,6 +35,16 @@ export const useSetStore = create(
             ...state.sets,
           },
         }));
+      },
+      addSetSync: (name: string, teamId: string) => {
+        const id = uuid.v4() as string;
+        set(state => ({
+          sets: {
+            [id]: createSet(id, name, teamId),
+            ...state.sets,
+          },
+        }));
+        return id;
       },
       removeSet: (setId: string) => {
         return set(state => {
