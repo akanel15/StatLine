@@ -16,12 +16,23 @@ import {
 type StatOverlayProps = {
   onClose: () => void;
   onStatPress: (category: ActionType, action: string) => void;
+  playerLabel?: string;
 };
 
 // Wrapped with memo to prevent unnecessary re-renders when parent state changes
-const StatOverlay = memo(function StatOverlay({ onClose, onStatPress }: StatOverlayProps) {
+const StatOverlay = memo(function StatOverlay({
+  onClose,
+  onStatPress,
+  playerLabel,
+}: StatOverlayProps) {
   return (
     <View style={styles.container}>
+      {playerLabel ? (
+        <>
+          <Text style={styles.playerLabel}>{playerLabel}</Text>
+          <View style={styles.playerLabelDivider} />
+        </>
+      ) : null}
       <Text style={styles.heading}>Shooting</Text>
       <View style={styles.rowContainer}>
         {Object.values(ShootingStatMake).map(action => (
@@ -88,8 +99,19 @@ const StatOverlay = memo(function StatOverlay({ onClose, onStatPress }: StatOver
 export default StatOverlay;
 
 const styles = StyleSheet.create({
-  container: {
-    marginTop: scale(6),
+  container: {},
+  playerLabel: {
+    fontSize: moderateScale(14),
+    fontWeight: "bold",
+    textAlign: "center",
+    color: theme.colorOrangePeel,
+    marginBottom: scale(4),
+  },
+  playerLabelDivider: {
+    height: 1,
+    backgroundColor: theme.colorLightGrey,
+    marginHorizontal: scale(40),
+    marginBottom: scale(6),
   },
   heading: {
     fontSize: moderateScale(14),

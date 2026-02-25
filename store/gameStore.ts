@@ -84,6 +84,7 @@ type GameState = {
   updateAllPeriods: (gameId: string, newPeriods: any[]) => void;
   deletePeriod: (gameId: string, periodIndex: number) => void;
   migratePlayIds: () => { gamesUpdated: number; playsUpdated: number };
+  importGame: (gameData: Omit<GameType, "id" | "sets" | "opposingTeamImageUri">) => string;
 };
 
 export const useGameStore = create(
@@ -1053,6 +1054,25 @@ export const useGameStore = create(
           console.log(`Migration complete: ${gamesUpdated} games, ${playsUpdated} plays updated`);
         }
         return { gamesUpdated, playsUpdated };
+      },
+
+      importGame: (
+        gameData: Omit<GameType, "id" | "sets" | "activeSets" | "opposingTeamImageUri">,
+      ) => {
+        const id = uuid.v4() as string;
+        set(state => ({
+          games: {
+            [id]: {
+              ...gameData,
+              id,
+              sets: {},
+              activeSets: [],
+              opposingTeamImageUri: undefined,
+            },
+            ...state.games,
+          },
+        }));
+        return id;
       },
     }),
     {

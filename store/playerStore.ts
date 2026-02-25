@@ -24,6 +24,7 @@ type PlayerState = {
   // Batched stat update - performs all player updates in a single set() call
   batchUpdateStats: (updates: PlayerStatUpdate[]) => void;
   getPlayerSafely: (playerId: string) => PlayerType | null;
+  addPlayerSync: (name: string, number: string, teamId: string) => string;
 };
 
 export const usePlayerStore = create(
@@ -192,6 +193,17 @@ export const usePlayerStore = create(
       getPlayerSafely: (playerId: string) => {
         const state = get();
         return state.players[playerId] || null;
+      },
+
+      addPlayerSync: (name: string, number: string, teamId: string) => {
+        const id = uuid.v4() as string;
+        set(state => ({
+          players: {
+            [id]: createPlayer(id, name, number, teamId),
+            ...state.players,
+          },
+        }));
+        return id;
       },
     }),
     {

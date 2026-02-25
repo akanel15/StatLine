@@ -29,6 +29,7 @@ type TeamState = {
   // Batched stat update - performs all team updates in a single set() call
   batchUpdateStats: (updates: TeamStatUpdate[]) => void;
   getTeamSafely: (teamId: string) => TeamType | null;
+  addTeamSync: (name: string) => string;
 };
 
 export const useTeamStore = create(
@@ -232,6 +233,16 @@ export const useTeamStore = create(
       getTeamSafely: (teamId: string) => {
         const state = get();
         return state.teams[teamId] || null;
+      },
+      addTeamSync: (name: string) => {
+        const id = uuid.v4() as string;
+        set(state => ({
+          teams: {
+            [id]: createTeam(id, name),
+            ...state.teams,
+          },
+        }));
+        return id;
       },
       removeTeamWithCascade: (teamId: string) => {
         return set(state => {

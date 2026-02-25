@@ -28,7 +28,6 @@ import UnifiedPlayByPlay from "@/components/gamePage/UnifiedPlayByPlay";
 import BoxScoreOverlay from "@/components/gamePage/BoxScoreOverlay";
 import CompletedUnifiedPlayByPlay from "@/components/gamePage/CompletedUnifiedPlayByPlay";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import Feather from "@expo/vector-icons/Feather";
 import MatchUpDisplay from "@/components/MatchUpDisplay";
 import { Result } from "@/types/player";
 import {
@@ -52,6 +51,10 @@ import { useHelpStore } from "@/store/helpStore";
 import { useReviewStore } from "@/store/reviewStore";
 import { triggerReviewIfEligible } from "@/logic/reviewPrompt";
 import { ContextualTooltip } from "@/components/shared/ContextualTooltip";
+import { ShareTypeModal } from "@/components/sharing/ShareTypeModal";
+import { StickyShareButton } from "@/components/sharing/StickyShareButton";
+import { buildExportPackage } from "@/logic/exportData";
+import { shareStatLineFile } from "@/utils/shareGameData";
 
 export default function GamePage() {
   const { gameId } = useRoute().params as { gameId: string }; // Access playerId from route params
@@ -84,6 +87,8 @@ export default function GamePage() {
 
   const [isSharing, setIsSharing] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showShareTypeModal, setShowShareTypeModal] = useState(false);
+  const [pendingShareAction, setPendingShareAction] = useState<"image" | "data" | null>(null);
   const shareableRef = useRef<ViewShot>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showSetsSection, setShowSetsSection] = useState(teamSets.length > 0);
@@ -136,12 +141,15 @@ export default function GamePage() {
   const handleShare = async () => {
     if (isSharing) return;
 
+    if (__DEV__) console.log("[handleShare] Starting share flow");
     setIsSharing(true);
     setShowShareModal(true);
 
     // Small delay to ensure modal is rendered
     setTimeout(async () => {
       try {
+        if (__DEV__)
+          console.log("[handleShare] setTimeout fired, ref exists:", !!shareableRef.current);
         if (shareableRef.current) {
           // Get team names for filename
           const ourTeam = getTeamSafely(teamId);
@@ -153,13 +161,50 @@ export default function GamePage() {
           const fileName = sanitizeFileName(rawTitle);
 
           const gameName = `vs ${opponentName}`;
+          if (__DEV__) console.log("[handleShare] Calling shareBoxScoreImage");
           await shareBoxScoreImage(shareableRef, gameName, fileName);
+          if (__DEV__) console.log("[handleShare] shareBoxScoreImage completed");
         }
       } finally {
+        if (__DEV__) console.log("[handleShare] Finally block — cleaning up");
         setIsSharing(false);
         setShowShareModal(false);
       }
     }, 500);
+  };
+
+  const handleShareImageFromModal = () => {
+    setPendingShareAction("image");
+    setShowShareTypeModal(false);
+  };
+
+  const handleShareData = () => {
+    setPendingShareAction("data");
+    setShowShareTypeModal(false);
+  };
+
+  const executeShareData = async () => {
+    if (!game) return;
+
+    setIsSharing(true);
+    try {
+      const ourTeam = getTeamSafely(teamId);
+      const teamName = ourTeam?.name || "My Team";
+      const exportData = buildExportPackage(teamName, [game], players);
+      await shareStatLineFile(exportData, teamName);
+    } finally {
+      setIsSharing(false);
+    }
+  };
+
+  const handleShareTypeModalDismiss = () => {
+    const action = pendingShareAction;
+    setPendingShareAction(null);
+    if (action === "image") {
+      handleShare();
+    } else if (action === "data") {
+      executeShareData();
+    }
   };
 
   // Handle invalid game ID
@@ -178,7 +223,7 @@ export default function GamePage() {
   // Move all hooks before any conditional returns
   useEffect(() => {
     if (game) {
-      const activeSets = game.activeSets.map(setId => sets[setId]);
+      const activeSets = (game.activeSets ?? []).map(setId => sets[setId]);
       if (activeSets.length === 0 && setIdList.length > 0) {
         setActiveSets(gameId, setIdList.slice(0, 5));
       }
@@ -587,25 +632,22 @@ export default function GamePage() {
           )}
         </View>
 
-        {/* Bottom Action Buttons - Only show when Box Score tab is active */}
-        {activeTab === "boxscore" && (
-          <View style={styles.bottomActionsContainer}>
-            <Pressable
-              style={styles.actionButton}
-              onPress={isSharing ? () => {} : handleShare}
-              disabled={isSharing}
-            >
-              <Feather
-                name={isSharing ? "loader" : "upload"}
-                size={20}
-                color={theme.colorOrangePeel}
-              />
-              <Text style={styles.actionButtonText}>
-                {isSharing ? "Sharing..." : "Share Box Score"}
-              </Text>
-            </Pressable>
-          </View>
-        )}
+        {/* Bottom Share Button */}
+        <StickyShareButton
+          label="Share Game"
+          onPress={() => setShowShareTypeModal(true)}
+          disabled={isSharing}
+          loading={isSharing}
+        />
+
+        {/* Share Type Modal */}
+        <ShareTypeModal
+          visible={showShareTypeModal}
+          onClose={() => setShowShareTypeModal(false)}
+          onShareImage={handleShareImageFromModal}
+          onShareData={handleShareData}
+          onDismiss={handleShareTypeModalDismiss}
+        />
 
         {/* Edit Game Modal */}
         <EditGameModal
@@ -668,7 +710,17 @@ export default function GamePage() {
       )}
 
       {showOverlay ? (
-        <StatOverlay onClose={handleCloseOverlay} onStatPress={handleStatPress} />
+        <StatOverlay
+          onClose={handleCloseOverlay}
+          onStatPress={handleStatPress}
+          playerLabel={
+            selectedPlayer === "Team"
+              ? "Team"
+              : selectedPlayer === "Opponent"
+                ? "Opponent"
+                : players[selectedPlayer]?.name
+          }
+        />
       ) : showSets ? (
         <SetOverlay gameId={gameId} onClose={() => setShowSets(false)} />
       ) : showSubstitutions || activePlayers.length === 0 ? (
@@ -886,34 +938,6 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     flex: 1,
-  },
-  bottomActionsContainer: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    paddingVertical: scale(16),
-    paddingHorizontal: scale(20),
-    backgroundColor: theme.colorWhite,
-    borderTopWidth: 1,
-    borderTopColor: theme.colorLightGrey,
-    gap: scale(12),
-  },
-  actionButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: theme.colorWhite,
-    borderWidth: 1,
-    borderColor: theme.colorOrangePeel,
-    borderRadius: scale(8),
-    paddingVertical: scale(12),
-    paddingHorizontal: scale(20),
-    flex: 1,
-    gap: scale(8),
-  },
-  actionButtonText: {
-    color: theme.colorOrangePeel,
-    fontSize: moderateScale(16),
-    fontWeight: "600",
   },
   absoluteTooltipContainer: {
     position: "absolute",

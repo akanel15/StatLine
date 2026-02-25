@@ -4,15 +4,47 @@ import { Link } from "expo-router";
 import { GameType } from "@/types/game";
 import MatchUpDisplay from "./MatchUpDisplay";
 import { scale } from "@/utils/responsive";
-//<PlayerImage game={game} size={80}></PlayerImage>
+import Feather from "@expo/vector-icons/Feather";
 
-export function GameCard({ game }: { game: GameType }) {
+type GameCardProps = {
+  game: GameType;
+  selectionMode?: boolean;
+  selected?: boolean;
+  onToggleSelect?: (gameId: string) => void;
+};
+
+export function GameCard({
+  game,
+  selectionMode = false,
+  selected = false,
+  onToggleSelect,
+}: GameCardProps) {
+  if (selectionMode) {
+    return (
+      <Pressable
+        style={[styles.gameCard, selected && styles.gameCardSelected]}
+        onPress={() => onToggleSelect?.(game.id)}
+      >
+        <View style={styles.checkbox}>
+          <Feather
+            name={selected ? "check-square" : "square"}
+            size={22}
+            color={selected ? theme.colorOrangePeel : theme.colorGrey}
+          />
+        </View>
+        <View style={styles.details}>
+          <MatchUpDisplay game={game} />
+        </View>
+      </Pressable>
+    );
+  }
+
   return (
     <View style={styles.gameCard}>
       <Link href={`/games/${game.id}`} asChild>
         <Pressable style={styles.cardContent}>
           <View style={styles.details}>
-            <MatchUpDisplay game={game}></MatchUpDisplay>
+            <MatchUpDisplay game={game} />
           </View>
         </Pressable>
       </Link>
@@ -37,9 +69,17 @@ const styles = StyleSheet.create({
     elevation: 3,
     alignItems: "center",
   },
+  gameCardSelected: {
+    borderWidth: 1.5,
+    borderColor: theme.colorOrangePeel,
+  },
   cardContent: {
     flexDirection: "row",
     flex: 1,
+  },
+  checkbox: {
+    justifyContent: "center",
+    paddingRight: scale(8),
   },
   details: {
     padding: scale(8),
