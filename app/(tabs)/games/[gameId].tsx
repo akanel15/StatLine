@@ -9,6 +9,7 @@ import { useEffect, useLayoutEffect, useState, useRef, useCallback, useMemo } fr
 import {
   Alert,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -22,7 +23,6 @@ import { scale, moderateScale } from "@/utils/responsive";
 import { SetRadioButton } from "@/components/SetRadioButton";
 import { useSetStore } from "@/store/setStore";
 import StatOverlay from "@/components/gamePage/StatOverlay";
-import SetOverlay from "@/components/gamePage/SetOverlay";
 import SubstitutionOverlay from "@/components/gamePage/SubstitutionOverlay";
 import UnifiedPlayByPlay from "@/components/gamePage/UnifiedPlayByPlay";
 import BoxScoreOverlay from "@/components/gamePage/BoxScoreOverlay";
@@ -55,6 +55,7 @@ import { ShareTypeModal } from "@/components/sharing/ShareTypeModal";
 import { StickyShareButton } from "@/components/sharing/StickyShareButton";
 import { buildExportPackage } from "@/logic/exportData";
 import { shareStatLineFile } from "@/utils/shareGameData";
+import { LinearGradient } from "expo-linear-gradient";
 
 export default function GamePage() {
   const { gameId } = useRoute().params as { gameId: string }; // Access playerId from route params
@@ -81,7 +82,6 @@ export default function GamePage() {
   const [selectedPlay, setSelectedPlay] = useState<string>("");
   const [showOverlay, setShowOverlay] = useState(false);
   const [showSubstitutions, setShowSubstitutions] = useState(false);
-  const [showSets, setShowSets] = useState(false);
   const [showBoxScore, setShowBoxScore] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState<string>("");
 
@@ -90,6 +90,10 @@ export default function GamePage() {
   const [showShareTypeModal, setShowShareTypeModal] = useState(false);
   const [pendingShareAction, setPendingShareAction] = useState<"image" | "data" | null>(null);
   const shareableRef = useRef<ViewShot>(null);
+  const hasRecordedUnderSetRef = useRef(false);
+  const [setsCanScroll, setSetsCanScroll] = useState(false);
+  const [setsScrolledToEnd, setSetsScrolledToEnd] = useState(false);
+  const setsLayoutWidth = useRef(0);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showSetsSection, setShowSetsSection] = useState(teamSets.length > 0);
   const [activeTab, setActiveTab] = useState<"boxscore" | "playbyplay">("boxscore");
@@ -224,12 +228,23 @@ export default function GamePage() {
   // Move all hooks before any conditional returns
   useEffect(() => {
     if (game) {
-      const activeSets = (game.activeSets ?? []).map(setId => sets[setId]);
-      if (activeSets.length === 0 && setIdList.length > 0) {
-        setActiveSets(gameId, setIdList.slice(0, 5));
+      const currentActive = game.activeSets ?? [];
+      if (currentActive.length === 0 && setIdList.length > 0) {
+        // First load: sort all team sets by runCount descending
+        const sorted = [...teamSets]
+          .sort((a, b) => (b.runCount ?? 0) - (a.runCount ?? 0))
+          .map(s => s.id);
+        setActiveSets(gameId, sorted);
+      } else if (currentActive.length > 0 && setIdList.length > 0) {
+        // Handle mid-game set additions/deletions
+        const validActive = currentActive.filter(id => setIdList.includes(id));
+        const newSets = setIdList.filter(id => !validActive.includes(id));
+        if (validActive.length !== currentActive.length || newSets.length > 0) {
+          setActiveSets(gameId, [...validActive, ...newSets]);
+        }
       }
     }
-  }, [game, sets, setIdList, gameId, setActiveSets]);
+  }, [game, sets, teamSets, setIdList, gameId, setActiveSets]);
 
   // Auto-show substitutions when there are no active players
   useEffect(() => {
@@ -256,7 +271,6 @@ export default function GamePage() {
   useLayoutEffect(() => {
     if (game?.isFinished) {
       setShowOverlay(false);
-      setShowSets(false);
       setShowBoxScore(false);
       setShowSubstitutions(false);
       setShowEditModal(false);
@@ -417,6 +431,7 @@ export default function GamePage() {
 
   const handleSetSelection = useCallback(
     (setId: string) => {
+      hasRecordedUnderSetRef.current = false;
       setSelectedPlay(setId);
       // Show set reset hint on first set selection - check hydration
       if (hasHydrated && !hasSeenSetResetHint && setId !== "") {
@@ -424,13 +439,24 @@ export default function GamePage() {
         // Mark as seen immediately when shown (not on dismiss)
         markHintAsSeen("setReset");
       }
+      // Reorder activeSets so the selected set jumps to position 0
+      if (setId !== "" && game) {
+        const currentOrder = game.activeSets ?? [];
+        const newOrder = [setId, ...currentOrder.filter(id => id !== setId)];
+        setActiveSets(gameId, newOrder);
+      }
     },
-    [hasHydrated, hasSeenSetResetHint, markHintAsSeen],
+    [hasHydrated, hasSeenSetResetHint, markHintAsSeen, game, gameId, setActiveSets],
   );
 
   const handleResetSet = useCallback(() => {
+    if (selectedPlay && hasRecordedUnderSetRef.current) {
+      updateSetRunCount(selectedPlay);
+      updateGameSetCounts(gameId, selectedPlay);
+    }
+    hasRecordedUnderSetRef.current = false;
     setSelectedPlay("");
-  }, []);
+  }, [selectedPlay, gameId, updateSetRunCount, updateGameSetCounts]);
 
   const handleDismissGameFlowHint = useCallback(() => {
     setShowGameFlowHint(false);
@@ -442,10 +468,6 @@ export default function GamePage() {
 
   const handleShowSubstitutions = useCallback(() => {
     setShowSubstitutions(true);
-  }, []);
-
-  const handleShowSets = useCallback(() => {
-    setShowSets(true);
   }, []);
 
   const handleShowBoxScore = useCallback(() => {
@@ -522,6 +544,8 @@ export default function GamePage() {
     () => (game?.activeSets ?? []).map(setId => sets[setId]).filter(Boolean),
     [game?.activeSets, sets],
   );
+  const setsRow1 = useMemo(() => activeSets.filter((_, i) => i % 2 === 0), [activeSets]);
+  const setsRow2 = useMemo(() => activeSets.filter((_, i) => i % 2 === 1), [activeSets]);
 
   // Show loading or error state if game doesn't exist
   if (!game) {
@@ -591,6 +615,9 @@ export default function GamePage() {
       playerId: selectedPlayer,
       setId: selectedPlay,
     });
+    if (selectedPlay) {
+      hasRecordedUnderSetRef.current = true;
+    }
     handleCloseOverlay();
 
     // Reset set if opponent gained possession (possession-based set tracking)
@@ -688,7 +715,7 @@ export default function GamePage() {
       </View>
 
       {/* Absolute Positioned Tooltips Over Play-by-Play - Only show when NOT in overlay mode */}
-      {!showOverlay && !showSets && !showSubstitutions && !showBoxScore && showGameFlowHint && (
+      {!showOverlay && !showSubstitutions && !showBoxScore && showGameFlowHint && (
         <View style={styles.absoluteTooltipContainer} pointerEvents="box-none">
           <ContextualTooltip
             message="Tap a player, then select their action. Optional: Tap a set first to track which plays you run."
@@ -699,7 +726,7 @@ export default function GamePage() {
         </View>
       )}
 
-      {!showOverlay && !showSets && !showSubstitutions && !showBoxScore && showSetResetHint && (
+      {!showOverlay && !showSubstitutions && !showBoxScore && showSetResetHint && (
         <View style={styles.absoluteTooltipContainer} pointerEvents="box-none">
           <ContextualTooltip
             message="Sets stay active for the entire possession. They reset on turnovers or when the opponent gains the ball."
@@ -722,8 +749,6 @@ export default function GamePage() {
                 : players[selectedPlayer]?.name
           }
         />
-      ) : showSets ? (
-        <SetOverlay gameId={gameId} onClose={() => setShowSets(false)} />
       ) : showSubstitutions || activePlayers.length === 0 ? (
         <SubstitutionOverlay
           gameId={gameId}
@@ -771,23 +796,65 @@ export default function GamePage() {
                 </View>
               </View>
               {showSetsSection && (
-                <View style={styles.rowContainer}>
-                  {activeSets.map(set => (
-                    <SetRadioButton
-                      key={set.id}
-                      title={set.name}
-                      selected={selectedPlay === set.id}
-                      onPress={handleSetSelection}
-                      setId={set.id}
+                <View>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    onContentSizeChange={contentWidth => {
+                      setSetsCanScroll(contentWidth > setsLayoutWidth.current);
+                    }}
+                    onLayout={e => {
+                      setsLayoutWidth.current = e.nativeEvent.layout.width;
+                    }}
+                    onScroll={e => {
+                      const { contentOffset, layoutMeasurement, contentSize } = e.nativeEvent;
+                      const atEnd =
+                        contentOffset.x + layoutMeasurement.width >= contentSize.width - 10;
+                      setSetsScrolledToEnd(atEnd);
+                    }}
+                    scrollEventThrottle={16}
+                  >
+                    <View>
+                      <View style={styles.setRow}>
+                        {setsRow1.map(set => (
+                          <SetRadioButton
+                            key={set.id}
+                            title={set.name}
+                            selected={selectedPlay === set.id}
+                            onPress={handleSetSelection}
+                            setId={set.id}
+                          />
+                        ))}
+                      </View>
+                      <View style={styles.setRow}>
+                        <SetRadioButton
+                          title="Reset"
+                          selected={false}
+                          onPress={handleResetSet}
+                          setId=""
+                          reset={true}
+                        />
+                        {setsRow2.map(set => (
+                          <SetRadioButton
+                            key={set.id}
+                            title={set.name}
+                            selected={selectedPlay === set.id}
+                            onPress={handleSetSelection}
+                            setId={set.id}
+                          />
+                        ))}
+                      </View>
+                    </View>
+                  </ScrollView>
+                  {setsCanScroll && !setsScrolledToEnd && (
+                    <LinearGradient
+                      colors={["transparent", theme.colorWhite]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      pointerEvents="none"
+                      style={styles.scrollFade}
                     />
-                  ))}
-                  <SetRadioButton
-                    title="Reset"
-                    selected={false}
-                    onPress={handleResetSet}
-                    setId=""
-                    reset={true}
-                  />
+                  )}
                 </View>
               )}
             </View>
@@ -818,13 +885,6 @@ export default function GamePage() {
               <View style={styles.rowContainer}>
                 <View style={styles.split}>
                   <StatLineButton onPress={handleShowSubstitutions} title="Sub Players" />
-                </View>
-                <View style={styles.split}>
-                  <StatLineButton
-                    onPress={handleShowSets}
-                    title="Change Sets"
-                    color={theme.colorBlue}
-                  />
                 </View>
                 <View style={styles.split}>
                   <StatLineButton
@@ -897,6 +957,18 @@ const styles = StyleSheet.create({
     gap: scale(6),
     marginBottom: scale(6),
     flexWrap: "wrap",
+  },
+  setRow: {
+    flexDirection: "row",
+    gap: scale(6),
+    marginBottom: scale(4),
+  },
+  scrollFade: {
+    position: "absolute",
+    right: 0,
+    top: 0,
+    bottom: 0,
+    width: scale(24),
   },
   split: {
     flex: 1,
