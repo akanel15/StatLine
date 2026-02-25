@@ -6,6 +6,7 @@ import { initialBaseStats, Stat, StatsType } from "@/types/stats";
 import { useSetStore } from "./setStore";
 import { debouncedAsyncStorage } from "@/utils/debounceAsyncStorage";
 import { storeHydration } from "@/utils/storeHydration";
+import { migrateGameSetStats } from "@/logic/migrateGameSetStats";
 
 export type UnifiedPlayEntry = {
   play: PlayByPlayType;
@@ -1076,6 +1077,25 @@ export const useGameStore = create(
       // Use debounced AsyncStorage to prevent blocking UI during rapid drag operations
       // Writes are batched and delayed by 300ms, improving drag responsiveness
       storage: createJSONStorage(() => debouncedAsyncStorage),
+      version: 2,
+      migrate: (persistedState, version) => {
+        const state = persistedState as GameState;
+        if (version < 2) {
+          // v2: Rebuild game.sets stats from play-by-play to fix opponent-stats-in-sets bug
+          const migrated = migrateGameSetStats(state.games);
+          if (__DEV__) {
+            const gameCount = Object.keys(migrated).length;
+            const setsFixed = Object.values(migrated).filter(
+              g => Object.keys(g.sets).length > 0,
+            ).length;
+            console.log(
+              `[gameStore] v2 migration: ${gameCount} games processed, ${setsFixed} with sets rebuilt`,
+            );
+          }
+          return { ...state, games: migrated };
+        }
+        return state;
+      },
       onRehydrateStorage: () => state => {
         // Mark this store as hydrated when rehydration completes
         // This allows health checks to wait for all stores to load from AsyncStorage
