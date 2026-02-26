@@ -250,13 +250,9 @@ Points, rebounds, assists, steals, blocks, turnovers, fouls, plus various shooti
 # Kill all running processes
 pkill -f expo; pkill -f metro; pkill -f xcodebuild; pkill -f yarn
 
-# Clean all caches and artifacts
+# Clean caches and regenerate iOS project
 yarn cache clean
-rm -rf ios/build
-rm -rf ios
-
-# Regenerate iOS project cleanly
-npx expo prebuild --platform ios
+npx expo prebuild --platform ios --clean
 ```
 
 ### Key Configuration Files
@@ -314,7 +310,7 @@ eas submit --platform ios
 2. Test on physical iOS device (not just simulator)
 3. Verify features on iOS 15.1+
 4. Update version/buildNumber in app.json
-5. `npx expo prebuild --platform ios`
+5. `npx expo prebuild --platform ios --clean`
 6. `eas build --platform ios --profile production`
 7. `eas submit --platform ios`
 8. Update "What's New" and screenshots in App Store Connect
