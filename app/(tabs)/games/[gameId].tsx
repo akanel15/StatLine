@@ -55,7 +55,6 @@ import { ShareTypeModal } from "@/components/sharing/ShareTypeModal";
 import { StickyShareButton } from "@/components/sharing/StickyShareButton";
 import { buildExportPackage } from "@/logic/exportData";
 import { shareStatLineFile } from "@/utils/shareGameData";
-import { LinearGradient } from "expo-linear-gradient";
 
 export default function GamePage() {
   const { gameId } = useRoute().params as { gameId: string }; // Access playerId from route params
@@ -91,9 +90,7 @@ export default function GamePage() {
   const [pendingShareAction, setPendingShareAction] = useState<"image" | "data" | null>(null);
   const shareableRef = useRef<ViewShot>(null);
   const hasRecordedUnderSetRef = useRef(false);
-  const [setsCanScroll, setSetsCanScroll] = useState(false);
-  const [setsScrolledToEnd, setSetsScrolledToEnd] = useState(false);
-  const setsLayoutWidth = useRef(0);
+  const setsScrollRef = useRef<ScrollView>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showSetsSection, setShowSetsSection] = useState(teamSets.length > 0);
   const [activeTab, setActiveTab] = useState<"boxscore" | "playbyplay">("boxscore");
@@ -324,6 +321,22 @@ export default function GamePage() {
     return unsubscribe;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navigation, gameId, teamId, game?.isFinished, game?.gamePlayedList, game?.statTotals]);
+
+  // Auto-scroll peek to hint that sets section is horizontally scrollable
+  const activeSetsCount = game?.activeSets?.length ?? 0;
+  const activePlayersCount = game?.activePlayers?.length ?? 0;
+  const isFinished = game?.isFinished ?? false;
+  useEffect(() => {
+    if (showSetsSection && activeSetsCount > 3 && activePlayersCount > 0 && !isFinished) {
+      const timer = setTimeout(() => {
+        setsScrollRef.current?.scrollTo({ x: 40, animated: true });
+        setTimeout(() => {
+          setsScrollRef.current?.scrollTo({ x: 0, animated: true });
+        }, 300);
+      }, 400);
+      return () => clearTimeout(timer);
+    }
+  }, [showSetsSection, activeSetsCount, activePlayersCount, isFinished]);
 
   useLayoutEffect(() => {
     if (!game) return;
@@ -796,66 +809,39 @@ export default function GamePage() {
                 </View>
               </View>
               {showSetsSection && (
-                <View>
-                  <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    onContentSizeChange={contentWidth => {
-                      setSetsCanScroll(contentWidth > setsLayoutWidth.current);
-                    }}
-                    onLayout={e => {
-                      setsLayoutWidth.current = e.nativeEvent.layout.width;
-                    }}
-                    onScroll={e => {
-                      const { contentOffset, layoutMeasurement, contentSize } = e.nativeEvent;
-                      const atEnd =
-                        contentOffset.x + layoutMeasurement.width >= contentSize.width - 10;
-                      setSetsScrolledToEnd(atEnd);
-                    }}
-                    scrollEventThrottle={16}
-                  >
-                    <View>
-                      <View style={styles.setRow}>
-                        {setsRow1.map(set => (
-                          <SetRadioButton
-                            key={set.id}
-                            title={set.name}
-                            selected={selectedPlay === set.id}
-                            onPress={handleSetSelection}
-                            setId={set.id}
-                          />
-                        ))}
-                      </View>
-                      <View style={styles.setRow}>
+                <ScrollView ref={setsScrollRef} horizontal showsHorizontalScrollIndicator={false}>
+                  <View>
+                    <View style={styles.setRow}>
+                      {setsRow1.map(set => (
                         <SetRadioButton
-                          title="Reset"
-                          selected={false}
-                          onPress={handleResetSet}
-                          setId=""
-                          reset={true}
+                          key={set.id}
+                          title={set.name}
+                          selected={selectedPlay === set.id}
+                          onPress={handleSetSelection}
+                          setId={set.id}
                         />
-                        {setsRow2.map(set => (
-                          <SetRadioButton
-                            key={set.id}
-                            title={set.name}
-                            selected={selectedPlay === set.id}
-                            onPress={handleSetSelection}
-                            setId={set.id}
-                          />
-                        ))}
-                      </View>
+                      ))}
                     </View>
-                  </ScrollView>
-                  {setsCanScroll && !setsScrolledToEnd && (
-                    <LinearGradient
-                      colors={["transparent", theme.colorWhite]}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 0 }}
-                      pointerEvents="none"
-                      style={styles.scrollFade}
-                    />
-                  )}
-                </View>
+                    <View style={styles.setRow}>
+                      <SetRadioButton
+                        title="Reset"
+                        selected={false}
+                        onPress={handleResetSet}
+                        setId=""
+                        reset={true}
+                      />
+                      {setsRow2.map(set => (
+                        <SetRadioButton
+                          key={set.id}
+                          title={set.name}
+                          selected={selectedPlay === set.id}
+                          onPress={handleSetSelection}
+                          setId={set.id}
+                        />
+                      ))}
+                    </View>
+                  </View>
+                </ScrollView>
               )}
             </View>
 
@@ -962,13 +948,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: scale(6),
     marginBottom: scale(4),
-  },
-  scrollFade: {
-    position: "absolute",
-    right: 0,
-    top: 0,
-    bottom: 0,
-    width: scale(24),
   },
   split: {
     flex: 1,

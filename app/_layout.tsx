@@ -1,8 +1,22 @@
 import { useEffect } from "react";
 import { Stack, router } from "expo-router";
 import { Linking } from "react-native";
+import * as Updates from "expo-updates";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { HeaderIconButton } from "@/components/HeaderIconButton";
+
+async function checkForOTAUpdate() {
+  if (__DEV__) return;
+
+  try {
+    const update = await Updates.checkForUpdateAsync();
+    if (update.isAvailable) {
+      await Updates.fetchUpdateAsync();
+    }
+  } catch (error) {
+    console.log("OTA update check failed:", error);
+  }
+}
 
 function handleDeepLink(url: string) {
   if (url.endsWith(".statline") || url.includes(".statline")) {
@@ -23,6 +37,8 @@ export default function Layout() {
         handleDeepLink(url);
       }
     });
+
+    checkForOTAUpdate();
 
     return () => subscription.remove();
   }, []);

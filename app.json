@@ -5,6 +5,15 @@
     "owner": "akanel",
     "scheme": "statline",
     "version": "1.0.0",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/73e9210c-f423-4718-848c-ae00dab72485",
+      "enabled": true,
+      "fallbackToCacheTimeout": 0,
+      "checkAutomatically": "ON_LOAD"
+    },
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -56,6 +65,7 @@
     },
     "plugins": [
       "expo-router",
+      "expo-updates",
       "./plugins/fix-hermes-warning.js",
       [
         "expo-image-picker",
