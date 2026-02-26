@@ -152,7 +152,6 @@ if (imageUri && !isDefaultLogo) {
 
 ## Development Rules
 
-From WARP.md:
 1. **Testing First** - Add tests alongside features, use Jest + Testing Library
 2. **Theme Colors** - Use only exported theme colors, no hard-coded values
 3. **Package Management** - Use `yarn` exclusively
@@ -303,3 +302,42 @@ eas build --platform ios --profile production
 # Submit to App Store Connect
 eas submit --platform ios
 ```
+
+### OTA Update Strategy
+- **OTA eligible** (EAS Update): JavaScript, styling, images, UI components
+- **App Store submission required**: Native code changes, new native dependencies, app.json changes
+- **Channels**: `development`, `preview`, `production`
+- **Runtime version**: Tied to `appVersion` in app.json
+
+### Submission Checklist
+1. `yarn lint --fix && yarn test`
+2. Test on physical iOS device (not just simulator)
+3. Verify features on iOS 15.1+
+4. Update version/buildNumber in app.json
+5. `npx expo prebuild --platform ios`
+6. `eas build --platform ios --profile production`
+7. `eas submit --platform ios`
+8. Update "What's New" and screenshots in App Store Connect
+
+## Sharing & Import System
+
+### Export
+- `logic/exportData.ts` — builds `.statline` JSON files from team/player/set/game data
+- `components/sharing/` — `StickyShareButton`, `ShareTypeModal`, `GameSelectionHeader`
+- Export includes: team, players, sets, games (box scores, play-by-play, set stats)
+
+### Import
+- `logic/importData.ts` — `executeImport()` applies merge decisions to stores
+- `logic/importValidation.ts` — validation, `autoMatchPlayers()`, `autoMatchSets()`, `detectDuplicateGames()`
+- `types/statlineExport.ts` — `StatLineExport`, decision types (`TeamDecision`, `PlayerDecision`, `SetDecision`, `GameDecision`)
+
+### Import Wizard (6 steps)
+- `components/import/ImportWizard.tsx` — orchestrates the flow
+- Steps: Summary → Team Match → Player Merge → Set Merge → Game Merge → Confirm
+- Steps are skipped when empty (no players → skip player step, no sets → skip set step)
+- `app/import.tsx` — fullScreenModal presentation
+- `app/_layout.tsx` — handles deep linking for `.statline` file opens
+
+### .statline File Format
+- Deep linking via `CFBundleDocumentTypes` + `UTExportedTypeDeclarations` in app.json
+- Opening a `.statline` file on device auto-launches the import wizard

@@ -34,6 +34,15 @@ export function ImportSummaryStep({ exportData, onContinue, onCancel }: ImportSu
               {exportData.players.length === 1 ? "player" : "players"}
             </Text>
           </View>
+          {(exportData.sets || []).length > 0 && (
+            <View style={styles.summaryRow}>
+              <Feather name="layers" size={20} color={theme.colorOnyx} />
+              <Text style={styles.summaryText}>
+                <Text style={styles.summaryBold}>{exportData.sets.length}</Text>{" "}
+                {exportData.sets.length === 1 ? "set" : "sets"}
+              </Text>
+            </View>
+          )}
           <View style={styles.summaryRow}>
             <Feather name="activity" size={20} color={theme.colorOnyx} />
             <Text style={styles.summaryText}>

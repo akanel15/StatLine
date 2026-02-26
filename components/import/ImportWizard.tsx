@@ -11,7 +11,6 @@ import {
   SetDecision,
 } from "@/types/statlineExport";
 import { executeImport } from "@/logic/importData";
-import { autoMatchSets } from "@/logic/importValidation";
 import { useGameStore } from "@/store/gameStore";
 import { useTeamStore } from "@/store/teamStore";
 import { usePlayerStore } from "@/store/playerStore";
@@ -19,10 +18,11 @@ import { useSetStore } from "@/store/setStore";
 import { ImportSummaryStep } from "./ImportSummaryStep";
 import { TeamMatchStep } from "./TeamMatchStep";
 import { PlayerMergeStep } from "./PlayerMergeStep";
+import { SetMergeStep } from "./SetMergeStep";
 import { GameMergeStep } from "./GameMergeStep";
 import { ImportConfirmStep } from "./ImportConfirmStep";
 
-type WizardStep = "summary" | "team" | "players" | "games" | "confirm";
+type WizardStep = "summary" | "team" | "players" | "sets" | "games" | "confirm";
 
 type ImportWizardProps = {
   exportData: StatLineExport;
@@ -32,6 +32,7 @@ export function ImportWizard({ exportData }: ImportWizardProps) {
   const [step, setStep] = useState<WizardStep>("summary");
   const [teamDecision, setTeamDecision] = useState<TeamDecision | null>(null);
   const [playerDecisions, setPlayerDecisions] = useState<PlayerDecision[]>([]);
+  const [setDecisions, setSetDecisions] = useState<SetDecision[]>([]);
   const [gameDecisions, setGameDecisions] = useState<GameDecision[]>([]);
 
   const handleCancel = () => {
@@ -46,15 +47,30 @@ export function ImportWizard({ exportData }: ImportWizardProps) {
     setTeamDecision(decision);
     if (exportData.players.length > 0) {
       setStep("players");
-    } else {
-      // Skip player step if no players
+    } else if ((exportData.sets || []).length > 0) {
+      // Skip player step but show sets
       setPlayerDecisions([]);
+      setStep("sets");
+    } else {
+      // Skip both player and set steps
+      setPlayerDecisions([]);
+      setSetDecisions([]);
       setStep("games");
     }
   };
 
   const handlePlayersContinue = (decisions: PlayerDecision[]) => {
     setPlayerDecisions(decisions);
+    if ((exportData.sets || []).length > 0) {
+      setStep("sets");
+    } else {
+      setSetDecisions([]);
+      setStep("games");
+    }
+  };
+
+  const handleSetsContinue = (decisions: SetDecision[]) => {
+    setSetDecisions(decisions);
     setStep("games");
   };
 
@@ -65,20 +81,6 @@ export function ImportWizard({ exportData }: ImportWizardProps) {
 
   const handleConfirm = async () => {
     if (!teamDecision) return;
-
-    // Auto-match sets by name (deterministic — no manual wizard step needed)
-    const targetTeamId = teamDecision.type === "match" ? teamDecision.existingTeamId : null;
-    const existingSets = targetTeamId
-      ? Object.values(useSetStore.getState().sets).filter(s => s.teamId === targetTeamId)
-      : [];
-    const setMatches = autoMatchSets(exportData.sets || [], existingSets);
-    const setDecisions: SetDecision[] = (exportData.sets || []).map(s => {
-      const matchId = setMatches.get(s.originalId);
-      if (matchId) {
-        return { type: "match", originalId: s.originalId, existingSetId: matchId };
-      }
-      return { type: "create", originalId: s.originalId, name: s.name };
-    });
 
     const decisions: ImportDecisions = {
       team: teamDecision,
@@ -161,18 +163,33 @@ export function ImportWizard({ exportData }: ImportWizardProps) {
           onBack={() => setStep("team")}
         />
       )}
+      {step === "sets" && teamDecision && (
+        <SetMergeStep
+          importSets={exportData.sets || []}
+          teamDecision={teamDecision}
+          onContinue={handleSetsContinue}
+          onBack={exportData.players.length > 0 ? () => setStep("players") : () => setStep("team")}
+        />
+      )}
       {step === "games" && teamDecision && (
         <GameMergeStep
           importGames={exportData.games}
           teamDecision={teamDecision}
           onContinue={handleGamesContinue}
-          onBack={exportData.players.length > 0 ? () => setStep("players") : () => setStep("team")}
+          onBack={
+            (exportData.sets || []).length > 0
+              ? () => setStep("sets")
+              : exportData.players.length > 0
+                ? () => setStep("players")
+                : () => setStep("team")
+          }
         />
       )}
       {step === "confirm" && teamDecision && (
         <ImportConfirmStep
           teamDecision={teamDecision}
           playerDecisions={playerDecisions}
+          setDecisions={setDecisions}
           gameDecisions={gameDecisions}
           onConfirm={handleConfirm}
           onBack={() => setStep("games")}

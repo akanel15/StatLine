@@ -2,12 +2,13 @@ import { useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { theme } from "@/theme";
 import { scale, moderateScale } from "@/utils/responsive";
-import { TeamDecision, PlayerDecision, GameDecision } from "@/types/statlineExport";
+import { TeamDecision, PlayerDecision, SetDecision, GameDecision } from "@/types/statlineExport";
 import Feather from "@expo/vector-icons/Feather";
 
 type ImportConfirmStepProps = {
   teamDecision: TeamDecision;
   playerDecisions: PlayerDecision[];
+  setDecisions: SetDecision[];
   gameDecisions: GameDecision[];
   onConfirm: () => Promise<void>;
   onBack: () => void;
@@ -16,6 +17,7 @@ type ImportConfirmStepProps = {
 export function ImportConfirmStep({
   teamDecision,
   playerDecisions,
+  setDecisions,
   gameDecisions,
   onConfirm,
   onBack,
@@ -25,6 +27,8 @@ export function ImportConfirmStep({
   const gamesIncluded = gameDecisions.filter(g => g.include).length;
   const newPlayers = playerDecisions.filter(p => p.type === "create").length;
   const matchedPlayers = playerDecisions.filter(p => p.type === "match").length;
+  const newSets = setDecisions.filter(s => s.type === "create").length;
+  const matchedSets = setDecisions.filter(s => s.type === "match").length;
 
   const handleImport = async () => {
     setIsImporting(true);
@@ -76,6 +80,20 @@ export function ImportConfirmStep({
               {playerDecisions.length === 1 ? "player" : "players"}
             </Text>
           </View>
+
+          {/* Sets */}
+          {setDecisions.length > 0 && (
+            <View style={styles.summaryRow}>
+              <Feather name="layers" size={20} color={theme.colorOnyx} />
+              <Text style={styles.summaryText}>
+                {newSets > 0 && <Text style={styles.bold}>{newSets} new</Text>}
+                {newSets > 0 && matchedSets > 0 && ", "}
+                {matchedSets > 0 && <Text>{matchedSets} matched</Text>}
+                {newSets === 0 && matchedSets === 0 && "No"}{" "}
+                {setDecisions.length === 1 ? "set" : "sets"}
+              </Text>
+            </View>
+          )}
 
           {/* Games */}
           <View style={styles.summaryRow}>
