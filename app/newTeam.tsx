@@ -81,6 +81,7 @@ export default function NewTeam() {
         style={styles.centered}
         activeOpacity={0.6}
         onPress={handleTeamLogoSelection}
+        testID="team-logo-picker"
       >
         <View style={styles.imageContainer}>
           <StatLineImage imageUri={imageUri} defaultLogoId={selectedDefaultLogo} />
@@ -100,6 +101,7 @@ export default function NewTeam() {
       <TouchableOpacity
         style={styles.defaultLogosButton}
         onPress={() => setShowDefaultOptions(!showDefaultOptions)}
+        testID="toggle-default-logos"
       >
         <Text style={styles.defaultLogosText}>
           {showDefaultOptions ? "Hide Default Logos" : "Choose from Default Logos"}
@@ -116,6 +118,7 @@ export default function NewTeam() {
                 selectedDefaultLogo === logo.id && styles.selectedDefaultLogo,
               ]}
               onPress={() => handleDefaultLogoSelection(logo.id)}
+              testID={`logo-option-${logo.id}`}
             >
               <Image source={logo.source} style={styles.defaultLogoImage} resizeMode="contain" />
               <Text
@@ -137,9 +140,14 @@ export default function NewTeam() {
         autoCapitalize="words"
         placeholder="Blackburn Vikings"
         onChangeText={newTeamName => setTeamName(newTeamName)}
+        testID="team-name-input"
       ></TextInput>
 
-      <StatLineButton title="Create Team" onPress={handleSubmit}></StatLineButton>
+      <StatLineButton
+        title="Create Team"
+        onPress={handleSubmit}
+        testID="create-team-button"
+      ></StatLineButton>
     </KeyboardAwareScrollView>
   );
 }

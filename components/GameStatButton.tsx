@@ -9,6 +9,7 @@ type Props = {
   onPress: () => void;
   backgroundColor?: string;
   accessibilityLabel?: string;
+  testID?: string;
 };
 
 // Wrapped with memo to prevent unnecessary re-renders during rapid stat entry
@@ -17,6 +18,7 @@ export const GameStatButton = memo(function GameStatButton({
   onPress,
   backgroundColor,
   accessibilityLabel,
+  testID,
 }: Props) {
   const handlePress = useCallback(() => {
     if (Platform.OS !== "web") {
@@ -28,6 +30,7 @@ export const GameStatButton = memo(function GameStatButton({
   return (
     <Pressable
       onPress={handlePress}
+      testID={testID}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel || title}
       accessibilityHint="Double tap to add this stat"

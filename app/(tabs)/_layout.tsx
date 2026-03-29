@@ -15,6 +15,7 @@ export default function Layout() {
           tabBarShowLabel: true,
           headerShown: false,
           tabBarIcon: ({ size, color }) => <FontAwesome name="group" size={size} color={color} />,
+          tabBarTestID: "tab-team",
         }}
       />
       <Tabs.Screen
@@ -24,6 +25,7 @@ export default function Layout() {
           tabBarShowLabel: true,
           headerShown: false,
           tabBarIcon: ({ size, color }) => <AntDesign name="profile" size={size} color={color} />,
+          tabBarTestID: "tab-players",
         }}
       />
       <Tabs.Screen
@@ -35,6 +37,7 @@ export default function Layout() {
           tabBarIcon: ({ size, color }) => (
             <Foundation name="clipboard-pencil" size={size} color={color} />
           ),
+          tabBarTestID: "tab-sets",
         }}
       />
       <Tabs.Screen
@@ -46,6 +49,7 @@ export default function Layout() {
           tabBarIcon: ({ size, color }) => (
             <FontAwesome6 name="basketball" size={size} color={color} />
           ),
+          tabBarTestID: "tab-games",
         }}
       />
     </Tabs>

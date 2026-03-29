@@ -29,6 +29,7 @@ export function TeamCard({ team }: { team: TeamType }) {
       <Pressable
         style={styles.teamCard}
         onPress={handlePress}
+        testID={`team-card-${team.id}`}
         accessibilityRole="button"
         accessibilityLabel={accessibilityLabel}
         accessibilityHint="Double tap to view team details"

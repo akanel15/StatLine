@@ -11,6 +11,7 @@ type Props = {
   accessibilityLabel?: string;
   accessibilityHint?: string;
   disabled?: boolean;
+  testID?: string;
 };
 
 export const StatLineButton = memo(function StatLineButton({
@@ -20,6 +21,7 @@ export const StatLineButton = memo(function StatLineButton({
   accessibilityLabel,
   accessibilityHint,
   disabled,
+  testID,
 }: Props) {
   const handlePress = () => {
     if (Platform.OS !== "web") {
@@ -32,6 +34,7 @@ export const StatLineButton = memo(function StatLineButton({
     <Pressable
       onPress={handlePress}
       disabled={disabled}
+      testID={testID}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel || title}
       accessibilityHint={accessibilityHint}

@@ -9,6 +9,7 @@ type RadioButtonProps = {
   onPress: (setId: string) => void;
   setId?: string;
   reset?: boolean;
+  testID?: string;
 };
 
 export const SetRadioButton = memo(function SetRadioButton({
@@ -17,9 +18,11 @@ export const SetRadioButton = memo(function SetRadioButton({
   onPress,
   setId = "",
   reset,
+  testID,
 }: RadioButtonProps) {
   return (
     <TouchableOpacity
+      testID={testID}
       style={[
         styles.radioButton,
         {

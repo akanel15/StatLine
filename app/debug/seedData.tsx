@@ -63,6 +63,7 @@ export default function SeedDataScreen() {
     return (
       <Pressable
         key={seedType}
+        testID={`debug-seed-${seedType}`}
         style={[styles.seedCard, { borderLeftColor: color }]}
         onPress={() => handleLoadSeed(seedType)}
         disabled={loading}

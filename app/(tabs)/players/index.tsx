@@ -29,6 +29,7 @@ export default function App() {
         <StatLineButton
           title="Add your first player"
           onPress={() => router.navigate("/players/newPlayer")}
+          testID="add-player-button"
         ></StatLineButton>
       }
     ></FlatList>

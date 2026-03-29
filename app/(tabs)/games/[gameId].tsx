@@ -649,6 +649,7 @@ export default function GamePage() {
           <TouchableOpacity
             style={[styles.tab, activeTab === "boxscore" && styles.activeTab]}
             onPress={() => setActiveTab("boxscore")}
+            testID="tab-box-score"
           >
             <Text style={[styles.tabText, activeTab === "boxscore" && styles.activeTabText]}>
               Box Score
@@ -657,6 +658,7 @@ export default function GamePage() {
           <TouchableOpacity
             style={[styles.tab, activeTab === "playbyplay" && styles.activeTab]}
             onPress={() => setActiveTab("playbyplay")}
+            testID="tab-play-by-play"
           >
             <Text style={[styles.tabText, activeTab === "playbyplay" && styles.activeTabText]}>
               Play-by-Play
@@ -797,6 +799,7 @@ export default function GamePage() {
                   <Pressable
                     hitSlop={10}
                     onPress={handleToggleSetsSection}
+                    testID="toggle-sets"
                     accessibilityRole="button"
                     accessibilityLabel={showSetsSection ? "Collapse sets" : "Expand sets"}
                   >
@@ -819,6 +822,7 @@ export default function GamePage() {
                           selected={selectedPlay === set.id}
                           onPress={handleSetSelection}
                           setId={set.id}
+                          testID={`set-${set.id}`}
                         />
                       ))}
                     </View>
@@ -829,6 +833,7 @@ export default function GamePage() {
                         onPress={handleResetSet}
                         setId=""
                         reset={true}
+                        testID="reset-set"
                       />
                       {setsRow2.map(set => (
                         <SetRadioButton
@@ -837,6 +842,7 @@ export default function GamePage() {
                           selected={selectedPlay === set.id}
                           onPress={handleSetSelection}
                           setId={set.id}
+                          testID={`set-${set.id}`}
                         />
                       ))}
                     </View>
@@ -856,6 +862,7 @@ export default function GamePage() {
                     onLongPress={handleTeamStatPress}
                     size={showSetsSection ? "normal" : "large"}
                     allowMultilineText={!showSetsSection}
+                    testID={`game-player-${player.id}`}
                   />
                 ))}
                 <GamePlayerButton
@@ -863,6 +870,7 @@ export default function GamePage() {
                   opponentName={game.opposingTeamName}
                   size={showSetsSection ? "normal" : "large"}
                   allowMultilineText={!showSetsSection}
+                  testID="game-player-opponent"
                 />
               </View>
             </View>
@@ -870,13 +878,18 @@ export default function GamePage() {
             <View style={styles.section}>
               <View style={styles.rowContainer}>
                 <View style={styles.split}>
-                  <StatLineButton onPress={handleShowSubstitutions} title="Sub Players" />
+                  <StatLineButton
+                    onPress={handleShowSubstitutions}
+                    title="Sub Players"
+                    testID="sub-players-button"
+                  />
                 </View>
                 <View style={styles.split}>
                   <StatLineButton
                     onPress={handleShowBoxScore}
                     title="Box Score"
                     color={theme.colorOnyx}
+                    testID="box-score-button"
                   />
                 </View>
               </View>

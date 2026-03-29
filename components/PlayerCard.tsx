@@ -19,6 +19,7 @@ export function PlayerCard({ player }: { player: PlayerType }) {
     <Link href={`/players/${player.id}`} asChild>
       <Pressable
         style={styles.playerCard}
+        testID={`player-card-${player.id}`}
         accessibilityRole="button"
         accessibilityLabel={accessibilityLabel}
         accessibilityHint="Double tap to view player details"

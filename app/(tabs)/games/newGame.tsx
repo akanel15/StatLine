@@ -94,6 +94,7 @@ export default function NewGame() {
         autoCapitalize="words"
         placeholder="LA Lakers"
         onChangeText={newOpponentName => setOpponentName(newOpponentName)}
+        testID="opponent-name-input"
       ></TextInput>
 
       <View style={styles.periodContainer}>
@@ -101,15 +102,21 @@ export default function NewGame() {
           title="Quarters"
           selected={periodSelector === PeriodType.Quarters}
           onPress={() => setPeriodSelector(PeriodType.Quarters)}
+          testID="period-type-quarters"
         ></StatLineToggle>
         <StatLineToggle
           title="Halves"
           selected={periodSelector === PeriodType.Halves}
           onPress={() => setPeriodSelector(PeriodType.Halves)}
+          testID="period-type-halves"
         ></StatLineToggle>
       </View>
 
-      <StatLineButton title="Start Game" onPress={handleSubmit}></StatLineButton>
+      <StatLineButton
+        title="Start Game"
+        onPress={handleSubmit}
+        testID="create-game-button"
+      ></StatLineButton>
     </KeyboardAwareScrollView>
   );
 }

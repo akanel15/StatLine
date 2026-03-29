@@ -14,6 +14,7 @@ type Props = {
   opponentName?: string;
   size?: "normal" | "large";
   allowMultilineText?: boolean;
+  testID?: string;
 };
 
 export const GamePlayerButton = memo(function GamePlayerButton({
@@ -24,6 +25,7 @@ export const GamePlayerButton = memo(function GamePlayerButton({
   opponentName,
   size = "normal",
   allowMultilineText = true,
+  testID,
 }: Props) {
   const handlePress = () => {
     if (Platform.OS !== "web") {
@@ -75,6 +77,7 @@ export const GamePlayerButton = memo(function GamePlayerButton({
       onPress={handlePress}
       onLongPress={handleLongPress}
       delayLongPress={400}
+      testID={testID}
       accessibilityRole="button"
       accessibilityLabel={getAccessibilityLabel()}
       accessibilityHint="Double tap to select this player"

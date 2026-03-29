@@ -219,6 +219,7 @@ export default function TeamSetupScreen() {
           </View>
 
           <StatLineButton
+            testID="debug-quick-setup"
             title={isCreating ? "Creating..." : "Create Vikes Team"}
             onPress={handleQuickSetup}
             color={theme.colorOrangePeel}
@@ -246,6 +247,7 @@ export default function TeamSetupScreen() {
             </View>
 
             <StatLineButton
+              testID="debug-demo-teams"
               title={isGeneratingDemo ? "Creating..." : "Generate Demo Teams"}
               onPress={handleDemoTeamsSetup}
               color={theme.colorGreen}
@@ -306,6 +308,7 @@ export default function TeamSetupScreen() {
           <View style={styles.inputSection}>
             <Text style={styles.label}>Team Name</Text>
             <TextInput
+              testID="debug-custom-team-name"
               style={styles.input}
               value={customTeamName}
               onChangeText={setCustomTeamName}
@@ -318,6 +321,7 @@ export default function TeamSetupScreen() {
             <Text style={styles.label}>Players (one per line)</Text>
             <Text style={styles.helperText}>Format: Name Number</Text>
             <TextInput
+              testID="debug-custom-players"
               style={[styles.input, styles.multilineInput]}
               value={customPlayers}
               onChangeText={setCustomPlayers}
@@ -345,6 +349,7 @@ export default function TeamSetupScreen() {
           </View>
 
           <StatLineButton
+            testID="debug-custom-create"
             title={isCreating ? "Creating..." : "Create Custom Team"}
             onPress={handleCustomSetup}
             color={theme.colorBlue}

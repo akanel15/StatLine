@@ -259,6 +259,7 @@ export default function Games() {
           <StatLineButton
             title="Add your first game"
             onPress={() => router.navigate("/games/newGame")}
+            testID="new-game-button"
           />
         }
       />

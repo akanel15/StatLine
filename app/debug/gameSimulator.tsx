@@ -133,6 +133,7 @@ export default function GameSimulatorScreen() {
             {teamList.map((team) => (
               <TouchableOpacity
                 key={team.id}
+                testID={`debug-sim-team-${team.id}`}
                 style={[
                   styles.teamChip,
                   selectedTeamId === team.id && styles.teamChipSelected,
@@ -156,6 +157,7 @@ export default function GameSimulatorScreen() {
         <View style={styles.section}>
           <Text style={styles.label}>Opponent Name</Text>
           <TextInput
+            testID="debug-sim-opponent"
             style={styles.input}
             value={opponentName}
             onChangeText={setOpponentName}
@@ -169,6 +171,7 @@ export default function GameSimulatorScreen() {
           <Text style={styles.label}>Our Score Range</Text>
           <View style={styles.row}>
             <TextInput
+              testID="debug-sim-our-min"
               style={[styles.input, styles.smallInput]}
               value={ourScoreMin}
               onChangeText={setOurScoreMin}
@@ -177,6 +180,7 @@ export default function GameSimulatorScreen() {
             />
             <Text style={styles.rangeText}>to</Text>
             <TextInput
+              testID="debug-sim-our-max"
               style={[styles.input, styles.smallInput]}
               value={ourScoreMax}
               onChangeText={setOurScoreMax}
@@ -190,6 +194,7 @@ export default function GameSimulatorScreen() {
           <Text style={styles.label}>Opponent Score Range</Text>
           <View style={styles.row}>
             <TextInput
+              testID="debug-sim-opp-min"
               style={[styles.input, styles.smallInput]}
               value={oppScoreMin}
               onChangeText={setOppScoreMin}
@@ -198,6 +203,7 @@ export default function GameSimulatorScreen() {
             />
             <Text style={styles.rangeText}>to</Text>
             <TextInput
+              testID="debug-sim-opp-max"
               style={[styles.input, styles.smallInput]}
               value={oppScoreMax}
               onChangeText={setOppScoreMax}
@@ -212,6 +218,7 @@ export default function GameSimulatorScreen() {
           <Text style={styles.label}>Period Type</Text>
           <View style={styles.row}>
             <TouchableOpacity
+              testID="debug-sim-quarters"
               style={[
                 styles.toggleButton,
                 periodType === PeriodType.Quarters && styles.toggleButtonActive,
@@ -228,6 +235,7 @@ export default function GameSimulatorScreen() {
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
+              testID="debug-sim-halves"
               style={[
                 styles.toggleButton,
                 periodType === PeriodType.Halves && styles.toggleButtonActive,
@@ -296,6 +304,7 @@ export default function GameSimulatorScreen() {
         <View style={styles.section}>
           <Text style={styles.label}>Number of Games to Simulate</Text>
           <TextInput
+            testID="debug-sim-count"
             style={styles.input}
             value={numGames}
             onChangeText={setNumGames}
@@ -309,6 +318,7 @@ export default function GameSimulatorScreen() {
         {/* Simulate Button */}
         <View style={styles.section}>
           <StatLineButton
+            testID="debug-sim-start"
             title={isSimulating ? "Simulating..." : "Simulate Game(s)"}
             onPress={handleSimulate}
             color={theme.colorOrangePeel}

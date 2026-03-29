@@ -20,6 +20,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Before marking changes complete:** Always run `yarn lint --fix && yarn test`
 
+**After implementing a feature or bug fix:** Run `/verify` to visually confirm the changes work in the running iOS simulator via Maestro. Navigate to the affected screen, check the result, and report back. Do not skip this step — automated tests alone are not sufficient for UI changes.
+
 ### Test Execution
 - Run single test file: `yarn test path/to/test.ts`
 - Run tests matching pattern: `yarn test --testNamePattern="pattern"`

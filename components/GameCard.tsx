@@ -24,6 +24,7 @@ export function GameCard({
       <Pressable
         style={[styles.gameCard, selected && styles.gameCardSelected]}
         onPress={() => onToggleSelect?.(game.id)}
+        testID={`game-card-${game.id}`}
       >
         <View style={styles.checkbox}>
           <Feather
@@ -42,7 +43,7 @@ export function GameCard({
   return (
     <View style={styles.gameCard}>
       <Link href={`/games/${game.id}`} asChild>
-        <Pressable style={styles.cardContent}>
+        <Pressable style={styles.cardContent} testID={`game-card-${game.id}`}>
           <View style={styles.details}>
             <MatchUpDisplay game={game} />
           </View>

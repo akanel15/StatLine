@@ -62,6 +62,7 @@ export default function NewPlayer() {
         style={styles.centered}
         activeOpacity={0.6}
         onPress={handlePlayerImageSelection}
+        testID="player-image-picker"
       >
         <View style={styles.imageContainer}>
           <PlayerImage
@@ -90,6 +91,7 @@ export default function NewPlayer() {
         autoCapitalize="words"
         placeholder="Lebron James"
         onChangeText={newPlayerName => setPlayerName(newPlayerName)}
+        testID="player-name-input"
       ></TextInput>
       <Text style={styles.header}>Player Number</Text>
       <TextInput
@@ -97,9 +99,14 @@ export default function NewPlayer() {
         keyboardType="numeric"
         placeholder="0"
         onChangeText={newPlayerNumber => setPlayerNumber(newPlayerNumber)}
+        testID="jersey-number-input"
       ></TextInput>
 
-      <StatLineButton title="Add Player" onPress={handleSubmit}></StatLineButton>
+      <StatLineButton
+        title="Add Player"
+        onPress={handleSubmit}
+        testID="create-player-button"
+      ></StatLineButton>
     </KeyboardAwareScrollView>
   );
 }

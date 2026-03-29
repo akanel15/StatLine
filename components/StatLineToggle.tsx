@@ -5,11 +5,13 @@ type ToggleProps = {
   title: string;
   selected: boolean;
   onPress: () => void;
+  testID?: string;
 };
 
-export const StatLineToggle = ({ title, selected, onPress }: ToggleProps) => {
+export const StatLineToggle = ({ title, selected, onPress, testID }: ToggleProps) => {
   return (
     <TouchableOpacity
+      testID={testID}
       style={[
         styles.radioButton,
         {

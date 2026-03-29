@@ -63,14 +63,6 @@ const debugSections: DebugSection[] = [
     route: "/debug/gameSimulator",
     color: theme.colorPurple,
   },
-  {
-    id: "swipeableList",
-    title: "Swipeable Drag List",
-    description: "Test swipeable and draggable list component",
-    icon: "📝",
-    route: "/debug/swipeable-list",
-    color: theme.colorOrangePeel,
-  }
 ];
 
 export default function DebugHomeScreen() {
@@ -96,6 +88,7 @@ export default function DebugHomeScreen() {
 
   const renderDebugSection = ({ item }: { item: DebugSection }) => (
     <Pressable
+      testID={`debug-${item.id}`}
       style={[styles.card, { borderLeftColor: item.color }]}
       onPress={() => router.push(item.route)}
     >

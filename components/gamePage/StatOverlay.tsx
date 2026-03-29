@@ -41,6 +41,7 @@ const StatOverlay = memo(function StatOverlay({
             title={action}
             onPress={() => onStatPress(ActionType.ShootingMake, action)}
             backgroundColor={theme.colorMindaroGreen}
+            testID={`stat-make-${action}`}
           />
         ))}
       </View>
@@ -51,6 +52,7 @@ const StatOverlay = memo(function StatOverlay({
             title={action}
             onPress={() => onStatPress(ActionType.ShootingMiss, action)}
             backgroundColor={theme.colorRedCrayola}
+            testID={`stat-miss-${action}`}
           />
         ))}
       </View>
@@ -63,6 +65,7 @@ const StatOverlay = memo(function StatOverlay({
             title={action}
             onPress={() => onStatPress(ActionType.ReboundAssist, action)}
             backgroundColor={theme.colorMayaBlue}
+            testID={`stat-${action}`}
           />
         ))}
       </View>
@@ -74,6 +77,7 @@ const StatOverlay = memo(function StatOverlay({
             key={action}
             title={action}
             onPress={() => onStatPress(ActionType.DefensivePlay, action)}
+            testID={`stat-${action}`}
           />
         ))}
       </View>
@@ -85,12 +89,13 @@ const StatOverlay = memo(function StatOverlay({
             key={action}
             title={action}
             onPress={() => onStatPress(ActionType.FoulTurnover, action)}
+            testID={`stat-${action}`}
           />
         ))}
       </View>
 
       <View style={styles.closeButtonContainer}>
-        <StatLineButton onPress={onClose} title="Close" />
+        <StatLineButton onPress={onClose} title="Close" testID="close-stat-overlay" />
       </View>
     </View>
   );
