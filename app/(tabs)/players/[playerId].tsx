@@ -26,6 +26,7 @@ import { sanitizeFileName } from "@/utils/filename";
 import Feather from "@expo/vector-icons/Feather";
 import { GameCountSelectorModal } from "@/components/shared/GameCountSelectorModal";
 import { HeaderTextButton } from "@/components/HeaderTextButton";
+import { calculatePlayerTotalMinutes, calculateMPG } from "@/logic/minutesCalculation";
 
 export default function PlayerPage() {
   const { playerId } = useRoute().params as { playerId: string };
@@ -151,6 +152,15 @@ export default function PlayerPage() {
   const team = teams[player?.teamId || ""];
   const gameList = Object.values(games);
   const playerGames = gameList.filter(game => game.boxScore[playerId] !== undefined);
+
+  // Calculate MPG for this player
+  const playerMPG = (() => {
+    const { totalSeconds, gamesWithMinutes } = calculatePlayerTotalMinutes(
+      gameList.filter(g => g.teamId === player.teamId),
+      playerId,
+    );
+    return calculateMPG(totalSeconds, gamesWithMinutes);
+  })();
 
   const handleShareRecentGames = () => {
     // Show game count selector first
@@ -319,7 +329,7 @@ export default function PlayerPage() {
         {/* Player Stats */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Player Stats</Text>
-          <PlayerStatsTable player={player} />
+          <PlayerStatsTable player={player} mpg={playerMPG} />
         </View>
 
         {/* Recent Games */}

@@ -41,12 +41,24 @@ export function remapGamePlayerIds(
     };
   });
 
+  // Remap minutesTracking stints
+  const newMinutesTracking = game.minutesTracking
+    ? {
+        ...game.minutesTracking,
+        stints: game.minutesTracking.stints.map(stint => ({
+          ...stint,
+          playerId: remapId(stint.playerId),
+        })),
+      }
+    : undefined;
+
   return {
     ...game,
     boxScore: newBoxScore,
     gamePlayedList: remapIdList(game.gamePlayedList),
     activePlayers: remapIdList(game.activePlayers),
     periods: newPeriods,
+    ...(newMinutesTracking && { minutesTracking: newMinutesTracking }),
   };
 }
 

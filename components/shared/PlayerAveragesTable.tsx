@@ -11,6 +11,7 @@ import { BaseStatsTable, BaseTableHeader, BaseTableRow } from "./BaseStatsTable"
 type PlayerAveragesTableProps = {
   players: PlayerType[];
   stickyColumnHeader?: string;
+  mpgData?: Record<string, number | null>; // playerId → MPG (null = no data)
 };
 
 type SortDirection = "asc" | "desc" | null;
@@ -53,7 +54,9 @@ const HEADINGS = [
 export function PlayerAveragesTable({
   players,
   stickyColumnHeader = "Player",
+  mpgData,
 }: PlayerAveragesTableProps) {
+  const hasMPG = mpgData !== undefined && Object.values(mpgData).some(v => v !== null);
   const [sortColumnIndex, setSortColumnIndex] = useState<number>(0);
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
 
@@ -136,11 +139,15 @@ export function PlayerAveragesTable({
         ? `#${player.number} ${player.name}`
         : player.name;
 
+    const mpg = hasMPG ? (mpgData[player.id] ?? null) : null;
+    const mpgFormatted = mpg !== null ? mpg.toFixed(1) : "-";
+    const mpgRaw = mpg ?? -1;
+
     return {
       id: player.id,
       name: displayName,
-      stats: formatted,
-      rawStats: raw,
+      stats: hasMPG ? [mpgFormatted, ...formatted] : formatted,
+      rawStats: hasMPG ? [mpgRaw, ...raw] : raw,
     };
   });
 
@@ -171,7 +178,8 @@ export function PlayerAveragesTable({
     router.push(`/(tabs)/players/${playerId}`);
   };
 
-  const headers: BaseTableHeader[] = HEADINGS.map((heading, index) => ({
+  const activeHeadings = hasMPG ? ["MPG", ...HEADINGS] : HEADINGS;
+  const headers: BaseTableHeader[] = activeHeadings.map((heading, index) => ({
     label: heading + getSortIndicator(index),
     onPress: () => handleHeaderPress(index),
     isActive: sortColumnIndex === index,

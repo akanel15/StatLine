@@ -94,3 +94,11 @@ tap_on text: settings gear  →  tap_on text: "Debug Tools"  →  tap_on id: "de
 | Team Setup | `debug-quick-setup`, `debug-demo-teams`, `debug-custom-team-name`, `debug-custom-players`, `debug-custom-create` |
 | Game Simulator | `debug-sim-team-{id}`, `debug-sim-opponent`, `debug-sim-our-min`, `debug-sim-our-max`, `debug-sim-opp-min`, `debug-sim-opp-max`, `debug-sim-quarters`, `debug-sim-halves`, `debug-sim-count`, `debug-sim-start` |
 | Seed Data | `debug-seed-minimal`, `debug-seed-fullSeason`, `debug-seed-edgeCases` |
+
+## Navigation Escape Hatches
+
+- **Reactivate completed game:** On finished game screen, tap Edit in header → game returns to active state with full game UI (stat overlay, subs, play-by-play)
+- **Auto-completion warning:** Navigating away from an active game may auto-complete it via AppState/Navigation completion triggers. Finish all testing on an active game before navigating away.
+- **Fresh start:** From any screen, navigate back to Select Team and create a new game with the same settings
+- **New game shortcut:** On Games tab, tap + to create a new game at any time
+- **Game list access:** Back button from game detail returns to Games list, back from Games list returns to team page

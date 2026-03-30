@@ -3,6 +3,7 @@ import { GameType, Team } from "@/types/game";
 import { initialBaseStats, Stat, StatsType } from "@/types/stats";
 import { theme } from "@/theme";
 import { Result } from "@/types/player";
+import { calculatePlayerMinutes, formatMinutes } from "@/logic/minutesCalculation";
 
 type ShareableRecentGamesTableProps = {
   games: GameType[];
@@ -19,7 +20,12 @@ export function ShareableRecentGamesTable({
   playerName,
   teamName,
 }: ShareableRecentGamesTableProps) {
-  const headings = [
+  const hasAnyMinutes =
+    context === "player" &&
+    playerId &&
+    games.some(g => g.minutesTracking?.enabled && g.gamePlayedList.includes(playerId));
+
+  const baseHeadings = [
     "PTS",
     "REB",
     "AST",
@@ -46,6 +52,7 @@ export function ShareableRecentGamesTable({
     "EFF",
     "+/-",
   ];
+  const headings = hasAnyMinutes ? ["MIN", ...baseHeadings] : baseHeadings;
 
   const formatStats = (stats: StatsType): string[] => {
     const safeDivide = (num: number, den: number) =>
@@ -108,6 +115,15 @@ export function ShareableRecentGamesTable({
       statsToShow = formatStats(playerStats);
     } else {
       statsToShow = formatStats({ ...initialBaseStats });
+    }
+
+    if (hasAnyMinutes && playerId) {
+      if (game.minutesTracking?.enabled) {
+        const playerSeconds = calculatePlayerMinutes(game.minutesTracking.stints, playerId);
+        statsToShow = [formatMinutes(playerSeconds), ...statsToShow];
+      } else {
+        statsToShow = ["-", ...statsToShow];
+      }
     }
 
     return {

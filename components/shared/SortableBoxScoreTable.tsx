@@ -5,6 +5,7 @@ import { initialBaseStats, Stat, StatsType } from "@/types/stats";
 import { theme } from "@/theme";
 import { moderateScale } from "@/utils/responsive";
 import { BaseStatsTable, BaseTableHeader, BaseTableRow } from "./BaseStatsTable";
+import { formatMinutes } from "@/logic/minutesCalculation";
 
 type SortableBoxScoreTableProps = {
   game: GameType;
@@ -12,6 +13,7 @@ type SortableBoxScoreTableProps = {
   stickyColumnHeader?: string;
   scrollable?: boolean;
   getPlayerDisplayName: (playerId: string) => string;
+  minutesData?: Record<string, number>;
 };
 
 type SortDirection = "asc" | "desc" | null;
@@ -111,7 +113,9 @@ export function SortableBoxScoreTable({
   stickyColumnHeader = "Player",
   scrollable = true,
   getPlayerDisplayName,
+  minutesData,
 }: SortableBoxScoreTableProps) {
+  const hasMinutes = minutesData !== undefined;
   const [sortColumnIndex, setSortColumnIndex] = useState<number | null>(0);
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
 
@@ -126,25 +130,27 @@ export function SortableBoxScoreTable({
         ? `#${playerNumber} ${playerName}`
         : playerName;
     const { formatted, raw } = formatStats(game.boxScore[playerId] ?? { ...initialBaseStats });
+    const playerSeconds = hasMinutes ? (minutesData[playerId] ?? 0) : 0;
 
     return {
       id: playerId,
       name: displayName,
-      stats: formatted,
+      stats: hasMinutes ? [formatMinutes(playerSeconds), ...formatted] : formatted,
       isTotal: false,
-      rawStats: raw,
+      rawStats: hasMinutes ? [playerSeconds, ...raw] : raw,
     };
   });
 
   const teamStats = game.boxScore["Team"];
   const hasTeamStats =
     teamStats && Object.values(teamStats).some(val => typeof val === "number" && val !== 0);
-  const teamEntry: BoxScoreEntry | null = hasTeamStats
+  const teamFormatted = hasTeamStats ? formatStats(teamStats) : null;
+  const teamEntry: BoxScoreEntry | null = teamFormatted
     ? {
         id: "Team",
         name: "Team",
-        stats: formatStats(teamStats).formatted,
-        rawStats: formatStats(teamStats).raw,
+        stats: hasMinutes ? ["", ...teamFormatted.formatted] : teamFormatted.formatted,
+        rawStats: hasMinutes ? [0, ...teamFormatted.raw] : teamFormatted.raw,
         isTotal: false,
         isTeam: true,
       }
@@ -157,15 +163,15 @@ export function SortableBoxScoreTable({
     {
       id: "Us",
       name: "Total",
-      stats: usStats.formatted,
-      rawStats: usStats.raw,
+      stats: hasMinutes ? ["", ...usStats.formatted] : usStats.formatted,
+      rawStats: hasMinutes ? [0, ...usStats.raw] : usStats.raw,
       isTotal: true,
     },
     {
       id: "Opponent",
       name: game.opposingTeamName,
-      stats: opponentStats.formatted,
-      rawStats: opponentStats.raw,
+      stats: hasMinutes ? ["", ...opponentStats.formatted] : opponentStats.formatted,
+      rawStats: hasMinutes ? [0, ...opponentStats.raw] : opponentStats.raw,
       isTotal: true,
     },
   ];
@@ -203,7 +209,8 @@ export function SortableBoxScoreTable({
     return "";
   };
 
-  const headers: BaseTableHeader[] = HEADINGS.map((heading, index) => ({
+  const activeHeadings = hasMinutes ? ["MIN", ...HEADINGS] : HEADINGS;
+  const headers: BaseTableHeader[] = activeHeadings.map((heading, index) => ({
     label: heading + getSortIndicator(index),
     onPress: () => handleHeaderPress(index),
     isActive: sortColumnIndex === index,

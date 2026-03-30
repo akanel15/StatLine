@@ -1,6 +1,5 @@
 import { useEffect } from "react";
-import { Stack, router } from "expo-router";
-import { Linking } from "react-native";
+import { Stack } from "expo-router";
 import * as Updates from "expo-updates";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { HeaderIconButton } from "@/components/HeaderIconButton";
@@ -18,29 +17,9 @@ async function checkForOTAUpdate() {
   }
 }
 
-function handleDeepLink(url: string) {
-  if (url.endsWith(".statline") || url.includes(".statline")) {
-    router.navigate({ pathname: "/import", params: { fileUri: url } });
-  }
-}
-
 export default function Layout() {
   useEffect(() => {
-    // Handle URL when app is already open
-    const subscription = Linking.addEventListener("url", ({ url }) => {
-      handleDeepLink(url);
-    });
-
-    // Handle URL when app is cold-started via file open
-    Linking.getInitialURL().then(url => {
-      if (url) {
-        handleDeepLink(url);
-      }
-    });
-
     checkForOTAUpdate();
-
-    return () => subscription.remove();
   }, []);
 
   return (

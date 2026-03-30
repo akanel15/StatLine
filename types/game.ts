@@ -25,6 +25,21 @@ export type PeriodInfo = {
   playByPlay: PlayByPlayType[];
 };
 
+export type StintType = {
+  playerId: string;
+  periodIndex: number;
+  checkInTime: number; // seconds remaining in period (e.g. 600 = 10:00)
+  checkOutTime?: number; // seconds remaining; undefined = still on court
+};
+
+export type MinutesTrackingType = {
+  enabled: boolean;
+  periodLength: number; // in seconds (e.g. 600 for 10-minute quarters)
+  stints: StintType[];
+  lastSubTime?: number; // seconds remaining at last substitution confirm
+  lastSubPeriod?: number; // period index of last substitution confirm
+};
+
 export type BoxScoreType = Record<string, StatsType>; //<playerId, stats>
 
 //this is stored in the game store in a record <gameId,GameType>
@@ -46,6 +61,9 @@ export type GameType = {
 
   //other stats
   sets: Record<string, SetType>;
+
+  //optional minutes tracking
+  minutesTracking?: MinutesTrackingType;
 };
 
 export const createGame = (
@@ -54,6 +72,7 @@ export const createGame = (
   opposingTeamName: string,
   periodType: PeriodType,
   opposingTeamImageUri?: string,
+  minutesTrackingConfig?: { enabled: boolean; periodLength: number },
 ): GameType => ({
   id: id,
   teamId: teamId,
@@ -73,6 +92,14 @@ export const createGame = (
   isFinished: false,
 
   sets: {},
+
+  ...(minutesTrackingConfig?.enabled && {
+    minutesTracking: {
+      enabled: true,
+      periodLength: minutesTrackingConfig.periodLength,
+      stints: [],
+    },
+  }),
 });
 
 //todo for game store and page

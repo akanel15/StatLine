@@ -3,9 +3,10 @@ import { StatsTable } from "./StatsTable";
 
 type PlayerStatsTableProps = {
   player: PlayerType;
+  mpg?: number | null;
 };
 
-export function PlayerStatsTable({ player }: PlayerStatsTableProps) {
+export function PlayerStatsTable({ player, mpg }: PlayerStatsTableProps) {
   return (
     <StatsTable
       rows={[
@@ -15,6 +16,7 @@ export function PlayerStatsTable({ player }: PlayerStatsTableProps) {
           divisor: player.gameNumbers.gamesPlayed,
         },
       ]}
+      mpg={mpg}
     />
   );
 }

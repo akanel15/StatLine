@@ -7,6 +7,12 @@ import { useSetStore } from "./setStore";
 import { debouncedAsyncStorage } from "@/utils/debounceAsyncStorage";
 import { storeHydration } from "@/utils/storeHydration";
 import { migrateGameSetStats } from "@/logic/migrateGameSetStats";
+import {
+  closePeriodStints,
+  openNewPeriodStints,
+  processSubstitution,
+  remapStintsAfterPeriodDeletion,
+} from "@/logic/minutesCalculation";
 
 export type UnifiedPlayEntry = {
   play: PlayByPlayType;
@@ -42,6 +48,7 @@ type GameState = {
     opposingTeamName: string,
     periodType: PeriodType,
     opposingTeamImageUri?: string,
+    minutesTrackingConfig?: { enabled: boolean; periodLength: number },
   ) => string;
   removeGame: (gameId: string) => void;
   updateGame: (
@@ -84,6 +91,13 @@ type GameState = {
   createNewPeriod: (gameId: string) => number;
   updateAllPeriods: (gameId: string, newPeriods: any[]) => void;
   deletePeriod: (gameId: string, periodIndex: number) => void;
+  recordSubstitutionTime: (
+    gameId: string,
+    periodIndex: number,
+    clockTimeSeconds: number,
+    subbedOutPlayerIds: string[],
+    subbedInPlayerIds: string[],
+  ) => void;
   migratePlayIds: () => { gamesUpdated: number; playsUpdated: number };
   importGame: (gameData: Omit<GameType, "id" | "opposingTeamImageUri">) => string;
 };
@@ -97,11 +111,19 @@ export const useGameStore = create(
         opposingTeamName: string,
         periodType: PeriodType,
         opposingTeamImageUri?: string,
+        minutesTrackingConfig?: { enabled: boolean; periodLength: number },
       ) => {
         const id = uuid.v4();
         set(state => ({
           games: {
-            [id]: createGame(id, teamId, opposingTeamName, periodType, opposingTeamImageUri),
+            [id]: createGame(
+              id,
+              teamId,
+              opposingTeamName,
+              periodType,
+              opposingTeamImageUri,
+              minutesTrackingConfig,
+            ),
             ...state.games,
           },
         }));
@@ -684,12 +706,24 @@ export const useGameStore = create(
             console.warn(`Game with ID ${gameId} not found.`);
             return state;
           }
+
+          // Close all open stints for the final period
+          let updatedMinutesTracking = game.minutesTracking;
+          if (game.minutesTracking?.enabled && game.periods.length > 0) {
+            const lastPeriodIndex = game.periods.length - 1;
+            updatedMinutesTracking = {
+              ...game.minutesTracking,
+              stints: closePeriodStints(game.minutesTracking.stints, lastPeriodIndex),
+            };
+          }
+
           return {
             games: {
               ...state.games,
               [gameId]: {
                 ...game,
                 isFinished: true,
+                ...(updatedMinutesTracking && { minutesTracking: updatedMinutesTracking }),
               },
             },
           };
@@ -889,12 +923,32 @@ export const useGameStore = create(
             playByPlay: [],
           };
 
+          // Handle minutes tracking: close previous period stints, open new ones
+          let updatedMinutesTracking = game.minutesTracking;
+          if (game.minutesTracking?.enabled && newPeriodIndex > 0) {
+            const previousPeriodIndex = newPeriodIndex - 1;
+            let stints = closePeriodStints(game.minutesTracking.stints, previousPeriodIndex);
+            stints = openNewPeriodStints(
+              stints,
+              game.activePlayers,
+              newPeriodIndex,
+              game.minutesTracking.periodLength,
+            );
+            updatedMinutesTracking = {
+              ...game.minutesTracking,
+              stints,
+              lastSubTime: undefined,
+              lastSubPeriod: undefined,
+            };
+          }
+
           return {
             games: {
               ...state.games,
               [gameId]: {
                 ...game,
                 periods: [...game.periods, newPeriod],
+                ...(updatedMinutesTracking && { minutesTracking: updatedMinutesTracking }),
               },
             },
           };
@@ -961,12 +1015,22 @@ export const useGameStore = create(
           // Remove the deleted period
           updatedPeriods.splice(periodIndex, 1);
 
+          // Handle minutes tracking: remap stint period indices
+          let updatedMinutesTracking = game.minutesTracking;
+          if (game.minutesTracking?.enabled) {
+            updatedMinutesTracking = {
+              ...game.minutesTracking,
+              stints: remapStintsAfterPeriodDeletion(game.minutesTracking.stints, periodIndex),
+            };
+          }
+
           return {
             games: {
               ...state.games,
               [gameId]: {
                 ...game,
                 periods: updatedPeriods,
+                ...(updatedMinutesTracking && { minutesTracking: updatedMinutesTracking }),
               },
             },
           };
@@ -1013,6 +1077,42 @@ export const useGameStore = create(
           // For now, return state unchanged - this would require more complex logic
           // to properly redistribute plays across periods
           return state;
+        });
+      },
+
+      recordSubstitutionTime: (
+        gameId: string,
+        periodIndex: number,
+        clockTimeSeconds: number,
+        subbedOutPlayerIds: string[],
+        subbedInPlayerIds: string[],
+      ) => {
+        set(state => {
+          const game = state.games[gameId];
+          if (!game?.minutesTracking?.enabled) return state;
+
+          const updatedStints = processSubstitution(
+            game.minutesTracking.stints,
+            periodIndex,
+            clockTimeSeconds,
+            subbedOutPlayerIds,
+            subbedInPlayerIds,
+          );
+
+          return {
+            games: {
+              ...state.games,
+              [gameId]: {
+                ...game,
+                minutesTracking: {
+                  ...game.minutesTracking,
+                  stints: updatedStints,
+                  lastSubTime: clockTimeSeconds,
+                  lastSubPeriod: periodIndex,
+                },
+              },
+            },
+          };
         });
       },
 
@@ -1077,7 +1177,7 @@ export const useGameStore = create(
       // Use debounced AsyncStorage to prevent blocking UI during rapid drag operations
       // Writes are batched and delayed by 300ms, improving drag responsiveness
       storage: createJSONStorage(() => debouncedAsyncStorage),
-      version: 2,
+      version: 3,
       migrate: (persistedState, version) => {
         const state = persistedState as GameState;
         if (version < 2) {

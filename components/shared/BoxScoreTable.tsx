@@ -4,6 +4,7 @@ import { initialBaseStats, Stat, StatsType } from "@/types/stats";
 import { theme } from "@/theme";
 import { moderateScale } from "@/utils/responsive";
 import { BaseStatsTable, BaseTableHeader, BaseTableRow } from "./BaseStatsTable";
+import { formatMinutes } from "@/logic/minutesCalculation";
 
 type BoxScoreTableProps = {
   game: GameType;
@@ -11,6 +12,7 @@ type BoxScoreTableProps = {
   stickyColumnHeader?: string;
   scrollable?: boolean;
   getPlayerDisplayName: (playerId: string) => string;
+  minutesData?: Record<string, number>;
 };
 
 const HEADINGS = [
@@ -93,8 +95,11 @@ export function BoxScoreTable({
   stickyColumnHeader = "Player",
   scrollable = true,
   getPlayerDisplayName,
+  minutesData,
 }: BoxScoreTableProps) {
-  const headers: BaseTableHeader[] = HEADINGS.map(h => ({ label: h }));
+  const hasMinutes = minutesData !== undefined;
+  const activeHeadings = hasMinutes ? ["MIN", ...HEADINGS] : HEADINGS;
+  const headers: BaseTableHeader[] = activeHeadings.map(h => ({ label: h }));
 
   // Build box score data
   const allPlayerIds = [...game.gamePlayedList];
@@ -107,10 +112,13 @@ export function BoxScoreTable({
         ? `#${playerNumber} ${playerName}`
         : playerName;
 
+    const stats = formatStats(game.boxScore[playerId] ?? { ...initialBaseStats });
+    const playerSeconds = hasMinutes ? (minutesData[playerId] ?? 0) : 0;
+
     return {
       id: playerId,
       name: displayName,
-      stats: formatStats(game.boxScore[playerId] ?? { ...initialBaseStats }),
+      stats: hasMinutes ? [formatMinutes(playerSeconds), ...stats] : stats,
       isTotal: false,
       isTeam: false,
     };
@@ -119,15 +127,19 @@ export function BoxScoreTable({
   const teamStats = game.boxScore["Team"];
   const hasTeamStats =
     teamStats && Object.values(teamStats).some(val => typeof val === "number" && val !== 0);
-  const teamEntry = hasTeamStats
+  const teamFormatted = hasTeamStats ? formatStats(teamStats) : null;
+  const teamEntry = teamFormatted
     ? {
         id: "Team",
         name: "Team",
-        stats: formatStats(teamStats),
+        stats: hasMinutes ? ["", ...teamFormatted] : teamFormatted,
         isTotal: false,
         isTeam: true,
       }
     : null;
+
+  const usFormatted = formatStats(game.statTotals[Team.Us]);
+  const oppFormatted = formatStats(game.statTotals[Team.Opponent]);
 
   const boxScoreData = [
     ...playerEntries,
@@ -135,14 +147,14 @@ export function BoxScoreTable({
     {
       id: "Us",
       name: "Total",
-      stats: formatStats(game.statTotals[Team.Us]),
+      stats: hasMinutes ? ["", ...usFormatted] : usFormatted,
       isTotal: true,
       isTeam: false,
     },
     {
       id: "Opponent",
       name: game.opposingTeamName,
-      stats: formatStats(game.statTotals[Team.Opponent]),
+      stats: hasMinutes ? ["", ...oppFormatted] : oppFormatted,
       isTotal: true,
       isTeam: false,
     },

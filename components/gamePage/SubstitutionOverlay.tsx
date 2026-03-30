@@ -1,5 +1,14 @@
-import { useState, useEffect, memo } from "react";
-import { View, Text, StyleSheet, FlatList, Pressable, Alert, Platform } from "react-native";
+import { useState, useEffect, memo, useRef } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  Pressable,
+  Alert,
+  Platform,
+  TextInput,
+} from "react-native";
 import * as Haptics from "expo-haptics";
 import { StatLineButton } from "@/components/StatLineButton";
 import { useGameStore } from "@/store/gameStore";
@@ -10,15 +19,18 @@ import { PlayerImage } from "../PlayerImage";
 import { useHelpStore } from "@/store/helpStore";
 import { ContextualTooltip } from "@/components/shared/ContextualTooltip";
 import { scale, moderateScale } from "@/utils/responsive";
+import { parseClockInput } from "@/logic/minutesCalculation";
 
 type SubstitutionOverlayProps = {
   gameId: string;
+  currentPeriod: number;
   onClose: () => void;
 };
 
 // Wrapped with memo to prevent unnecessary re-renders when parent state changes
 const SubstitutionOverlay = memo(function SubstitutionOverlay({
   gameId,
+  currentPeriod,
   onClose,
 }: SubstitutionOverlayProps) {
   const game = useGameStore(state => state.games[gameId]);
@@ -29,6 +41,34 @@ const SubstitutionOverlay = memo(function SubstitutionOverlay({
   const teamPlayers = playersList.filter(player => player.teamId === game.teamId);
 
   const setActivePlayers = useGameStore(state => state.setActivePlayers);
+  const recordSubstitutionTime = useGameStore(state => state.recordSubstitutionTime);
+
+  // Minutes tracking state
+  const minutesTracking = game.minutesTracking;
+  const isMinutesEnabled = minutesTracking?.enabled ?? false;
+  const periodLengthSeconds = minutesTracking?.periodLength ?? 600;
+
+  const getInitialClockMinutes = () => {
+    if (!isMinutesEnabled) return "0";
+    const initSeconds =
+      minutesTracking?.lastSubPeriod === currentPeriod && minutesTracking?.lastSubTime !== undefined
+        ? minutesTracking.lastSubTime
+        : periodLengthSeconds;
+    return Math.floor(initSeconds / 60).toString();
+  };
+  const getInitialClockSeconds = () => {
+    if (!isMinutesEnabled) return "00";
+    const initSeconds =
+      minutesTracking?.lastSubPeriod === currentPeriod && minutesTracking?.lastSubTime !== undefined
+        ? minutesTracking.lastSubTime
+        : periodLengthSeconds;
+    return (initSeconds % 60).toString().padStart(2, "0");
+  };
+
+  const [clockMinutes, setClockMinutes] = useState(getInitialClockMinutes);
+  const [clockSeconds, setClockSeconds] = useState(getInitialClockSeconds);
+  const clockTouched = useRef(false);
+  const secondsInputRef = useRef<TextInput>(null);
 
   const activePlayers = game.activePlayers
     .map(playerId => players[playerId])
@@ -80,12 +120,40 @@ const SubstitutionOverlay = memo(function SubstitutionOverlay({
     setSelectedBench(prev => prev.filter(p => p.id !== player.id));
   };
 
+  // Determine if we should show the "unchanged clock" warning
+  const showClockWarning = (() => {
+    if (!isMinutesEnabled || !minutesTracking) return false;
+    // No warning on first confirm in this period
+    if (minutesTracking.lastSubPeriod !== currentPeriod) return false;
+    if (minutesTracking.lastSubTime === undefined) return false;
+    // Only warn if user hasn't touched the clock
+    if (clockTouched.current) return false;
+    return true;
+  })();
+
   const handleConfirm = () => {
     if (selectedActive.length === 0 || selectedActive.length > 5) {
       Alert.alert("Validation Error", "Please select a valid number of players (1-5).");
       return;
     }
+
     const activeIds = selectedActive.map(player => player.id);
+
+    // Record stint data if minutes tracking is enabled
+    if (isMinutesEnabled) {
+      const clockTime = parseClockInput(clockMinutes, clockSeconds, periodLengthSeconds);
+      if (clockTime === null) {
+        Alert.alert("Invalid Time", "Please enter a valid game clock time.");
+        return;
+      }
+
+      const previousActiveIds = game.activePlayers;
+      const subbedOut = previousActiveIds.filter(id => !activeIds.includes(id));
+      const subbedIn = activeIds.filter(id => !previousActiveIds.includes(id));
+
+      recordSubstitutionTime(gameId, currentPeriod, clockTime, subbedOut, subbedIn);
+    }
+
     addPlayerToGamePlayed(gameId, activeIds);
     setActivePlayers(gameId, activeIds);
     onClose();
@@ -94,6 +162,45 @@ const SubstitutionOverlay = memo(function SubstitutionOverlay({
   return (
     <View style={styles.overlay}>
       <Text style={styles.title}>Substitutions</Text>
+
+      {/* Game Clock Input */}
+      {isMinutesEnabled && (
+        <View style={styles.clockContainer}>
+          <Text style={styles.clockLabel}>Game Clock</Text>
+          <View style={styles.clockInputRow}>
+            <TextInput
+              style={styles.clockInput}
+              keyboardType="number-pad"
+              maxLength={2}
+              value={clockMinutes}
+              onChangeText={text => {
+                clockTouched.current = true;
+                setClockMinutes(text);
+              }}
+              onSubmitEditing={() => secondsInputRef.current?.focus()}
+              selectTextOnFocus
+              testID="clock-minutes-input"
+            />
+            <Text style={styles.clockColon}>:</Text>
+            <TextInput
+              ref={secondsInputRef}
+              style={styles.clockInput}
+              keyboardType="number-pad"
+              maxLength={2}
+              value={clockSeconds}
+              onChangeText={text => {
+                clockTouched.current = true;
+                setClockSeconds(text);
+              }}
+              selectTextOnFocus
+              testID="clock-seconds-input"
+            />
+          </View>
+          {showClockWarning && (
+            <Text style={styles.clockWarning}>Clock unchanged since last sub</Text>
+          )}
+        </View>
+      )}
 
       {/* Absolute Positioned Tooltip */}
       {showSubstitutionHint && (
@@ -249,6 +356,41 @@ const styles = StyleSheet.create({
   },
   section: {
     marginBottom: scale(10),
+  },
+  clockContainer: {
+    alignItems: "center",
+    marginTop: scale(8),
+  },
+  clockLabel: {
+    fontSize: moderateScale(14),
+    color: theme.colorGrey,
+    marginBottom: scale(4),
+  },
+  clockInputRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  clockInput: {
+    fontSize: moderateScale(24),
+    fontWeight: "bold",
+    color: theme.colorOnyx,
+    borderColor: theme.colorLightGrey,
+    borderWidth: 2,
+    borderRadius: scale(6),
+    width: scale(50),
+    textAlign: "center",
+    padding: scale(6),
+  },
+  clockColon: {
+    fontSize: moderateScale(24),
+    fontWeight: "bold",
+    color: theme.colorOnyx,
+    marginHorizontal: scale(4),
+  },
+  clockWarning: {
+    fontSize: moderateScale(12),
+    color: theme.colorOrangePeel,
+    marginTop: scale(4),
   },
   absoluteTooltipContainer: {
     position: "absolute",

@@ -1,4 +1,4 @@
-import { useLayoutEffect, useState, useEffect, useRef } from "react";
+import { useLayoutEffect, useState, useEffect, useRef, useMemo } from "react";
 import { useRoute } from "@react-navigation/native";
 import { useNavigation } from "@react-navigation/native";
 import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal } from "react-native";
@@ -16,6 +16,7 @@ import { useGameStore } from "@/store/gameStore";
 import { usePlayerStore } from "@/store/playerStore";
 import { TopSetCard } from "@/components/shared/TopSetCard";
 import { PlayerAveragesTable } from "@/components/shared/PlayerAveragesTable";
+import { calculatePlayerTotalMinutes, calculateMPG } from "@/logic/minutesCalculation";
 import { useSetStore } from "@/store/setStore";
 import { RecordBadge } from "@/components/shared/RecordBadge";
 import { TeamDeletionConfirm } from "@/components/deletion/TeamDeletionConfirm";
@@ -67,6 +68,19 @@ export default function TeamPage() {
   const sets = useSetStore(state => state.sets);
   const setsList = Object.values(sets);
   const teamSets = setsList.filter(set => set.teamId === teamId);
+
+  // MPG data for player averages
+  const mpgData = useMemo(() => {
+    const hasAnyMinutesGames = teamGames.some(g => g.isFinished && g.minutesTracking?.enabled);
+    if (!hasAnyMinutesGames) return undefined;
+
+    const result: Record<string, number | null> = {};
+    for (const player of teamPlayers) {
+      const { totalSeconds, gamesWithMinutes } = calculatePlayerTotalMinutes(teamGames, player.id);
+      result[player.id] = calculateMPG(totalSeconds, gamesWithMinutes);
+    }
+    return result;
+  }, [teamGames, teamPlayers]);
 
   const [showDeletionConfirm, setShowDeletionConfirm] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -527,7 +541,11 @@ export default function TeamPage() {
               </View>
             )}
           </View>
-          <PlayerAveragesTable players={teamPlayers} stickyColumnHeader="Player" />
+          <PlayerAveragesTable
+            players={teamPlayers}
+            stickyColumnHeader="Player"
+            mpgData={mpgData}
+          />
         </View>
 
         {/* Top Performing Sets */}

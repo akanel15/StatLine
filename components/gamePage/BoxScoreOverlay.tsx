@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { StatLineButton } from "@/components/StatLineButton";
 import { useGameStore } from "@/store/gameStore";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
@@ -7,6 +8,7 @@ import { getPlayerDisplayName } from "@/utils/displayHelpers";
 import { SortableBoxScoreTable } from "@/components/shared/SortableBoxScoreTable";
 import { GameSetStatsTable } from "@/components/shared/GameSetStatsTable";
 import { theme } from "@/theme";
+import { calculateAllPlayerMinutes } from "@/logic/minutesCalculation";
 
 type BoxScoreProps = {
   gameId: string;
@@ -21,6 +23,17 @@ export default function BoxScoreOverlay({
 }: BoxScoreProps) {
   const game = useGameStore(state => state.games[gameId]);
   const players = usePlayerStore.getState().players;
+
+  const minutesData = useMemo(() => {
+    if (!game?.minutesTracking?.enabled) return undefined;
+    const mt = game.minutesTracking;
+    if (game.isFinished) {
+      return calculateAllPlayerMinutes(mt.stints);
+    }
+    // For active games, don't extrapolate open stints to period end
+    const currentPeriod = game.periods.length > 0 ? game.periods.length - 1 : 0;
+    return calculateAllPlayerMinutes(mt.stints, currentPeriod, mt.lastSubTime);
+  }, [game?.minutesTracking, game?.isFinished, game?.periods?.length]);
 
   if (!game) return null;
 
@@ -42,6 +55,7 @@ export default function BoxScoreOverlay({
             stickyColumnHeader="Player"
             scrollable={true}
             getPlayerDisplayName={getPlayerDisplayName}
+            minutesData={minutesData}
           />
         </View>
 

@@ -1,4 +1,4 @@
-import { PeriodType, PeriodInfo, Team } from "./game";
+import { PeriodType, PeriodInfo, Team, MinutesTrackingType } from "./game";
 import { SetType } from "./set";
 import { StatsType } from "./stats";
 
@@ -25,6 +25,7 @@ export interface StatLineExportGame {
   activePlayers: string[];
   sets: Record<string, SetType>;
   activeSets: string[];
+  minutesTracking?: MinutesTrackingType;
 }
 
 export interface StatLineExport {

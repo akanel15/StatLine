@@ -13,7 +13,6 @@ import {
   StyleSheet,
   Text,
   View,
-  AppState,
   Modal,
   TouchableOpacity,
 } from "react-native";
@@ -273,30 +272,6 @@ export default function GamePage() {
       setShowEditModal(false);
     }
   }, [game?.isFinished]);
-
-  useEffect(() => {
-    if (!game) return;
-
-    const createGameCompletionActions = (): GameCompletionActions => ({
-      markGameAsFinished: () => useGameStore.getState().markGameAsFinished(gameId),
-      updateTeamGameNumbers: (teamId: string, result: Result) =>
-        useTeamStore.getState().updateGamesPlayed(teamId, result),
-      updatePlayerGameNumbers: (playerId: string, result: Result) =>
-        usePlayerStore.getState().updateGamesPlayed(playerId, result),
-      getCurrentGame: () => useGameStore.getState().games[gameId],
-    });
-
-    const handleAppStateChange = (nextAppState: string) => {
-      if ((nextAppState === "background" || nextAppState === "inactive") && !game.isFinished) {
-        const actions = createGameCompletionActions();
-        completeGameAutomatically(game, gameId, teamId, actions, "AppState");
-      }
-    };
-
-    const subscription = AppState.addEventListener("change", handleAppStateChange);
-    return () => subscription?.remove();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gameId, teamId, game?.gamePlayedList, game?.isFinished, game?.statTotals]);
 
   // Handle navigation away from game (back button, swipe, tab switch)
   useEffect(() => {
@@ -767,6 +742,7 @@ export default function GamePage() {
       ) : showSubstitutions || activePlayers.length === 0 ? (
         <SubstitutionOverlay
           gameId={gameId}
+          currentPeriod={game ? Math.max(0, game.periods.length - 1) : 0}
           onClose={() => {
             setShowSubstitutions(false);
             // Force a re-render to check if activePlayers.length > 0 after substitution

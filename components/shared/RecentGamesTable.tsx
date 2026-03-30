@@ -6,6 +6,7 @@ import { Result } from "@/types/player";
 import { router } from "expo-router";
 import { scale, moderateScale } from "@/utils/responsive";
 import { BaseStatsTable, BaseTableHeader, BaseTableRow } from "./BaseStatsTable";
+import { calculatePlayerMinutes, formatMinutes } from "@/logic/minutesCalculation";
 
 type RecentGamesTableProps = {
   games: GameType[];
@@ -43,7 +44,14 @@ export function RecentGamesTable({ games, context, playerId, setId }: RecentGame
     "+/-",
   ];
 
-  const headings = context === "set" ? ["RUNS", ...baseHeadings] : baseHeadings;
+  // Check if any game has minutes tracking for the MIN column
+  const hasAnyMinutes =
+    context === "player" &&
+    playerId &&
+    games.some(g => g.minutesTracking?.enabled && g.gamePlayedList.includes(playerId));
+
+  const headingsWithContext = context === "set" ? ["RUNS", ...baseHeadings] : baseHeadings;
+  const headings = hasAnyMinutes ? ["MIN", ...headingsWithContext] : headingsWithContext;
 
   const formatStats = (stats: StatsType, runCount?: number): string[] => {
     const safeDivide = (num: number, den: number) =>
@@ -117,6 +125,16 @@ export function RecentGamesTable({ games, context, playerId, setId }: RecentGame
       statsToShow = formatStats(setStats, runCount);
     } else {
       statsToShow = formatStats({ ...initialBaseStats });
+    }
+
+    // Prepend MIN value if any games have minutes tracking
+    if (hasAnyMinutes && playerId) {
+      if (game.minutesTracking?.enabled) {
+        const playerSeconds = calculatePlayerMinutes(game.minutesTracking.stints, playerId);
+        statsToShow = [formatMinutes(playerSeconds), ...statsToShow];
+      } else {
+        statsToShow = ["-", ...statsToShow];
+      }
     }
 
     const getResultStyles = () => {

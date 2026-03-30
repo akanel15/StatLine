@@ -23,6 +23,8 @@ export default function NewGame() {
   const [opponentName, setOpponentName] = useState<string>();
   const [opponentImageUri, setOpponentImageUri] = useState<string>();
   const [periodSelector, setPeriodSelector] = useState<PeriodType>(PeriodType.Quarters);
+  const [trackMinutes, setTrackMinutes] = useState(false);
+  const [periodLengthMinutes, setPeriodLengthMinutes] = useState("10");
 
   useEffect(() => {
     if (teamPlayers.length === 0) {
@@ -64,7 +66,13 @@ export default function NewGame() {
         },
       ]);
     }
-    const gameId = addGame(teamId, opponentName, periodSelector, opponentImageUri);
+    const minutesConfig = trackMinutes
+      ? {
+          enabled: true,
+          periodLength: (parseInt(periodLengthMinutes, 10) || 10) * 60,
+        }
+      : undefined;
+    const gameId = addGame(teamId, opponentName, periodSelector, opponentImageUri, minutesConfig);
     router.replace(`/games/${gameId}`);
   };
 
@@ -101,15 +109,43 @@ export default function NewGame() {
         <StatLineToggle
           title="Quarters"
           selected={periodSelector === PeriodType.Quarters}
-          onPress={() => setPeriodSelector(PeriodType.Quarters)}
+          onPress={() => {
+            setPeriodSelector(PeriodType.Quarters);
+            setPeriodLengthMinutes("10");
+          }}
           testID="period-type-quarters"
         ></StatLineToggle>
         <StatLineToggle
           title="Halves"
           selected={periodSelector === PeriodType.Halves}
-          onPress={() => setPeriodSelector(PeriodType.Halves)}
+          onPress={() => {
+            setPeriodSelector(PeriodType.Halves);
+            setPeriodLengthMinutes("20");
+          }}
           testID="period-type-halves"
         ></StatLineToggle>
+      </View>
+
+      <View style={styles.minutesContainer}>
+        <StatLineToggle
+          title="Track Minutes"
+          selected={trackMinutes}
+          onPress={() => setTrackMinutes(!trackMinutes)}
+          testID="track-minutes-toggle"
+        />
+        {trackMinutes && (
+          <View style={styles.periodLengthRow}>
+            <Text style={styles.periodLengthLabel}>Period length (min)</Text>
+            <TextInput
+              style={styles.periodLengthInput}
+              keyboardType="number-pad"
+              value={periodLengthMinutes}
+              onChangeText={setPeriodLengthMinutes}
+              maxLength={2}
+              testID="period-length-input"
+            />
+          </View>
+        )}
       </View>
 
       <StatLineButton
@@ -154,5 +190,28 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 30,
+  },
+  minutesContainer: {
+    marginBottom: 30,
+    alignItems: "center",
+  },
+  periodLengthRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 12,
+    gap: 12,
+  },
+  periodLengthLabel: {
+    color: theme.colorGrey,
+    fontSize: 16,
+  },
+  periodLengthInput: {
+    color: theme.colorOnyx,
+    fontSize: 20,
+    borderColor: theme.colorLightGrey,
+    borderWidth: 2,
+    padding: 8,
+    width: 60,
+    textAlign: "center",
   },
 });

@@ -20,7 +20,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Before marking changes complete:** Always run `yarn lint --fix && yarn test`
 
-**After implementing a feature or bug fix:** Run `/verify` to visually confirm the changes work in the running iOS simulator via Maestro. Navigate to the affected screen, check the result, and report back. Do not skip this step — automated tests alone are not sufficient for UI changes.
+**After implementing a feature or bug fix:** Run `/verify` to comprehensively verify changes in the running iOS simulator. This spawns a background QA agent that creates a test plan with acceptance criteria scoped to what changed, executes each criterion via Maestro, and reports pass/fail results. Test plans are saved to `docs/test-plans/`. Do not skip this step — automated tests alone are not sufficient.
 
 ### Test Execution
 - Run single test file: `yarn test path/to/test.ts`
@@ -151,6 +151,25 @@ if (imageUri && !isDefaultLogo) {
 - State stores (`store/`): 85% coverage required
 - UI components/screens: Integration tests preferred
 - Mock files in `__mocks__/` for external dependencies
+
+## Feature Tracking
+
+All features and significant bug fixes are tracked in `docs/features/`:
+
+```
+docs/features/
+├── backlog/     ← planned or in-progress features
+└── shipped/     ← completed features (used for release notes)
+```
+
+**Workflow:**
+1. When starting a new feature or receiving a feature idea, create a spec in `backlog/`
+2. When a feature is complete, move it from `backlog/` to `shipped/`
+3. When preparing a release, use `shipped/` to generate changelog and App Store "What's New" text
+
+**Backlog spec format:** goal, likely changes, pickup context, and status/why paused (if applicable).
+
+**Shipped spec format:** what was built, what changed, and user-facing summary (for release notes).
 
 ## Development Rules
 

@@ -147,6 +147,7 @@ export function buildExportPackage(
     activePlayers: game.activePlayers,
     sets: game.sets,
     activeSets: game.activeSets,
+    ...(game.minutesTracking && { minutesTracking: game.minutesTracking }),
   }));
 
   return {

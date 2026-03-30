@@ -12,6 +12,7 @@ export type StatsRow = {
 
 type StatsTableProps = {
   rows: StatsRow[];
+  mpg?: number | null;
 };
 
 const HEADINGS = [
@@ -91,18 +92,24 @@ const formatStats = (stats: StatsType, divisor: number): string[] => {
   ];
 };
 
-export function StatsTable({ rows }: StatsTableProps) {
-  const headers: BaseTableHeader[] = HEADINGS.map(h => ({ label: h }));
+export function StatsTable({ rows, mpg }: StatsTableProps) {
+  const hasMPG = mpg !== undefined && mpg !== null;
+  const activeHeadings = hasMPG ? ["MPG", ...HEADINGS] : HEADINGS;
+  const headers: BaseTableHeader[] = activeHeadings.map(h => ({ label: h }));
 
-  const tableRows: BaseTableRow[] = rows.map((row, index) => ({
-    key: index.toString(),
-    leftColumnContent: (
-      <Text style={styles.labelText} allowFontScaling={true} maxFontSizeMultiplier={1.5}>
-        {row.label}
-      </Text>
-    ),
-    statValues: formatStats(row.stats, row.divisor),
-  }));
+  const tableRows: BaseTableRow[] = rows.map((row, index) => {
+    const stats = formatStats(row.stats, row.divisor);
+    const mpgFormatted = hasMPG ? mpg.toFixed(1) : "-";
+    return {
+      key: index.toString(),
+      leftColumnContent: (
+        <Text style={styles.labelText} allowFontScaling={true} maxFontSizeMultiplier={1.5}>
+          {row.label}
+        </Text>
+      ),
+      statValues: hasMPG ? [mpgFormatted, ...stats] : stats,
+    };
+  });
 
   return (
     <BaseStatsTable
